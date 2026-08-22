@@ -19,7 +19,7 @@ services:
   - type: web
     name: sige-backend
     runtime: node
-    plan: starter               # cambia a "free" si quieres probar sin costo (se duerme tras inactividad)
+    plan: free                   # sin costo — el backend se duerme tras 15 min sin tráfico (normal del free tier)
     region: oregon               # el más barato/rápido para LATAM en Render; cambia si prefieres otro
     rootDir: sige
     buildCommand: npm install && npx prisma generate && npm run build
@@ -59,7 +59,7 @@ services:
   - type: web
     name: sige-frontend
     runtime: node
-    plan: starter
+    plan: free
     region: oregon
     rootDir: sige-frontend
     buildCommand: npm install && npm run build
