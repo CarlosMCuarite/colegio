@@ -1,0 +1,75 @@
+# render.yaml — Blueprint de Render para SIGE (backend + frontend).
+#
+# CÓMO USARLO:
+# 1. Este archivo debe estar en la RAÍZ del repo (junto a las carpetas
+#    sige/ y sige-frontend/) — así es como Render lo encuentra solo.
+# 2. En Render: New → Blueprint → conecta tu repo de GitHub → Render lee
+#    este archivo y te muestra los 2 servicios listos para crear.
+# 3. Las variables marcadas con "sync: false" son SECRETOS — Render no las
+#    puede leer de aquí (por seguridad, nunca se guardan en el repo). Te va
+#    a pedir que las escribas a mano en el dashboard la primera vez, UNA
+#    sola vez — de ahí quedan guardadas en Render, no en GitHub.
+# 4. Cada vez que hagas `git push` a la rama configurada (main), Render
+#    despliega solo — eso YA es automático por el simple hecho de conectar
+#    el repo, con o sin este archivo. Lo que este archivo agrega es no
+#    tener que configurar cada servicio a mano por el dashboard.
+
+services:
+  # ── Backend: Node/Express/Prisma ──────────────────────────────────────────
+  - type: web
+    name: sige-backend
+    runtime: node
+    plan: starter               # cambia a "free" si quieres probar sin costo (se duerme tras inactividad)
+    region: oregon               # el más barato/rápido para LATAM en Render; cambia si prefieres otro
+    rootDir: sige
+    buildCommand: npm install && npx prisma generate && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false             # tu cadena de conexión de Supabase Postgres
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: https://sige-frontend.onrender.com   # cámbialo si tu URL de frontend queda distinta
+      # ⚠️ IMPORTANTE — seguridad: estos dos tienen un valor de respaldo
+      # escrito directo en el código (src/routes/auth.ts) para que el
+      # sistema no se rompa si faltan, pero ese valor ya quedó público al
+      # subir el repo a GitHub. Sí o sí defínelos aquí con un código propio
+      # antes de usar el sistema con datos reales — si no, cualquiera que
+      # vea el repo público conoce el código de recuperación de Admin.
+      - key: ADMIN_RECOVERY_CODE
+        sync: false
+      - key: SUPERADMIN_RECOVERY_CODE
+        sync: false
+      # Opcionales — tienen valor por defecto en el código, solo hace falta
+      # definirlos si quieres nombres de bucket distintos a los de siempre
+      # o cambiar la frecuencia/retención de los backups automáticos:
+      # SUPABASE_STORAGE_BUCKET_AVATARES, _BACKUPS, _DOCUMENTOS, _LOGOS,
+      # _VOUCHERS, BACKUP_CRON, BACKUP_MAX_VERSIONES
+
+  # ── Frontend: Next.js ──────────────────────────────────────────────────────
+  - type: web
+    name: sige-frontend
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: sige-frontend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_API_URL
+        value: https://sige-backend.onrender.com/api/v1
+      # Opcionales — solo si quieres cambiar el nombre/subtítulo que se ve
+      # en el navegador (tienen "SIGE" y el nombre completo por defecto):
+      # NEXT_PUBLIC_SYSTEM_NAME, NEXT_PUBLIC_SYSTEM_SUBTITLE

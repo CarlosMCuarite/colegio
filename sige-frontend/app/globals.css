@@ -1,0 +1,371 @@
+/* app/globals.css */
+:root {
+  --bg-primary:     #ffffff;
+  --bg-secondary:   #f8f9fb;
+  --bg-sidebar:     #1a1d23;
+  --bg-card:        #ffffff;
+  --text-primary:   #0f172a;
+  --text-secondary: #64748b;
+  --text-muted:     #94a3b8;
+  --border-color:   #e2e8f0;
+  --accent:         #4f46e5;
+  --accent-hover:   #4338ca;
+  --accent-soft:    #eef2ff;
+  --success:        #10b981;
+  --warning:        #f59e0b;
+  --danger:         #ef4444;
+  --info:           #3b82f6;
+  --sidebar-width:  260px;
+  --topbar-height:  60px;
+  --radius:         10px;
+  --shadow-sm:      0 1px 3px rgba(0,0,0,0.06);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.08);
+  --shadow-lg:      0 8px 32px rgba(0,0,0,0.12);
+  --transition:     0.2s ease;
+}
+
+[data-theme="dark"] {
+  --bg-primary:     #0f1117;
+  --bg-secondary:   #161b27;
+  --bg-sidebar:     #0d1017;
+  --bg-card:        #1a2035;
+  --text-primary:   #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted:     #64748b;
+  --border-color:   #1e293b;
+  --accent-soft:    #1e1b4b;
+  --shadow-sm:      0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:      0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:      0 8px 32px rgba(0,0,0,0.5);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background var(--transition), color var(--transition);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Layout principal ────────────────────────────────────────────────────── */
+.sige-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sige-sidebar {
+  width: var(--sidebar-width);
+  background: var(--bg-sidebar);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: transform var(--transition);
+  overflow: hidden;
+}
+
+.sige-main {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+}
+
+.sige-topbar {
+  height: var(--topbar-height);
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  padding: 0 1.5rem;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.sige-content {
+  flex: 1;
+  padding: 1.5rem;
+}
+
+/* ── Cards ───────────────────────────────────────────────────────────────── */
+.sige-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition);
+}
+
+.sige-card:hover { box-shadow: var(--shadow-md); }
+
+.kpi-card {
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.kpi-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+/* ── Sidebar Nav ─────────────────────────────────────────────────────────── */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 2px 0.75rem;
+  transition: all var(--transition);
+  cursor: pointer;
+  border: none;
+  background: none;
+  width: calc(100% - 1.5rem);
+  text-align: left;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: #f1f5f9;
+}
+
+.sidebar-nav-item.active {
+  background: var(--accent);
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(79,70,229,0.4);
+}
+
+.sidebar-section-label {
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.5rem 1.75rem 0.25rem;
+  margin-top: 0.5rem;
+}
+
+/* ── Botones ─────────────────────────────────────────────────────────────── */
+.btn-accent {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition), transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.btn-accent:hover { background: var(--accent-hover); transform: translateY(-1px); }
+.btn-accent:active { transform: translateY(0); }
+
+/* ── Tablas ──────────────────────────────────────────────────────────────── */
+.sige-table { width: 100%; border-collapse: collapse; }
+.sige-table th {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+}
+.sige-table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+.sige-table tbody tr:hover { background: var(--bg-secondary); }
+.sige-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Badges de estado ────────────────────────────────────────────────────── */
+.badge-activo      { background: #d1fae5; color: #065f46; }
+.badge-inactivo    { background: #fee2e2; color: #991b1b; }
+.badge-pendiente   { background: #fef3c7; color: #92400e; }
+.badge-aprobado    { background: #d1fae5; color: #065f46; }
+.badge-rechazado   { background: #fee2e2; color: #991b1b; }
+.badge-revision    { background: #dbeafe; color: #1e40af; }
+
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ── QR Scanner ──────────────────────────────────────────────────────────── */
+.qr-scanner-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 2px solid var(--accent);
+}
+
+/* ── Widget Chatbot ──────────────────────────────────────────────────────── */
+.chatbot-widget {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 1000;
+}
+
+.chatbot-bubble {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition);
+}
+.chatbot-bubble:hover { transform: scale(1.1); }
+
+.chatbot-window {
+  position: absolute;
+  bottom: 70px; right: 0;
+  width: 340px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Animaciones ─────────────────────────────────────────────────────────── */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:.5; } }
+.animate-fade-in { animation: fadeIn 0.25s ease forwards; }
+.animate-pulse   { animation: pulse 1.5s ease infinite; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .sige-sidebar { transform: translateX(-100%); }
+  .sige-sidebar.open { transform: translateX(0); }
+  .sige-main { margin-left: 0; }
+}
+
+/* ── Input / Form ────────────────────────────────────────────────────────── */
+.sige-input {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  transition: border-color var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+.sige-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(79,70,229,0.12);
+}
+.sige-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.sige-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.sige-check input { cursor: pointer; }
+
+/* ── Modal ───────────────────────────────────────────────────────────────── */
+.sige-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem;
+}
+.sige-modal {
+  background: var(--bg-card);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+
+/* ── Scrollbar personalizado ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* ── Impresión — Carnet de estudiante ─────────────────────────────────────── */
+.carnet-solo-print { display: none; }
+@media print {
+  body:has(.carnet-print-root) * { visibility: hidden; }
+  .carnet-print-root, .carnet-print-root * { visibility: visible; }
+  .carnet-print-root { position: fixed; inset: 0; background: #fff !important; display: block; overflow: visible; }
+  .carnet-oculto-print { display: none !important; }
+  .carnet-solo-print { display: block !important; }
+  .carnet-pagina-print { page-break-after: always; padding-top: 2rem; }
+  .carnet-pagina-print:last-child { page-break-after: auto; }
+  .carnet-tarjeta { box-shadow: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ── Impresión — Boletín de notas y otras páginas de solo-imprimir-el-card ── */
+@media print {
+  body:has(.boletin-print-root) * { visibility: hidden; }
+  .boletin-print-root, .boletin-print-root * { visibility: visible; }
+  .boletin-print-root { position: fixed; inset: 0; background: #fff !important; display: block; overflow: visible; padding: 1.5rem; }
+}
+
+/* ── Chat directo — en pantallas angostas se ve una sola columna a la vez
+   (lista O conversación), como WhatsApp, en vez de dos columnas apretadas ── */
+@media (max-width: 768px) {
+  .sige-chat-grid { grid-template-columns: 1fr !important; height: calc(100vh - 130px) !important; }
+  .sige-chat-volver { display: inline-block !important; }
+}
+@media print {
+  body * { visibility: hidden; }
+  .horario-print-root, .horario-print-root * { visibility: visible; }
+  .horario-print-root { position: absolute; left: 0; top: 0; width: 100%; }
+  .horario-print-root .print-oculto { display: none; }
+  .horario-print-root .solo-print { display: block !important; }
+}

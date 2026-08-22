@@ -1,0 +1,1240 @@
+// =============================================================================
+// SIGE — Sistema Integral de Gestion Escolar
+// Prisma Schema v1.1 — sin caracteres especiales
+// PostgreSQL (Supabase) · Multi-tenant · Produccion
+// =============================================================================
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =============================================================================
+// ENUMS
+// =============================================================================
+
+enum ColegioEstado {
+  ACTIVO
+  SUSPENDIDO
+  INACTIVO
+  PRUEBA
+}
+
+enum LicenciaEstado {
+  ACTIVA
+  PRUEBA
+  SUSPENDIDA
+  VENCIDA
+}
+
+enum RolNombre {
+  SUPERADMIN
+  ADMINISTRADOR
+  DIRECTOR
+  SECRETARIA
+  DOCENTE
+  PADRE
+  AUXILIAR
+  PSICOLOGO
+  COORDINADOR
+  TUTOR
+  CONTADOR
+  ENFERMERIA
+}
+
+enum EstudianteEstado {
+  ACTIVO
+  RETIRADO
+  TRASLADADO
+  EGRESADO
+  SUSPENDIDO
+  INACTIVO
+}
+
+enum NivelEducativo {
+  INICIAL
+  PRIMARIA
+  SECUNDARIA
+}
+
+// Escala oficial MINEDU (Currículo Nacional de Educación Básica):
+// Inicial → A/B/C (no existe AD en inicial). Primaria → AD/A/B/C.
+// Secundaria → numérica 0-20 (con las mismas 4 bandas de fondo: AD=18-20,
+// A=14-17, B=11-13, C=0-10 — se usan para poder promediar/reportar de forma
+// consistente entre niveles aunque la vista al padre sea distinta).
+enum CalificacionLiteral {
+  AD
+  A
+  B
+  C
+}
+
+enum PeriodoAcademico {
+  BIMESTRE_1
+  BIMESTRE_2
+  BIMESTRE_3
+  BIMESTRE_4
+}
+
+enum RetencionDatos {
+  UN_ANIO
+  DOS_ANIOS
+  TRES_ANIOS
+  CINCO_ANIOS
+  PERMANENTE
+}
+
+enum AsistenciaEstado {
+  PRESENTE
+  AUSENTE
+  TARDANZA
+  JUSTIFICADO
+  PERMISO
+}
+
+enum PagoEstado {
+  PENDIENTE
+  EN_REVISION
+  APROBADO
+  RECHAZADO
+}
+
+enum PagoTipo {
+  MATRICULA
+  PENSION
+  CONCEPTO_ESPECIAL
+  MORA
+  OTRO
+}
+
+enum DocumentoTipo {
+  CONSTANCIA
+  CERTIFICADO
+  SOLICITUD
+  AUTORIZACION
+  OTRO
+}
+
+enum DocumentoEstado {
+  PENDIENTE
+  EN_PROCESO
+  LISTO
+  ENTREGADO
+  RECHAZADO
+}
+
+enum ObservacionTipo {
+  DISCIPLINARIA
+  ACADEMICA
+  CONDUCTUAL
+  POSITIVA
+  SALUD         // registros de Enfermería (visitas, incidentes de salud)
+  PSICOLOGICA   // registros de Psicología (seguimiento, derivaciones)
+  OTRO
+}
+
+enum PermisoSalidaEstado {
+  SOLICITADO
+  VALIDADO
+  AUTORIZADO
+  DENEGADO
+  EJECUTADO
+}
+
+enum EventoTipo {
+  FERIADO
+  SUSPENSION_CLASES
+  REUNION
+  ACTIVIDAD
+  OTRO
+}
+
+enum EncuestaEstado {
+  BORRADOR
+  ACTIVA
+  CERRADA
+  ARCHIVADA
+}
+
+enum NotificacionTipo {
+  ASISTENCIA
+  PAGO
+  COMUNICADO
+  EVENTO
+  OBSERVACION
+  DOCUMENTO
+  PERMISO
+  MENSAJE
+  SISTEMA
+}
+
+enum AuditoriaAccion {
+  CREAR
+  LEER
+  ACTUALIZAR
+  ELIMINAR
+  LOGIN
+  LOGOUT
+  EXPORTAR
+  APROBAR
+  RECHAZAR
+  SUSPENDER
+  RESTAURAR
+  RENOVAR
+  ACCESO_SOPORTE
+}
+
+enum BackupEstado {
+  COMPLETADO
+  EN_PROCESO
+  FALLIDO
+}
+
+// =============================================================================
+// MEMBRESIAS Y PLANES
+// =============================================================================
+
+model Plan {
+  id                   String   @id @default(cuid())
+  nombre               String   @unique
+  descripcion          String?
+  precio               Decimal  @db.Decimal(10, 2)
+  moneda               String   @default("PEN")
+  duracionDias         Int      @default(30)
+  maxEstudiantes       Int
+  maxUsuarios          Int
+  maxAlmacenamientoGB  Float    @default(5)
+  modulosActivos       String[]
+  rolesHabilitados     String[] @default([])
+  observaciones        String?
+  activo               Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  colegios Colegio[]
+
+  @@map("planes")
+}
+
+// =============================================================================
+// COLEGIOS (TENANT RAIZ)
+// =============================================================================
+
+model Colegio {
+  id                   String        @id @default(cuid())
+  slug                 String        @unique
+  nombre               String
+  nombreCorto          String?
+  ruc                  String?       @unique
+  direccion            String?
+  distrito             String?
+  provincia            String?
+  departamento         String?
+  pais                 String        @default("PE")
+  telefono             String?
+  email                String?
+  sitioWeb             String?
+  logoUrl              String?
+  colorPrimario        String?       @default("#4f46e5")
+  colorSecundario      String?       @default("#7c3aed")
+  // Plantilla editable del carnet de estudiante (colores propios, lema,
+  // qué campos mostrar en el reverso). Si es null, el carnet usa
+  // colorPrimario/colorSecundario y un set de campos por defecto.
+  // Se guarda como JSON libre para no tener que migrar el esquema cada vez
+  // que se agregue una opción nueva al editor de plantilla.
+  carnetConfig         Json?
+  imagenPortada        String?
+  historia             String?
+  mision               String?
+  vision               String?
+  galeria              String[]      @default([])
+  estado               ColegioEstado @default(ACTIVO)
+  planId               String
+  plan                 Plan          @relation(fields: [planId], references: [id])
+  licenciaInicio       DateTime?
+  licenciaFin          DateTime?
+  almacenamientoUsadoMB Float        @default(0)
+  whatsappNumero       String?
+  whatsappHorario      String?
+  whatsappMensaje      String?
+  // Horario de asistencia (formato "HH:mm") usado por el escáner QR para
+  // decidir si un ingreso cuenta como PRESENTE o TARDANZA, y como referencia
+  // de la hora de salida. Si no se configuran, se usan valores por defecto.
+  horaEntrada          String?       @default("07:30")
+  horaTardanza         String?       @default("08:00")
+  horaSalida           String?       @default("13:00")
+  // Datos de pago que ve el padre para saber dónde pagar la pensión.
+  yapeNumero           String?
+  yapeTitular          String?
+  yapeQrUrl            String?       // QR de Yape — opcional, además del número
+  plinNumero           String?
+  plinTitular          String?
+  plinQrUrl            String?
+  bancoNombre          String?
+  cuentaBancaria       String?
+  cuentaBancariaCCI    String?
+  bancoQrUrl           String?
+  anoEscolarActual     Int?
+  retencionDatos       RetencionDatos @default(TRES_ANIOS)
+  rolesOpcionales      RolNombre[]   @default([])
+  fcmServerKey         String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  deletedAt            DateTime?
+
+  usuarios         Usuario[]
+  estudiantes      Estudiante[]
+  padres           Padre[]
+  niveles          NivelGrado[]
+  aulas            Aula[]
+  horarios         Horario[]
+  cursos           Curso[]
+  notas            Nota[]
+  recuperaciones   Recuperacion[]
+  conversaciones   Conversacion[]
+  matriculas       Matricula[]
+  asistencias      Asistencia[]
+  pagos            Pago[]
+  conceptosPago    ConceptoPago[]
+  comunicados      Comunicado[]
+  eventos          Evento[]
+  encuestas        Encuesta[]
+  observaciones    Observacion[]
+  permisosSalida   PermisoSalida[]
+  documentos       Documento[]
+  auditoria        Auditoria[]
+  backups          Backup[]
+  exportaciones    Exportacion[]
+  chatbotPreguntas ChatbotPregunta[]
+  licencias        Licencia[]
+  pagosLicencia    PagoLicencia[]
+
+  @@map("colegios")
+}
+
+model Licencia {
+  id          String         @id @default(cuid())
+  colegioId   String
+  colegio     Colegio        @relation(fields: [colegioId], references: [id])
+  planId      String
+  estado      LicenciaEstado @default(PRUEBA)
+  fechaInicio DateTime       @default(now())
+  fechaFin    DateTime
+  motivo      String?
+  creadoPorId String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  pagos       PagoLicencia[]
+
+  @@index([colegioId])
+  @@map("licencias")
+}
+
+// Pago que un COLEGIO le hace a la PLATAFORMA (SIGE) por su suscripción —
+// mismo concepto que Pago (pensión) pero al revés: aquí el "cliente" es el
+// colegio y el "cobrador" es SuperAdmin.
+model PagoLicencia {
+  id             String       @id @default(cuid())
+  colegioId      String
+  colegio        Colegio      @relation(fields: [colegioId], references: [id])
+  licenciaId     String?
+  licencia       Licencia?    @relation(fields: [licenciaId], references: [id])
+  monto          Decimal      @db.Decimal(10, 2)
+  moneda         String       @default("PEN")
+  periodoPago    String?      // "2026-08" — mes que cubre este pago
+  estado         PagoEstado   @default(PENDIENTE)
+  banco          String?
+  operacion      String?
+  voucherUrl     String?      // path en el bucket "vouchers" (privado, se firma al vuelo)
+  voucherNombre  String?
+  fechaPago      DateTime?
+  observaciones  String?
+  aprobadoPorId  String?
+  aprobadoPor    Usuario?     @relation("PagoLicenciaAprobadoPor", fields: [aprobadoPorId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([colegioId])
+  @@map("pagos_licencia")
+}
+
+// Configuración global de la plataforma (fila única) — datos de pago que ve
+// un admin de colegio para pagar su suscripción SIGE (Yape/Plin/Banco del
+// dueño de la plataforma, no del colegio).
+model ConfiguracionPlataforma {
+  id                 String   @id @default("global")
+  yapeNumero         String?
+  yapeTitular        String?
+  yapeQrUrl          String?  // imagen del QR de Yape — opcional, si el banco/app solo funciona por QR
+  plinNumero         String?
+  plinTitular        String?
+  plinQrUrl          String?
+  bancoNombre        String?
+  cuentaBancaria     String?
+  cuentaBancariaCCI  String?
+  bancoQrUrl         String?  // QR del banco/otra billetera, si aplica
+  updatedAt          DateTime @updatedAt
+
+  @@map("configuracion_plataforma")
+}
+
+// =============================================================================
+// USUARIOS Y AUTENTICACION
+// =============================================================================
+
+model Usuario {
+  id          String    @id @default(cuid())
+  supabaseId  String    @unique
+  colegioId   String?
+  colegio     Colegio?  @relation(fields: [colegioId], references: [id])
+  rol         RolNombre
+  nombres     String
+  apellidos   String
+  dni         String?
+  email       String    @unique
+  telefono    String?
+  direccion   String?
+  avatarUrl   String?
+  activo      Boolean   @default(true)
+  fcmToken    String?
+  ultimoLogin DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  padre                   Padre?
+  docenteAulas            DocenteAula[]
+  notasRegistradas        Nota[]          @relation("NotaRegistradoPor")
+  recuperacionesRegistradas Recuperacion[] @relation("RecuperacionRegistradoPor")
+  conversacionesComoPadre Conversacion[]  @relation("ConversacionPadre")
+  conversacionesComoDocente Conversacion[] @relation("ConversacionDocente")
+  mensajesEnviados        Mensaje[]       @relation("MensajeAutor")
+  asistenciasRegistradas  Asistencia[]    @relation("AsistenciaRegistradaPor")
+  asistenciasJustificadas Asistencia[]    @relation("AsistenciaJustificadaPor")
+  pagosAprobados          Pago[]          @relation("PagoAprobadoPor")
+  pagosLicenciaAprobados  PagoLicencia[]  @relation("PagoLicenciaAprobadoPor")
+  comunicadosCreados      Comunicado[]
+  eventosCreados          Evento[]
+  encuestasCreadas        Encuesta[]
+  observaciones           Observacion[]   @relation("ObservacionCreadaPor")
+  permisosSolicitados     PermisoSalida[] @relation("PermisoPorUsuario")
+  permisosValidados       PermisoSalida[] @relation("PermisoValidadoPor")
+  permisosAutorizados     PermisoSalida[] @relation("PermisoAutorizadoPor")
+  documentosSolicitados   Documento[]     @relation("DocumentoSolicitadoPor")
+  documentosProcesados    Documento[]     @relation("DocumentoProcesadoPor")
+  auditoria               Auditoria[]
+  exportaciones           Exportacion[]
+  notificaciones          Notificacion[]
+  horariosDictados        Horario[]       @relation("HorarioDocente")
+  aulasComoTutor          Aula[]          @relation("AulaDocenteTutor")
+
+  @@index([colegioId])
+  @@index([supabaseId])
+  @@map("usuarios")
+}
+
+// =============================================================================
+// ESTRUCTURA ACADEMICA
+// =============================================================================
+
+model NivelGrado {
+  id        String         @id @default(cuid())
+  colegioId String
+  colegio   Colegio        @relation(fields: [colegioId], references: [id])
+  nivel     NivelEducativo
+  grado     Int
+  nombre    String
+  activo    Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  secciones  Seccion[]
+  matriculas Matricula[]
+  horarios   Horario[]
+  cursos     Curso[]
+
+  @@unique([colegioId, nivel, grado])
+  @@index([colegioId])
+  @@map("niveles_grados")
+}
+
+model Seccion {
+  id           String     @id @default(cuid())
+  nivelGradoId String
+  nivelGrado   NivelGrado @relation(fields: [nivelGradoId], references: [id])
+  nombre       String
+  capacidad    Int?
+  activo       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  aulas      Aula[]
+  matriculas Matricula[]
+  horarios   Horario[]
+
+  @@unique([nivelGradoId, nombre])
+  @@map("secciones")
+}
+
+model Aula {
+  id        String   @id @default(cuid())
+  colegioId String
+  colegio   Colegio  @relation(fields: [colegioId], references: [id])
+  seccionId String?
+  seccion   Seccion? @relation(fields: [seccionId], references: [id])
+  docenteTutorId String?
+  docenteTutor   Usuario? @relation("AulaDocenteTutor", fields: [docenteTutorId], references: [id])
+  nombre    String
+  capacidad Int?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  docentesAula DocenteAula[]
+  asistencias  Asistencia[]
+  horarios     Horario[]
+
+  @@index([colegioId])
+  @@map("aulas")
+}
+
+model DocenteAula {
+  id        String  @id @default(cuid())
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  aulaId    String
+  aula      Aula    @relation(fields: [aulaId], references: [id])
+  materia   String?
+  // Curso real dictado por este docente en esta aula — es lo que determina
+  // si puede registrar notas de ese curso para esos alumnos. `materia`
+  // (texto libre) se mantiene solo por compatibilidad con asignaciones
+  // creadas antes de que existiera el modelo Curso.
+  cursoId   String?
+  curso     Curso?  @relation(fields: [cursoId], references: [id])
+  esTutor   Boolean @default(false)
+  activo    Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([usuarioId, aulaId, materia])
+  @@index([cursoId])
+  @@map("docente_aulas")
+}
+
+enum TipoBloque {
+  CLASE
+  RECREO
+}
+
+// Curso: la materia/área curricular real, ligada a un grado específico —
+// reemplaza el texto libre "materia" que había en Horario/DocenteAula (ese
+// texto libre era justamente el origen del problema: cada quien lo escribía
+// distinto, y no había forma de agregar notas contra "algo" concreto).
+model Curso {
+  id             String     @id @default(cuid())
+  colegioId      String
+  colegio        Colegio    @relation(fields: [colegioId], references: [id])
+  nivelGradoId   String
+  nivelGrado     NivelGrado @relation(fields: [nivelGradoId], references: [id])
+  nombre         String
+  areaCurricular String?
+  activo         Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  docentesAula DocenteAula[]
+  horarios     Horario[]
+  notas        Nota[]
+  recuperaciones Recuperacion[]
+
+  @@index([colegioId])
+  @@index([nivelGradoId])
+  @@map("cursos")
+}
+
+// Una nota por estudiante + curso + bimestre. Se guardan SIEMPRE los dos
+// valores (literal Y numérico): el numérico es necesario para poder sacar
+// promedios incluso en inicial/primaria (no se pueden promediar letras
+// directamente), pero al padre se le muestra el literal en esos niveles —
+// solo en secundaria se muestra el número real.
+model Nota {
+  id                   String               @id @default(cuid())
+  colegioId            String
+  colegio              Colegio              @relation(fields: [colegioId], references: [id])
+  estudianteId         String
+  estudiante           Estudiante           @relation(fields: [estudianteId], references: [id])
+  cursoId              String
+  curso                Curso                @relation(fields: [cursoId], references: [id])
+  periodo              PeriodoAcademico
+  calificacionLiteral  CalificacionLiteral?
+  calificacionNumerica Decimal?             @db.Decimal(4, 2)
+  observacion          String?
+  registradoPorId      String
+  registradoPor        Usuario              @relation("NotaRegistradoPor", fields: [registradoPorId], references: [id])
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  @@unique([estudianteId, cursoId, periodo])
+  @@index([colegioId])
+  @@index([estudianteId])
+  @@index([cursoId])
+  @@map("notas")
+}
+
+// Examen de recuperación — para un estudiante que no llegó al nivel mínimo
+// en el promedio final de un curso. No hay un flujo único documentado por
+// colegio para esto, así que se deja lo estándar: una nota de recuperación
+// por estudiante+curso, con fecha de examen y resultado.
+model Recuperacion {
+  id              String    @id @default(cuid())
+  colegioId       String
+  colegio         Colegio   @relation(fields: [colegioId], references: [id])
+  estudianteId    String
+  estudiante      Estudiante @relation(fields: [estudianteId], references: [id])
+  cursoId         String
+  curso           Curso     @relation(fields: [cursoId], references: [id])
+  notaFinal       Decimal?  @db.Decimal(4, 2)
+  aprobado        Boolean?
+  fechaExamen     DateTime?
+  observacion     String?
+  registradoPorId String
+  registradoPor   Usuario   @relation("RecuperacionRegistradoPor", fields: [registradoPorId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([estudianteId, cursoId])
+  @@index([colegioId])
+  @@map("recuperaciones")
+}
+
+model Horario {
+  id           String     @id @default(cuid())
+  colegioId    String
+  colegio      Colegio    @relation(fields: [colegioId], references: [id])
+  nivelGradoId String
+  nivelGrado   NivelGrado @relation(fields: [nivelGradoId], references: [id])
+  seccionId    String?
+  seccion      Seccion?   @relation(fields: [seccionId], references: [id])
+  aulaId       String?
+  aula         Aula?      @relation(fields: [aulaId], references: [id])
+  docenteId    String?
+  docente      Usuario?   @relation("HorarioDocente", fields: [docenteId], references: [id])
+  // Curso real que se dicta en este bloque — reemplaza el uso de `materia`
+  // como único dato. `materia` se mantiene como texto de respaldo para
+  // bloques que no son clase (ej. "Recreo", "Formación") o data antigua.
+  cursoId      String?
+  curso        Curso?     @relation(fields: [cursoId], references: [id])
+  diaSemana    Int
+  horaInicio   String
+  horaFin      String
+  materia      String
+  tipoBloque   TipoBloque @default(CLASE)
+  docenteNombre String?
+  activo       Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([colegioId])
+  @@index([nivelGradoId])
+  @@index([cursoId])
+  @@map("horarios")
+}
+
+// =============================================================================
+// ESTUDIANTES
+// =============================================================================
+
+model Estudiante {
+  id               String           @id @default(cuid())
+  colegioId        String
+  colegio          Colegio          @relation(fields: [colegioId], references: [id])
+  dni              String
+  nombres          String
+  apellidos        String
+  fechaNacimiento  DateTime?
+  genero           String?
+  direccion        String?
+  fotoUrl          String?
+  estado           EstudianteEstado @default(ACTIVO)
+  codigoQR         String           @unique
+  anoIngreso       Int?
+  tipoSangre       String?
+  alergias         String?
+  medicacion       String?
+  restricciones    String?
+  notasSalud       String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  deletedAt        DateTime?
+
+  padreEstudiantes PadreEstudiante[]
+  matriculas       Matricula[]
+  asistencias      Asistencia[]
+  observaciones    Observacion[]
+  permisosSalida   PermisoSalida[]
+  documentos       Documento[]
+  pagos            Pago[]
+  notas            Nota[]
+  recuperaciones   Recuperacion[]
+  conversaciones   Conversacion[]
+
+  @@unique([colegioId, dni])
+  @@index([colegioId])
+  @@index([codigoQR])
+  @@map("estudiantes")
+}
+
+// =============================================================================
+// PADRES
+// =============================================================================
+
+model Padre {
+  id        String   @id @default(cuid())
+  colegioId String
+  colegio   Colegio  @relation(fields: [colegioId], references: [id])
+  usuarioId String?  @unique
+  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  dni       String
+  nombres   String
+  apellidos String
+  email     String?
+  telefono  String?
+  telefono2 String?
+  direccion String?
+  fotoUrl   String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  padreEstudiantes    PadreEstudiante[]
+  pagos               Pago[]
+  encuestasRespuestas EncuestaRespuesta[]
+  notificaciones      Notificacion[]
+
+  @@unique([colegioId, dni])
+  @@index([colegioId])
+  @@map("padres")
+}
+
+enum VinculoEstado {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+model PadreEstudiante {
+  id           String     @id @default(cuid())
+  padreId      String
+  padre        Padre      @relation(fields: [padreId], references: [id])
+  estudianteId String
+  estudiante   Estudiante @relation(fields: [estudianteId], references: [id])
+  parentesco   String     @default("PADRE")
+  esPrincipal  Boolean    @default(false)
+  estado       VinculoEstado @default(APROBADO)
+  aprobadoPorId String?
+  createdAt    DateTime   @default(now())
+
+  @@unique([padreId, estudianteId])
+  @@map("padre_estudiantes")
+}
+
+// =============================================================================
+// MATRICULAS
+// =============================================================================
+
+model Matricula {
+  id             String     @id @default(cuid())
+  colegioId      String
+  colegio        Colegio    @relation(fields: [colegioId], references: [id])
+  estudianteId   String
+  estudiante     Estudiante @relation(fields: [estudianteId], references: [id])
+  nivelGradoId   String
+  nivelGrado     NivelGrado @relation(fields: [nivelGradoId], references: [id])
+  seccionId      String?
+  seccion        Seccion?   @relation(fields: [seccionId], references: [id])
+  anoEscolar     Int
+  fechaMatricula DateTime   @default(now())
+  activa         Boolean    @default(true)
+  observaciones  String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  @@unique([colegioId, estudianteId, anoEscolar])
+  @@index([colegioId])
+  @@index([estudianteId])
+  @@map("matriculas")
+}
+
+// =============================================================================
+// ASISTENCIA
+// =============================================================================
+
+model Asistencia {
+  id               String           @id @default(cuid())
+  colegioId        String
+  colegio          Colegio          @relation(fields: [colegioId], references: [id])
+  estudianteId     String
+  estudiante       Estudiante       @relation(fields: [estudianteId], references: [id])
+  aulaId           String?
+  aula             Aula?            @relation(fields: [aulaId], references: [id])
+  fecha            DateTime         @db.Date
+  estado           AsistenciaEstado @default(PRESENTE)
+  horaLlegada      DateTime?
+  motivoAusencia   String?
+  justificacion    String?
+  registradoPorId  String
+  registradoPor    Usuario          @relation("AsistenciaRegistradaPor", fields: [registradoPorId], references: [id])
+  justificadoPorId String?
+  justificadoPor   Usuario?         @relation("AsistenciaJustificadaPor", fields: [justificadoPorId], references: [id])
+  escaneadoViaQR   Boolean          @default(false)
+  notificadoPadre  Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([colegioId, estudianteId, fecha])
+  @@index([colegioId, fecha])
+  @@index([estudianteId])
+  @@map("asistencias")
+}
+
+// =============================================================================
+// PAGOS Y CONCEPTOS
+// =============================================================================
+
+model ConceptoPago {
+  id          String   @id @default(cuid())
+  colegioId   String
+  colegio     Colegio  @relation(fields: [colegioId], references: [id])
+  nombre      String
+  tipo        PagoTipo
+  monto       Decimal  @db.Decimal(10, 2)
+  moneda      String   @default("PEN")
+  descripcion String?
+  activo      Boolean  @default(true)
+  // Si es null, el concepto aplica a todos los niveles (ej. "Matrícula").
+  nivelAplicable  NivelEducativo?
+  // Meses del año (1-12) en que corresponde cobrar este concepto — ej. la
+  // pensión suele cobrarse de marzo a diciembre. Vacío = los 12 meses.
+  mesesAplicables Int[]    @default([3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pagos Pago[]
+
+  @@index([colegioId])
+  @@map("conceptos_pago")
+}
+
+model Pago {
+  id              String       @id @default(cuid())
+  colegioId       String
+  colegio         Colegio      @relation(fields: [colegioId], references: [id])
+  padreId         String
+  padre           Padre        @relation(fields: [padreId], references: [id])
+  // A qué hijo corresponde el cargo — necesario cuando hay más de un hijo en
+  // la familia, porque cada uno puede tener un monto distinto (ej. descuento
+  // por hermanos, beca, etc.). Nullable por compatibilidad con pagos viejos
+  // creados antes de este campo.
+  estudianteId    String?
+  estudiante      Estudiante?  @relation(fields: [estudianteId], references: [id])
+  montoOriginal   Decimal?     @db.Decimal(10, 2)
+  montoAjustadoPor String?
+  motivoAjuste    String?
+  conceptoId      String?
+  concepto        ConceptoPago? @relation(fields: [conceptoId], references: [id])
+  tipo            PagoTipo
+  monto           Decimal      @db.Decimal(10, 2)
+  moneda          String       @default("PEN")
+  estado          PagoEstado   @default(PENDIENTE)
+  voucherUrl      String?
+  voucherNombre   String?
+  fechaPago       DateTime?
+  periodoPago     String?
+  numeroBoleta    String?
+  banco           String?
+  operacion       String?
+  observaciones   String?
+  aprobadoPorId   String?
+  aprobadoPor     Usuario?     @relation("PagoAprobadoPor", fields: [aprobadoPorId], references: [id])
+  fechaAprobacion DateTime?
+  notificadoPadre Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([colegioId])
+  @@index([padreId])
+  @@index([estado])
+  @@map("pagos")
+}
+
+// =============================================================================
+// COMUNICADOS
+// =============================================================================
+
+model Comunicado {
+  id             String          @id @default(cuid())
+  colegioId      String
+  colegio        Colegio         @relation(fields: [colegioId], references: [id])
+  titulo         String
+  contenido      String
+  adjuntoUrl     String?
+  adjuntoNombre  String?
+  paraElColegio  Boolean         @default(false)
+  nivelEducativo NivelEducativo?
+  gradoId        String?
+  seccionId      String?
+  publicadoEn    DateTime?
+  venceEn        DateTime?
+  creadoPorId    String
+  creadoPor      Usuario         @relation(fields: [creadoPorId], references: [id])
+  activo         Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([colegioId])
+  @@map("comunicados")
+}
+
+// =============================================================================
+// EVENTOS
+// =============================================================================
+
+model Evento {
+  id          String     @id @default(cuid())
+  colegioId   String
+  colegio     Colegio    @relation(fields: [colegioId], references: [id])
+  titulo      String
+  descripcion String?
+  tipo        EventoTipo @default(ACTIVIDAD)
+  fechaInicio DateTime
+  fechaFin    DateTime?
+  todoElDia   Boolean    @default(true)
+  lugar       String?
+  creadoPorId String
+  creadoPor   Usuario    @relation(fields: [creadoPorId], references: [id])
+  activo      Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([colegioId])
+  @@index([fechaInicio])
+  @@map("eventos")
+}
+
+// =============================================================================
+// ENCUESTAS
+// =============================================================================
+
+model Encuesta {
+  id          String         @id @default(cuid())
+  colegioId   String
+  colegio     Colegio        @relation(fields: [colegioId], references: [id])
+  titulo      String
+  descripcion String?
+  estado      EncuestaEstado @default(BORRADOR)
+  fechaInicio DateTime?
+  fechaFin    DateTime?
+  anonima     Boolean        @default(false)
+  creadaPorId String
+  creadaPor   Usuario        @relation(fields: [creadaPorId], references: [id])
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  preguntas  EncuestaPregunta[]
+  respuestas EncuestaRespuesta[]
+
+  @@index([colegioId])
+  @@map("encuestas")
+}
+
+model EncuestaPregunta {
+  id         String   @id @default(cuid())
+  encuestaId String
+  encuesta   Encuesta @relation(fields: [encuestaId], references: [id], onDelete: Cascade)
+  orden      Int
+  pregunta   String
+  tipo       String
+  opciones   String[] @default([])
+  requerida  Boolean  @default(true)
+
+  respuestasDetalle EncuestaRespuestaDetalle[]
+
+  @@map("encuesta_preguntas")
+}
+
+model EncuestaRespuesta {
+  id         String   @id @default(cuid())
+  encuestaId String
+  encuesta   Encuesta @relation(fields: [encuestaId], references: [id])
+  padreId    String?
+  padre      Padre?   @relation(fields: [padreId], references: [id])
+  completada Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  detalles EncuestaRespuestaDetalle[]
+
+  @@map("encuesta_respuestas")
+}
+
+model EncuestaRespuestaDetalle {
+  id          String            @id @default(cuid())
+  respuestaId String
+  respuesta   EncuestaRespuesta @relation(fields: [respuestaId], references: [id], onDelete: Cascade)
+  preguntaId  String
+  pregunta    EncuestaPregunta  @relation(fields: [preguntaId], references: [id])
+  valor       String
+
+  @@map("encuesta_respuesta_detalles")
+}
+
+// =============================================================================
+// OBSERVACIONES DISCIPLINARIAS
+// =============================================================================
+
+model Observacion {
+  id              String          @id @default(cuid())
+  colegioId       String
+  colegio         Colegio         @relation(fields: [colegioId], references: [id])
+  estudianteId    String
+  estudiante      Estudiante      @relation(fields: [estudianteId], references: [id])
+  tipo            ObservacionTipo @default(DISCIPLINARIA)
+  descripcion     String
+  accionTomada    String?
+  fecha           DateTime        @default(now())
+  creadoPorId     String
+  creadoPor       Usuario         @relation("ObservacionCreadaPor", fields: [creadoPorId], references: [id])
+  notificadoPadre Boolean         @default(false)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([colegioId])
+  @@index([estudianteId])
+  @@map("observaciones")
+}
+
+// =============================================================================
+// PERMISOS DE SALIDA
+// =============================================================================
+
+model PermisoSalida {
+  id                 String              @id @default(cuid())
+  colegioId          String
+  colegio            Colegio             @relation(fields: [colegioId], references: [id])
+  estudianteId       String
+  estudiante         Estudiante          @relation(fields: [estudianteId], references: [id])
+  estado             PermisoSalidaEstado @default(SOLICITADO)
+  motivo             String
+  descripcion        String?
+  fechaSolicitud     DateTime            @default(now())
+  horaSalida         DateTime?
+  solicitadoPorId    String
+  solicitadoPor      Usuario             @relation("PermisoPorUsuario", fields: [solicitadoPorId], references: [id])
+  validadoPorId      String?
+  validadoPor        Usuario?            @relation("PermisoValidadoPor", fields: [validadoPorId], references: [id])
+  fechaValidacion    DateTime?
+  llamadaConfirmada  Boolean             @default(false)
+  telefonoContactado String?
+  autorizadoPorId    String?
+  autorizadoPor      Usuario?            @relation("PermisoAutorizadoPor", fields: [autorizadoPorId], references: [id])
+  fechaAutorizacion  DateTime?
+  observaciones      String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([colegioId])
+  @@index([estudianteId])
+  @@map("permisos_salida")
+}
+
+// =============================================================================
+// GESTION DOCUMENTAL
+// =============================================================================
+
+model Documento {
+  id              String          @id @default(cuid())
+  colegioId       String
+  colegio         Colegio         @relation(fields: [colegioId], references: [id])
+  estudianteId    String?
+  estudiante      Estudiante?     @relation(fields: [estudianteId], references: [id])
+  tipo            DocumentoTipo
+  nombre          String
+  descripcion     String?
+  estado          DocumentoEstado @default(PENDIENTE)
+  archivoUrl      String?
+  archivoNombre   String?
+  archivoTamanoKB Int?
+  solicitadoPorId String?
+  solicitadoPor   Usuario?        @relation("DocumentoSolicitadoPor", fields: [solicitadoPorId], references: [id])
+  procesadoPorId  String?
+  procesadoPor    Usuario?        @relation("DocumentoProcesadoPor", fields: [procesadoPorId], references: [id])
+  fechaEntrega    DateTime?
+  observaciones   String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([colegioId])
+  @@index([estudianteId])
+  @@map("documentos")
+}
+
+// =============================================================================
+// NOTIFICACIONES
+// =============================================================================
+
+// =============================================================================
+// CHAT — mensajería directa Padre ↔ Docente
+// =============================================================================
+// Una conversación está atada a UN estudiante específico (no solo al par
+// padre-docente) — así, si un padre tiene dos hijos con el mismo tutor,
+// tiene dos hilos separados, cada uno con el contexto correcto ("sobre
+// Juan" vs "sobre María"), en vez de mezclar todo en un solo chat confuso.
+model Conversacion {
+  id               String    @id @default(cuid())
+  colegioId        String
+  colegio          Colegio   @relation(fields: [colegioId], references: [id])
+  padreUsuarioId   String
+  padreUsuario     Usuario   @relation("ConversacionPadre", fields: [padreUsuarioId], references: [id])
+  docenteUsuarioId String
+  docenteUsuario   Usuario   @relation("ConversacionDocente", fields: [docenteUsuarioId], references: [id])
+  estudianteId     String
+  estudiante       Estudiante @relation(fields: [estudianteId], references: [id])
+  ultimoMensajeEn  DateTime?
+  ultimoMensajeTexto String?
+  createdAt        DateTime  @default(now())
+
+  mensajes Mensaje[]
+
+  @@unique([padreUsuarioId, docenteUsuarioId, estudianteId])
+  @@index([colegioId])
+  @@index([padreUsuarioId])
+  @@index([docenteUsuarioId])
+  @@map("conversaciones")
+}
+
+model Mensaje {
+  id             String       @id @default(cuid())
+  conversacionId String
+  conversacion   Conversacion @relation(fields: [conversacionId], references: [id])
+  autorId        String
+  autor          Usuario      @relation("MensajeAutor", fields: [autorId], references: [id])
+  contenido      String
+  leidoEn        DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@index([conversacionId])
+  @@map("mensajes")
+}
+
+model Notificacion {
+  id        String           @id @default(cuid())
+  usuarioId String?
+  usuario   Usuario?         @relation(fields: [usuarioId], references: [id])
+  padreId   String?
+  padre     Padre?           @relation(fields: [padreId], references: [id])
+  tipo      NotificacionTipo
+  titulo    String
+  cuerpo    String
+  datos     Json?
+  leida     Boolean          @default(false)
+  enviadaFCM Boolean         @default(false)
+  errorFCM  String?
+  createdAt DateTime         @default(now())
+
+  @@index([usuarioId])
+  @@index([padreId])
+  @@map("notificaciones")
+}
+
+// =============================================================================
+// CHATBOT
+// =============================================================================
+
+model ChatbotPregunta {
+  id        String   @id @default(cuid())
+  colegioId String
+  colegio   Colegio  @relation(fields: [colegioId], references: [id])
+  pregunta  String
+  respuesta String
+  categoria String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([colegioId])
+  @@map("chatbot_preguntas")
+}
+
+// =============================================================================
+// AUDITORIA
+// =============================================================================
+
+model Auditoria {
+  id          String          @id @default(cuid())
+  colegioId   String?
+  colegio     Colegio?        @relation(fields: [colegioId], references: [id])
+  usuarioId   String?
+  usuario     Usuario?        @relation(fields: [usuarioId], references: [id])
+  accion      AuditoriaAccion
+  modulo      String
+  recursoId   String?
+  recursoTipo String?
+  descripcion String?
+  datosAntes  Json?
+  datosDespues Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime        @default(now())
+
+  @@index([colegioId])
+  @@index([usuarioId])
+  @@index([createdAt])
+  @@map("auditoria")
+}
+
+// =============================================================================
+// BACKUPS
+// =============================================================================
+
+model Backup {
+  id          String       @id @default(cuid())
+  colegioId   String
+  colegio     Colegio      @relation(fields: [colegioId], references: [id])
+  nombre      String
+  rutaArchivo String
+  tamanoKB    Int?
+  estado      BackupEstado @default(EN_PROCESO)
+  error       String?
+  createdAt   DateTime     @default(now())
+
+  @@index([colegioId])
+  @@map("backups")
+}
+
+// =============================================================================
+// EXPORTACIONES HISTORICAS
+// =============================================================================
+
+model Exportacion {
+  id        String   @id @default(cuid())
+  colegioId String
+  colegio   Colegio  @relation(fields: [colegioId], references: [id])
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  nombre    String
+  archivoUrl String?
+  tamanoKB  Int?
+  modulos   String[]
+  estado    String   @default("EN_PROCESO")
+  error     String?
+  createdAt DateTime @default(now())
+
+  @@index([colegioId])
+  @@map("exportaciones")
+}
