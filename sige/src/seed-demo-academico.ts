@@ -20,7 +20,7 @@ import prisma from './config/prisma';
 import { supabaseAdmin } from './config/supabase';
 import {
   RolNombre, NivelEducativo, TipoBloque, AsistenciaEstado, VinculoEstado,
-  CalificacionLiteral,
+  CalificacionLiteral, Prisma,
 } from '@prisma/client';
 
 const PASSWORD_DEMO = 'Demo12345!';
@@ -166,7 +166,9 @@ async function main() {
         const email = `padre${contadorPadre}.academico@${DOMINIO}`;
         const supabaseId = await crearUsuarioAuth(email, 'Roberto', apellidos);
         const usuarioPadre = await prisma.usuario.upsert({ where: { supabaseId }, update: { colegioId: colegio.id, rol: RolNombre.PADRE }, create: { supabaseId, colegioId: colegio.id, rol: RolNombre.PADRE, nombres: 'Roberto', apellidos, email, dni: dniAleatorio(), telefono: '9' + dniAleatorio().slice(1) } });
-        padre = await prisma.padre.upsert({ where: { usuarioId: usuarioPadre.id }, update: {}, create: { colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: 'Roberto', apellidos, email, telefono: usuarioPadre.telefono } });
+        padre = await prisma.padre.upsert({ where: { usuarioId: usuarioPadre.id }, update: {}, create: {
+          colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: 'Roberto', apellidos, email, telefono: usuarioPadre.telefono,
+        } as Prisma.PadreUncheckedCreateInput });
         (padre as any).__esPadreDosHijos = true;
         padresCreados.push(padre);
       } else if (grado.nivelGrado.nivel === 'SECUNDARIA' && i === 0) {
@@ -177,7 +179,9 @@ async function main() {
         const nombresPadre = rnd(NOMBRES_H);
         const supabaseId = await crearUsuarioAuth(email, nombresPadre, apellidos);
         const usuarioPadre = await prisma.usuario.upsert({ where: { supabaseId }, update: { colegioId: colegio.id, rol: RolNombre.PADRE }, create: { supabaseId, colegioId: colegio.id, rol: RolNombre.PADRE, nombres: nombresPadre, apellidos, email, dni: dniAleatorio(), telefono: '9' + dniAleatorio().slice(1) } });
-        padre = await prisma.padre.upsert({ where: { usuarioId: usuarioPadre.id }, update: {}, create: { colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: nombresPadre, apellidos, email, telefono: usuarioPadre.telefono } });
+        padre = await prisma.padre.upsert({ where: { usuarioId: usuarioPadre.id }, update: {}, create: {
+          colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: nombresPadre, apellidos, email, telefono: usuarioPadre.telefono,
+        } as Prisma.PadreUncheckedCreateInput });
         padresCreados.push(padre);
       }
       await prisma.padreEstudiante.create({ data: { padreId: padre.id, estudianteId: estudiante.id, parentesco: 'PADRE', esPrincipal: true, estado: VinculoEstado.APROBADO } });

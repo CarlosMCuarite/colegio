@@ -25,7 +25,7 @@ import {
   RolNombre, NivelEducativo, TipoBloque, PagoTipo, PagoEstado,
   AsistenciaEstado, EventoTipo, PermisoSalidaEstado, VinculoEstado,
   CalificacionLiteral, ObservacionTipo, DocumentoTipo, DocumentoEstado,
-  EncuestaEstado,
+  EncuestaEstado, Prisma,
 } from '@prisma/client';
 
 const PASSWORD_DEMO = 'Demo12345!';
@@ -165,7 +165,9 @@ async function crearColegioCompleto(indice: 1 | 2 | 3) {
       const nombresPadre = rnd(NOMBRES_H);
       const supabaseId = await crearUsuarioAuth(email, nombresPadre, apellidos);
       const usuarioPadre = await prisma.usuario.upsert({ where: { supabaseId }, update: { colegioId: colegio.id, rol: RolNombre.PADRE }, create: { supabaseId, colegioId: colegio.id, rol: RolNombre.PADRE, nombres: nombresPadre, apellidos, email, dni: dniAleatorio(), telefono: '9' + dniAleatorio().slice(1) } });
-      padre = await prisma.padre.upsert({ where: { usuarioId: usuarioPadre.id }, update: {}, create: { colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: nombresPadre, apellidos, email, telefono: usuarioPadre.telefono } });
+      padre = await prisma.padre.upsert({ where: { usuarioId: usuarioPadre.id }, update: {}, create: {
+        colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: nombresPadre, apellidos, email, telefono: usuarioPadre.telefono,
+      } as Prisma.PadreUncheckedCreateInput });
       padresCreados.push(padre);
     }
     await prisma.padreEstudiante.create({ data: { padreId: padre.id, estudianteId: estudiante.id, parentesco: 'PADRE', esPrincipal: true, estado: VinculoEstado.APROBADO } });

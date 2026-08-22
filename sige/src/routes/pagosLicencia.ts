@@ -19,7 +19,13 @@ router.use(authenticate, resolveTenant);
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 function esAdminColegio(rol: RolNombre) {
-  return [RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR].includes(rol);
+  // Se anota el array como RolNombre[] (no un literal más angosto) — sin
+  // esto, TypeScript infiere el tipo más estrecho posible a partir de los
+  // dos valores del array, y `.includes(rol)` deja de aceptar la variable
+  // `rol` (que es del tipo completo RolNombre) porque no coincide con ese
+  // tipo angosto. Nunca se notó en local porque el dev normal usa ts-node
+  // (más permisivo); recién se ve con el build limpio de producción.
+  return ([RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR] as RolNombre[]).includes(rol);
 }
 
 // ── GET /pagos-licencia — SuperAdmin ve todos, admin de colegio ve los suyos ──

@@ -78,10 +78,20 @@ router.post(
   auditar({ modulo: 'PERMISOS_SALIDA', accion: AuditoriaAccion.CREAR }),
   async (req, res) => {
     const data = permisoSchema.parse(req.body);
+    // Se listan los campos explícitos en vez de "...data" — al mezclar un
+    // objeto parcialmente opcional (el que devuelve zod) con campos extra
+    // dentro del mismo literal, TypeScript no logra decidir contra cuál de
+    // las dos variantes del tipo de Prisma (CreateInput vs
+    // UncheckedCreateInput) debe validar, y termina marcando colegioId como
+    // inválido aunque el valor sea correcto en tiempo de ejecución. Nunca
+    // se notó en local porque ts-node es más permisivo con esto que un
+    // build de producción limpio con tsc.
     const permiso = await prisma.permisoSalida.create({
       data: {
-        ...data,
-        colegioId:      req.colegioId!,
+        estudianteId:    data.estudianteId,
+        motivo:          data.motivo,
+        descripcion:     data.descripcion,
+        colegioId:       req.colegioId!,
         solicitadoPorId: req.user!.id,
         estado:          PermisoSalidaEstado.SOLICITADO,
       },

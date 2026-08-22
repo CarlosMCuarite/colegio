@@ -21,7 +21,7 @@ import prisma from './config/prisma';
 import { supabaseAdmin } from './config/supabase';
 import {
   RolNombre, NivelEducativo, TipoBloque, PagoTipo, PagoEstado,
-  AsistenciaEstado, EventoTipo, PermisoSalidaEstado, VinculoEstado,
+  AsistenciaEstado, EventoTipo, PermisoSalidaEstado, VinculoEstado, Prisma,
 } from '@prisma/client';
 
 const PASSWORD_DEMO = 'Demo12345!';
@@ -178,7 +178,7 @@ async function crearColegioDemo(indice: 1 | 2) {
       });
       const padre = await prisma.padre.upsert({
         where: { usuarioId: usuarioPadre.id }, update: {},
-        create: { colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: nombresPadre, apellidos: apellidosPadre, email, telefono: usuarioPadre.telefono },
+        create: { colegioId: colegio.id, usuarioId: usuarioPadre.id, dni: usuarioPadre.dni!, nombres: nombresPadre, apellidos: apellidosPadre, email, telefono: usuarioPadre.telefono } as Prisma.PadreUncheckedCreateInput,
       });
       padres.push(padre);
     }
