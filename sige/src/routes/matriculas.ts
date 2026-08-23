@@ -6,7 +6,7 @@ import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion } from '@prisma/client';
+import { AuditoriaAccion, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -115,7 +115,7 @@ router.post(
       throw new AppError(`Límite de estudiantes del plan alcanzado`, 403);
 
     const matricula = await prisma.matricula.create({
-      data: { ...data, colegioId: req.colegioId! },
+      data: { ...data, colegioId: req.colegioId! } as Prisma.MatriculaUncheckedCreateInput,
       include: { nivelGrado: true, seccion: true },
     });
     res.status(201).json({ ok: true, data: matricula });

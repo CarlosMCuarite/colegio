@@ -6,7 +6,7 @@ import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, EventoTipo } from '@prisma/client';
+import { AuditoriaAccion, EventoTipo, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -114,7 +114,7 @@ router.post(
         creadoPorId: req.user!.id,
         fechaInicio: data.fechaInicio,
         fechaFin:    data.fechaFin ?? null,
-      },
+      } as Prisma.EventoUncheckedCreateInput,
     });
     res.status(201).json({ ok: true, data: evento });
   },

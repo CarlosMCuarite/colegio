@@ -118,7 +118,7 @@ async function crearColegioDemo(indice: 1 | 2) {
   for (const n of nivelesDef) {
     const nivelGrado = await prisma.nivelGrado.upsert({
       where: { colegioId_nivel_grado: { colegioId: colegio.id, nivel: n.nivel, grado: n.grado } },
-      update: {}, create: { colegioId: colegio.id, ...n },
+      update: {}, create: { colegioId: colegio.id, ...n } as Prisma.NivelGradoUncheckedCreateInput,
     });
     const seccion = await prisma.seccion.upsert({
       where: { nivelGradoId_nombre: { nivelGradoId: nivelGrado.id, nombre: 'A' } },

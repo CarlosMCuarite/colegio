@@ -6,7 +6,7 @@ import { authenticate, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, RolNombre, CalificacionLiteral } from '@prisma/client';
+import { AuditoriaAccion, RolNombre, CalificacionLiteral, Prisma } from '@prisma/client';
 import { literalesValidasParaNivel, usaNumeroDirecto, literalAEquivalenteNumerico, numeroABanda } from '../utils/calificaciones';
 
 const router = Router();
@@ -273,7 +273,7 @@ router.post('/recuperaciones', isDocente, auditar({ modulo: 'RECUPERACIONES', ac
 
   const recu = await prisma.recuperacion.upsert({
     where: { estudianteId_cursoId: { estudianteId: data.estudianteId, cursoId: data.cursoId } },
-    create: { ...data, fechaExamen: data.fechaExamen ? new Date(data.fechaExamen) : null, colegioId: req.colegioId!, registradoPorId: req.user!.id },
+    create: { ...data, fechaExamen: data.fechaExamen ? new Date(data.fechaExamen) : null, colegioId: req.colegioId!, registradoPorId: req.user!.id } as Prisma.RecuperacionUncheckedCreateInput,
     update: { ...data, fechaExamen: data.fechaExamen ? new Date(data.fechaExamen) : null, registradoPorId: req.user!.id },
   });
   res.status(201).json({ ok: true, data: recu });

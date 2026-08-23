@@ -6,7 +6,7 @@ import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, RolNombre, Prisma } from '@prisma/client';
 import { supabaseAdmin } from '../config/supabase';
 
 const router = Router();
@@ -209,7 +209,7 @@ router.post(
     }
 
     const padre = await prisma.padre.create({
-      data: { ...padreData, colegioId: req.colegioId!, usuarioId },
+      data: { ...padreData, colegioId: req.colegioId!, usuarioId } as Prisma.PadreUncheckedCreateInput,
     });
 
     // Vincular estudiantes si se indicaron

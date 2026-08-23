@@ -6,7 +6,7 @@ import { authenticate, isSuperAdmin, isAdminDir } from '../middleware/auth';
 import { resolveTenant } from '../middleware/tenant';
 import { AppError } from '../utils/AppError';
 import { auditar } from '../middleware/auditoria';
-import { AuditoriaAccion } from '@prisma/client';
+import { AuditoriaAccion, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant);
@@ -40,7 +40,7 @@ router.post('/planes', isSuperAdmin, auditar({ modulo: 'PLANES', accion: Auditor
   const data = planSchema.parse(req.body);
   const existe = await prisma.plan.findFirst({ where: { nombre: { equals: data.nombre, mode: 'insensitive' } } });
   if (existe) throw new AppError(`Ya existe un plan llamado "${data.nombre}"`, 409);
-  const plan = await prisma.plan.create({ data: { ...data, modulosActivos: data.modulosActivos ?? ['ALL'], rolesHabilitados: data.rolesHabilitados ?? [] } });
+  const plan = await prisma.plan.create({ data: { ...data, modulosActivos: data.modulosActivos ?? ['ALL'], rolesHabilitados: data.rolesHabilitados ?? [] } as Prisma.PlanCreateInput });
   res.status(201).json({ ok: true, data: plan });
 });
 

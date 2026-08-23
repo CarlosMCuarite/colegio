@@ -6,7 +6,7 @@ import prisma from '../config/prisma';
 import { authenticate, isAdmin } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { AppError } from '../utils/AppError';
-import { RolNombre } from '@prisma/client';
+import { RolNombre, Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
 
 const router = Router();
@@ -190,7 +190,7 @@ router.post('/faq', isAdmin, async (req, res) => {
     categoria: z.string().optional(),
   }).parse(req.body);
   const faq = await prisma.chatbotPregunta.create({
-    data: { ...data, colegioId: req.colegioId! },
+    data: { ...data, colegioId: req.colegioId! } as Prisma.ChatbotPreguntaUncheckedCreateInput,
   });
   res.status(201).json({ ok: true, data: faq });
 });

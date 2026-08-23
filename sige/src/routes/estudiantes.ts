@@ -7,7 +7,7 @@ import { authenticate, isStaff, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, EstudianteEstado, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, EstudianteEstado, RolNombre, Prisma } from '@prisma/client';
 import { uploadFile, BUCKETS } from '../services/storageService';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024 } });
@@ -128,7 +128,7 @@ router.post(
         colegioId,
         codigoQR:       data.dni,
         fechaNacimiento,
-      },
+      } as Prisma.EstudianteUncheckedCreateInput,
     });
     res.status(201).json({ ok: true, data: estudiante });
   },

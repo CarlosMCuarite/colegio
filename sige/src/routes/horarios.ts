@@ -6,7 +6,7 @@ import { authenticate, isAdmin } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, RolNombre, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -235,7 +235,7 @@ router.post(
       data.materia = curso.nombre;
     }
     await validarSolapamiento(req.colegioId!, data);
-    const horario = await prisma.horario.create({ data: { ...data, colegioId: req.colegioId! }, include: includeRelaciones });
+    const horario = await prisma.horario.create({ data: { ...data, colegioId: req.colegioId! } as Prisma.HorarioUncheckedCreateInput, include: includeRelaciones });
     await sincronizarAsignacionDocente(req.colegioId!, data);
     res.status(201).json({ ok: true, data: horario });
   },
@@ -253,7 +253,7 @@ router.post(
     for (const diaSemana of diasSemana) {
       const data = horarioSchema.parse({ ...resto, diaSemana });
       await validarSolapamiento(req.colegioId!, data);
-      const horario = await prisma.horario.create({ data: { ...data, colegioId: req.colegioId! }, include: includeRelaciones });
+      const horario = await prisma.horario.create({ data: { ...data, colegioId: req.colegioId! } as Prisma.HorarioUncheckedCreateInput, include: includeRelaciones });
       creados.push(horario);
     }
     // BUG REAL encontrado: este endpoint nunca sincronizaba la asignación
@@ -272,7 +272,7 @@ router.post('/bulk', isAdmin, async (req, res) => {
   const schema = z.object({ horarios: z.array(horarioSchema).min(1).max(100) });
   const { horarios } = schema.parse(req.body);
   const created = await prisma.horario.createMany({
-    data: horarios.map(h => ({ ...h, colegioId: req.colegioId! })),
+    data: horarios.map(h => ({ ...h, colegioId: req.colegioId! })) as Prisma.HorarioCreateManyInput[],
     skipDuplicates: true,
   });
   res.status(201).json({ ok: true, creados: created.count });

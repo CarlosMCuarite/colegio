@@ -5,6 +5,7 @@ import prisma from '../config/prisma';
 import { authenticate, isAdmin } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { AppError } from '../utils/AppError';
+import { Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -58,7 +59,7 @@ router.get('/docentes-disponibles', async (req, res) => {
 
 router.post('/', isAdmin, async (req, res) => {
   const data = aulaSchema.parse(req.body);
-  const aula = await prisma.aula.create({ data: { ...data, colegioId: req.colegioId! } });
+  const aula = await prisma.aula.create({ data: { ...data, colegioId: req.colegioId! } as Prisma.AulaUncheckedCreateInput });
   res.status(201).json({ ok: true, data: aula });
 });
 

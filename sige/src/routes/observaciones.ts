@@ -6,7 +6,7 @@ import { authenticate, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, ObservacionTipo, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, ObservacionTipo, RolNombre, Prisma } from '@prisma/client';
 import { enviarNotificacion } from '../services/notificacionService';
 
 const router = Router();
@@ -75,7 +75,7 @@ router.post(
         creadoPorId:    req.user!.id,
         fecha:          data.fecha ?? new Date(),
         notificadoPadre: notificarPadre,
-      },
+      } as Prisma.ObservacionUncheckedCreateInput,
     });
 
     // Notificar al padre principal si se solicitó

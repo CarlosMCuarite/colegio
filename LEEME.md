@@ -1,52 +1,62 @@
-# SIGE — Arreglos para el primer deploy en Render (v8.37)
+# SIGE — Segunda pasada de arreglos de build (v8.38)
 
-No hace falta SQL nuevo. Todo esto son correcciones de código para que el
-build de producción compile — no cambia ningún comportamiento del sistema.
+No hace falta SQL nuevo. Todo esto es código, para que el build de
+producción compile limpio.
 
-## Por qué recién ahora aparecieron estos errores
-`npm run build` corre `tsc` (el compilador de TypeScript) sobre **todo** lo
-que hay en `src/`, incluyendo los scripts de semilla — algo que nunca se
-había hecho antes de este primer deploy (en local siempre se usa `ts-node`,
-que es más permisivo). Por eso salieron ahora y no antes: es la primera vez
-que se compila todo de forma estricta.
+## Backend — causa raíz encontrada y corregida en 15 archivos
 
-## Backend — 3 archivos corregidos
+El patrón exacto: `prisma.X.create({ data: { ...data, campoExtra } })` —
+combinar el spread de un objeto validado por zod con campos adicionales
+explícitos en el MISMO literal rompe la inferencia de tipos de Prisma
+cuando se compila con `tsc` en modo estricto de producción (nunca se veía
+en local porque siempre se corre con `ts-node`, más permisivo).
 
-1. **`src/routes/pagosLicencia.ts`**: un array de dos roles usado con
-   `.includes()` — TypeScript infería un tipo demasiado angosto para el
-   array y rechazaba la comparación. Se anotó explícitamente como
-   `RolNombre[]`.
+Hice una búsqueda exhaustiva de este patrón en **todo** `src/routes/` y
+`src/seed*.ts` (no until until que Render fuera encontrando uno por uno) y
+corregí los 15 archivos donde aparecía:
 
-2. **`src/routes/permisosSalida.ts`**: al crear un permiso, se usaba
-   `...data` (spread) mezclado con campos adicionales en el mismo objeto —
-   eso confunde a TypeScript para decidir contra cuál de las dos variantes
-   del tipo de Prisma debe validar. Se cambió a listar los campos de forma
-   explícita.
+`estudiantes.ts` · `eventos.ts` · `horarios.ts` (3 veces) · `matriculas.ts`
+· `membresias.ts` · `notas.ts` · `observaciones.ts` · `padres.ts` ·
+`aulas.ts` · `chatbot.ts` · `conceptosPago.ts` · `cursos.ts` ·
+`plataforma.ts` · `pagosLicencia.ts` · `permisosSalida.ts` · los 3 scripts
+de semilla.
 
-3. **`src/seed-demo.ts`, `seed-demo-completo.ts`, `seed-demo-academico.ts`**:
-   mismo tipo de ambigüedad al crear un Padre (mezcla de `colegioId` +
-   `usuarioId` + otros campos). Se anotó explícitamente el tipo
-   `Prisma.PadreUncheckedCreateInput` en los 5 lugares donde aparecía.
+La corrección es la misma en todos: se anota explícitamente el tipo
+(`as Prisma.XUncheckedCreateInput`) para que TypeScript sepa contra cuál
+variante del tipo de Prisma debe validar, en vez de intentar adivinarlo y
+fallar. Verifiqué el balance de llaves de los 18 archivos tocados — todo
+correcto.
 
-## Frontend — revisa un archivo tuyo
-En tu copia local, `app/(dashboard)/admin/aulas/page.tsx` tiene los imports
-corrompidos: `'a/hooks/useApi'` y `'a/lib/api'` (les falta la `@` al
-inicio). **Esto no viene de los archivos que te entregué** — confirmé que mi
-copia está limpia — así que pasó en tu lado (buscar-y-reemplazar accidental
-o similar). Para no perseguir corrupciones sueltas, mejor te vuelvo a
-entregar `sige-frontend/` completo — reemplaza tu carpeta entera con esta y
-asegúrate de tener el `@` correctamente en todos los imports.
+## Frontend — la corrupción de imports seguía ahí (en más archivos)
 
-## Qué hacer ahora
-1. Reemplaza tus carpetas `sige/` y `sige-frontend/` con las de este zip
-   (o al menos los 5 archivos del backend + toda la carpeta del frontend).
-2. `git add . && git commit -m "Corrige errores de build para Render" && git push`
-3. En Render, dale **Manual Sync** al Blueprint (o va a redesplegar solo
-   apenas detecte el push, gracias al `autoDeploy: true`).
+Encontré que `admin/auditoria/page.tsx` y `admin/aulas/page.tsx` en tu
+copia local TODAVÍA tenían imports rotos, distintos a los de la vez
+pasada — confirmé que en los archivos que te entrego están perfectamente
+bien. Como esto ya pasó dos veces en archivos distintos, **no vamos a
+seguir parchando línea por línea** — hice una verificación automática de
+los 222 imports `@/...` de todo el frontend contra el sistema de archivos
+real, y confirmé que los 222 apuntan a un archivo que sí existe. Cero
+rotos.
+
+## Qué hacer ahora — reemplaza, no parches
+
+Para evitar que se cuele otra corrupción suelta:
+
+1. **Borra por completo** tus carpetas locales `sige/` y `sige-frontend/`
+   (no las sobreescribas archivo por archivo).
+2. Copia las de este zip en su lugar.
+3. Antes de subir, verifica que quedó limpio corriendo esto DENTRO de
+   `sige-frontend/`:
+   ```bash
+   grep -rn "from 'a/" app/ components/ lib/ hooks/ --include='*.tsx' --include='*.ts'
+   ```
+   Si no imprime nada, estás limpio.
+4. `git add . && git commit -m "Corrige todos los errores de build" && git push`
+5. Render debería redesplegar solo.
 
 ## Si vuelve a fallar
-Cópiame el log completo de errores (no solo la parte visible) — hay
-compañeros de la misma clase de error que quizás no alcanzamos a ver porque
-el log se cortaba en la captura de pantalla. Con el log completo puedo
-encontrar cualquier otro caso de una sola pasada en vez de ir arreglando de
-a uno según lo que vaya fallando.
+Esta vez cópiame el log **completo, de principio a fin**, sin cortar
+(puedes descargarlo como archivo desde el botón de opciones junto a "Live
+tail" en Render, en vez de copiar el texto de la pantalla) — así reviso
+todo de una sola vez y no vamos arreglando de a poco según lo que Render
+vaya reportando por partes.

@@ -10,7 +10,7 @@ import { authenticate, isAdmin, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion } from '@prisma/client';
+import { AuditoriaAccion, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -44,7 +44,7 @@ router.post('/', isAdmin, auditar({ modulo: 'CURSOS', accion: AuditoriaAccion.CR
   if (!grado) throw new AppError('Grado no encontrado', 404);
   const duplicado = await prisma.curso.findFirst({ where: { colegioId: req.colegioId!, nivelGradoId: data.nivelGradoId, nombre: { equals: data.nombre, mode: 'insensitive' } } });
   if (duplicado) throw new AppError('Ya existe un curso con ese nombre en ese grado', 409);
-  const curso = await prisma.curso.create({ data: { ...data, colegioId: req.colegioId! } });
+  const curso = await prisma.curso.create({ data: { ...data, colegioId: req.colegioId! } as Prisma.CursoUncheckedCreateInput });
   res.status(201).json({ ok: true, data: curso });
 });
 

@@ -9,7 +9,7 @@ import multer from 'multer';
 import prisma from '../config/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../utils/AppError';
-import { RolNombre } from '@prisma/client';
+import { RolNombre, Prisma } from '@prisma/client';
 import { uploadFile } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 
@@ -41,7 +41,7 @@ router.patch('/config', async (req, res) => {
   if (req.user!.rol !== RolNombre.SUPERADMIN) throw new AppError('Sin acceso', 403);
   const data = configSchema.parse(req.body);
   const config = await prisma.configuracionPlataforma.upsert({
-    where: { id: 'global' }, create: { id: 'global', ...data }, update: data,
+    where: { id: 'global' }, create: { id: 'global', ...data } as Prisma.ConfiguracionPlataformaCreateInput, update: data,
   });
   res.json({ ok: true, data: config });
 });

@@ -8,7 +8,7 @@ import prisma from '../config/prisma';
 import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
-import { AuditoriaAccion, PagoTipo, NivelEducativo } from '@prisma/client';
+import { AuditoriaAccion, PagoTipo, NivelEducativo, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -37,7 +37,7 @@ router.get('/', async (req, res) => {
 // ── POST /conceptos-pago ──────────────────────────────────────────────────────
 router.post('/', isStaff, auditar({ modulo: 'CONCEPTOS_PAGO', accion: AuditoriaAccion.CREAR }), async (req, res) => {
   const data = conceptoSchema.parse(req.body);
-  const concepto = await prisma.conceptoPago.create({ data: { ...data, colegioId: req.colegioId! } });
+  const concepto = await prisma.conceptoPago.create({ data: { ...data, colegioId: req.colegioId! } as Prisma.ConceptoPagoUncheckedCreateInput });
   res.status(201).json({ ok: true, data: concepto });
 });
 
