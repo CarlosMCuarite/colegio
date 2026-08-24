@@ -11,7 +11,7 @@ import { authenticate } from '../middleware/auth';
 import { resolveTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, RolNombre, PagoEstado } from '@prisma/client';
+import { AuditoriaAccion, RolNombre, PagoEstado, Prisma } from '@prisma/client';
 import { uploadFile, getSignedUrl, BUCKETS } from '../services/storageService';
 
 const router = Router();
@@ -75,7 +75,7 @@ router.post('/', upload.single('voucher'), auditar({ modulo: 'PAGOS_LICENCIA', a
       colegioId: req.colegioId!, monto, periodoPago, banco, operacion,
       voucherUrl, voucherNombre, fechaPago: voucherUrl ? new Date() : null,
       estado: voucherUrl ? PagoEstado.EN_REVISION : PagoEstado.PENDIENTE,
-    },
+    } as Prisma.PagoLicenciaUncheckedCreateInput,
   });
   res.status(201).json({ ok: true, data: pago });
 });
@@ -118,7 +118,7 @@ router.patch('/:id/aprobar', auditar({ modulo: 'PAGOS_LICENCIA', accion: Auditor
         fechaInicio: base, fechaFin: nuevaFecha,
         motivo: `Pago de suscripción aprobado (${pago.periodoPago ?? ''})`.trim(),
         creadoPorId: req.user!.id,
-      },
+      } as Prisma.LicenciaUncheckedCreateInput,
     }).catch(() => {});
   }
 

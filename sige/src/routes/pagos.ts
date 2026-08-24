@@ -7,7 +7,7 @@ import { authenticate, isFinanzas } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, PagoEstado, PagoTipo, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, PagoEstado, PagoTipo, RolNombre, Prisma } from '@prisma/client';
 import { uploadFile, getSignedUrl, BUCKETS } from '../services/storageService';
 import { enviarNotificacion } from '../services/notificacionService';
 
@@ -179,7 +179,7 @@ router.post(
         estado:       voucherUrl ? PagoEstado.EN_REVISION : PagoEstado.PENDIENTE,
         voucherUrl,
         voucherNombre,
-      },
+      } as Prisma.PagoUncheckedCreateInput,
     });
 
     res.status(201).json({ ok: true, data: pago });
@@ -253,7 +253,7 @@ router.post(
         monto:       concepto.monto,
         periodoPago,
         estado:      'PENDIENTE' as const,
-      })),
+      })) as Prisma.PagoCreateManyInput[],
     });
 
     res.status(201).json({ ok: true, generados: pendientes.length });

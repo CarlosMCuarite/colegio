@@ -63,7 +63,7 @@ router.post('/plantilla-por-defecto', isAdmin, auditar({ modulo: 'CURSOS', accio
     if (yaTiene > 0) continue;
     const lista = grado.nivel === 'INICIAL' ? CURSOS_INICIAL : grado.nivel === 'PRIMARIA' ? CURSOS_PRIMARIA : CURSOS_SECUNDARIA;
     await prisma.curso.createMany({
-      data: lista.map(nombre => ({ colegioId: req.colegioId!, nivelGradoId: grado.id, nombre })),
+      data: lista.map(nombre => ({ colegioId: req.colegioId!, nivelGradoId: grado.id, nombre })) as Prisma.CursoCreateManyInput[],
     });
     creados += lista.length;
   }

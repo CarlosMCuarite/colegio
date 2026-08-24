@@ -6,7 +6,7 @@ import prisma from '../config/prisma';
 import { authenticate, isAdminDir } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
-import { AuditoriaAccion } from '@prisma/client';
+import { AuditoriaAccion, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant, isAdminDir);
@@ -38,7 +38,7 @@ router.post(
         nombre:    `exportacion-${new Date().toISOString().slice(0, 10)}`,
         modulos,
         estado:    'EN_PROCESO',
-      },
+      } as Prisma.ExportacionUncheckedCreateInput,
     });
 
     try {

@@ -6,7 +6,7 @@ import { authenticate, isStaff, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, AsistenciaEstado, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, AsistenciaEstado, RolNombre, Prisma } from '@prisma/client';
 import { enviarNotificacion } from '../services/notificacionService';
 import dayjs from 'dayjs';
 
@@ -67,7 +67,7 @@ router.post(
         horaLlegada,
         registradoPorId: req.user!.id,
         escaneadoViaQR:  true,
-      },
+      } as Prisma.AsistenciaUncheckedCreateInput,
     });
 
     // Notificar al padre principal
@@ -243,7 +243,7 @@ router.post(
           colegioId: req.colegioId!, estudianteId, aulaId: aula.id, fecha: fechaRegistro, estado,
           horaLlegada: estado === AsistenciaEstado.AUSENTE ? null : new Date(),
           registradoPorId: user.id, escaneadoViaQR: false,
-        } });
+        } as Prisma.AsistenciaUncheckedCreateInput });
 
     res.json({ ok: true, data: asistencia });
   },

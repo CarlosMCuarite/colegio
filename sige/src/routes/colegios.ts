@@ -7,7 +7,7 @@ import { authenticate, isSuperAdmin } from '../middleware/auth';
 import { resolveTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, ColegioEstado, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, ColegioEstado, RolNombre, Prisma } from '@prisma/client';
 import { uploadFile, BUCKETS } from '../services/storageService';
 import { supabaseAdmin } from '../config/supabase';
 import { logger } from '../utils/logger';
@@ -104,7 +104,7 @@ router.post('/', isSuperAdmin, auditar({ modulo: 'COLEGIOS', accion: AuditoriaAc
     data: { nombre: data.nombre, nombreCorto: data.nombreCorto, slug, ruc: data.ruc, direccion: data.direccion, distrito: data.distrito, provincia: data.provincia, departamento: data.departamento, telefono: data.telefono, email: data.email, sitioWeb: data.sitioWeb, planId: data.planId, estado: ColegioEstado.ACTIVO, licenciaInicio, licenciaFin, anoEscolarActual: data.anoEscolarActual, whatsappNumero: data.whatsappNumero, whatsappHorario: data.whatsappHorario, whatsappMensaje: data.whatsappMensaje, colorPrimario: data.colorPrimario, colorSecundario: data.colorSecundario, historia: data.historia, mision: data.mision, vision: data.vision },
   });
 
-  await prisma.licencia.create({ data: { colegioId: colegio.id, planId: plan.id, estado: 'ACTIVA', fechaInicio: licenciaInicio, fechaFin: licenciaFin, motivo: 'Licencia inicial', creadoPorId: req.user!.id } });
+  await prisma.licencia.create({ data: { colegioId: colegio.id, planId: plan.id, estado: 'ACTIVA', fechaInicio: licenciaInicio, fechaFin: licenciaFin, motivo: 'Licencia inicial', creadoPorId: req.user!.id } as Prisma.LicenciaUncheckedCreateInput });
 
   const credencialesGeneradas: Array<{ rol: string; email: string; password: string }> = [];
   const erroresGeneracion: Array<{ rol: string; email: string; error: string }> = [];
@@ -303,7 +303,11 @@ router.post('/:id/portada', upload.single('portada'), async (req, res) => {
 router.post('/:id/galeria', upload.array('imagenes', 10), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-  const files = (req.files as Express.Multer.File[]) ?? [];
+  // El tipo "Express.Multer.File" depende de que @types/multer logre
+  // aumentar el namespace global de Express — en este entorno de build esa
+  // fusión de tipos no está resolviendo (falla con "no exported member
+  // Multer"), así que se tipa de forma más simple y directa en su lugar.
+  const files = (req.files as Array<{ buffer: Buffer; originalname: string; mimetype: string }>) ?? [];
   if (!files.length) throw new AppError('Archivos requeridos', 400);
   const urls: string[] = [];
   for (const file of files) { const r = await uploadFile(BUCKETS.LOGOS, file.buffer, file.originalname, file.mimetype, `${req.params.id}/galeria`); urls.push(r.url); }

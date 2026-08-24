@@ -6,7 +6,7 @@ import prisma from '../config/prisma';
 import { AppError } from '../utils/AppError';
 import { authenticate } from '../middleware/auth';
 import { authLimiter } from '../middleware/rateLimiter';
-import { AuditoriaAccion, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, RolNombre, Prisma } from '@prisma/client';
 
 const router = Router();
 
@@ -27,14 +27,14 @@ router.post('/login', authLimiter, async (req, res) => {
     if (usuario.colegio.estado === 'INACTIVO')   throw new AppError('El colegio está inactivo. Contacta con soporte.', 403);
   }
   await prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } });
-  await prisma.auditoria.create({ data: { colegioId: usuario.colegioId, usuarioId: usuario.id, accion: AuditoriaAccion.LOGIN, modulo: 'AUTH', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip, userAgent: req.headers['user-agent'] ?? null } }).catch(() => {});
+  await prisma.auditoria.create({ data: { colegioId: usuario.colegioId, usuarioId: usuario.id, accion: AuditoriaAccion.LOGIN, modulo: 'AUTH', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip, userAgent: req.headers['user-agent'] ?? null } as Prisma.AuditoriaUncheckedCreateInput }).catch(() => {});
 
   res.json({ ok: true, token: data.session.access_token, refreshToken: data.session.refresh_token,
     usuario: { id: usuario.id, nombres: usuario.nombres, apellidos: usuario.apellidos, email: usuario.email, rol: usuario.rol, telefono: usuario.telefono, avatarUrl: usuario.avatarUrl, colegio: usuario.colegio } });
 });
 
 router.post('/logout', authenticate, async (req, res) => {
-  await prisma.auditoria.create({ data: { colegioId: req.user!.colegioId, usuarioId: req.user!.id, accion: AuditoriaAccion.LOGOUT, modulo: 'AUTH', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip } }).catch(() => {});
+  await prisma.auditoria.create({ data: { colegioId: req.user!.colegioId, usuarioId: req.user!.id, accion: AuditoriaAccion.LOGOUT, modulo: 'AUTH', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip } as Prisma.AuditoriaUncheckedCreateInput }).catch(() => {});
   try { await supabaseAdmin.auth.admin.signOut(req.user!.supabaseId); } catch {}
   res.json({ ok: true });
 });
@@ -73,7 +73,7 @@ async function restaurarPasswordDeEmergencia(req: any, res: any, email: string, 
       colegioId: usuario.colegioId, usuarioId: usuario.id, accion: AuditoriaAccion.ACTUALIZAR, modulo: 'AUTH',
       descripcion,
       ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip,
-    },
+    } as Prisma.AuditoriaUncheckedCreateInput,
   }).catch(() => {});
 
   res.json({ ok: true, mensaje: 'Contraseña restaurada. Ya puedes iniciar sesión con la nueva contraseña.' });
@@ -148,7 +148,7 @@ router.post('/cambiar-password', authenticate, async (req, res) => {
   // Cerrar todas las sesiones
   try { await supabaseAdmin.auth.admin.signOut(req.user!.supabaseId); } catch {}
 
-  await prisma.auditoria.create({ data: { colegioId: req.user!.colegioId, usuarioId: req.user!.id, accion: AuditoriaAccion.ACTUALIZAR, modulo: 'AUTH', descripcion: 'Cambio de contraseña — sesiones cerradas', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip } }).catch(() => {});
+  await prisma.auditoria.create({ data: { colegioId: req.user!.colegioId, usuarioId: req.user!.id, accion: AuditoriaAccion.ACTUALIZAR, modulo: 'AUTH', descripcion: 'Cambio de contraseña — sesiones cerradas', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip } as Prisma.AuditoriaUncheckedCreateInput }).catch(() => {});
 
   res.json({ ok: true, mensaje: 'Contraseña actualizada. Inicia sesión nuevamente.' });
 });

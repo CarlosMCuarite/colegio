@@ -7,7 +7,7 @@ import { authenticate, isStaff, isDocente, isAdminDir } from '../middleware/auth
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, PermisoSalidaEstado } from '@prisma/client';
+import { AuditoriaAccion, PermisoSalidaEstado, Prisma } from '@prisma/client';
 import { enviarNotificacion } from '../services/notificacionService';
 
 const router = Router();

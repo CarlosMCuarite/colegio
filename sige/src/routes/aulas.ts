@@ -141,7 +141,7 @@ router.post('/secciones', isAdmin, async (req, res) => {
   const existente = await prisma.seccion.findFirst({ where: { nivelGradoId: data.nivelGradoId, nombre: data.nombre } });
   if (existente) throw new AppError(`Ya existe la sección "${data.nombre}" en ese grado`, 409);
 
-  const seccion = await prisma.seccion.create({ data });
+  const seccion = await prisma.seccion.create({ data: data as Prisma.SeccionUncheckedCreateInput });
   res.status(201).json({ ok: true, data: seccion });
 });
 

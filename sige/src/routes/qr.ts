@@ -8,6 +8,7 @@ import { authenticate, isStaff, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { qrLimiter } from '../middleware/rateLimiter';
 import { AppError } from '../utils/AppError';
+import { Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
 
 const router = Router();
@@ -124,7 +125,7 @@ router.post('/escanear', isStaff, qrLimiter, async (req, res) => {
       horaLlegada:     ahora.toDate(),
       registradoPorId: req.user!.id,
       escaneadoViaQR:  true,
-    },
+    } as Prisma.AsistenciaUncheckedCreateInput,
   });
 
   // Notificar padre en background
@@ -229,7 +230,7 @@ router.post('/ausencia-masiva', isStaff, async (req, res) => {
       estado:          'AUSENTE' as const,
       registradoPorId: req.user!.id,
       escaneadoViaQR:  false,
-    })),
+    })) as Prisma.AsistenciaCreateManyInput[],
     skipDuplicates: true,
   });
 

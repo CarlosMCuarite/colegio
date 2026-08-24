@@ -7,7 +7,7 @@ import { authenticate, isStaff, isDocente } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, NivelEducativo, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, NivelEducativo, RolNombre, Prisma } from '@prisma/client';
 import { uploadFile } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 import { enviarNotificacion } from '../services/notificacionService';
@@ -121,7 +121,7 @@ router.post(
         adjuntoNombre,
         publicadoEn:  data.publicadoEn ?? new Date(),
         venceEn:      data.venceEn ?? null,
-      },
+      } as Prisma.ComunicadoUncheckedCreateInput,
     });
 
     // Notificar a padres afectados (async, no bloquea)
@@ -169,7 +169,11 @@ router.patch(
         ...data,
         adjuntoUrl,
         adjuntoNombre,
-        venceEn: data.venceEn ? new Date(data.venceEn as string) : undefined,
+        // `venceEn` ya es un objeto Date real (el schema usa z.coerce.date()),
+        // así que envolverlo de nuevo en "new Date(... as string)" era
+        // incorrecto — convertía un Date a string solo para reconvertirlo,
+        // y ese cast inválido es lo que rompía la compilación.
+        venceEn: data.venceEn ?? undefined,
       },
     });
     res.json({ ok: true });

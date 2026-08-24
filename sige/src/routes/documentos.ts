@@ -7,7 +7,7 @@ import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, DocumentoEstado, DocumentoTipo, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, DocumentoEstado, DocumentoTipo, RolNombre, Prisma } from '@prisma/client';
 import { uploadFile, deleteFile } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 import { enviarNotificacion } from '../services/notificacionService';
@@ -88,7 +88,7 @@ router.post(
         colegioId:      req.colegioId!,
         solicitadoPorId: req.user!.id,
         estado:          DocumentoEstado.PENDIENTE,
-      },
+      } as Prisma.DocumentoUncheckedCreateInput,
     });
     res.status(201).json({ ok: true, data: doc });
   },

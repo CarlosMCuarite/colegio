@@ -105,7 +105,7 @@ router.post('/licencias', isSuperAdmin, auditar({ modulo: 'LICENCIAS', accion: A
   const inicio = new Date();
   const fin = new Date();
   fin.setDate(fin.getDate() + dias);
-  const licencia = await prisma.licencia.create({ data: { colegioId, planId: planId ?? colegio.planId, estado, fechaInicio: inicio, fechaFin: fin, motivo, creadoPorId: req.user!.id } });
+  const licencia = await prisma.licencia.create({ data: { colegioId, planId: planId ?? colegio.planId, estado, fechaInicio: inicio, fechaFin: fin, motivo, creadoPorId: req.user!.id } as Prisma.LicenciaUncheckedCreateInput });
   await prisma.colegio.update({ where: { id: colegioId }, data: { planId: planId ?? colegio.planId, licenciaInicio: inicio, licenciaFin: fin, estado: estado === 'SUSPENDIDA' ? 'SUSPENDIDO' : 'ACTIVO' } });
   res.status(201).json({ ok: true, data: licencia });
 });
@@ -115,7 +115,7 @@ router.patch('/licencias/:colegioId/suspender', isSuperAdmin, auditar({ modulo: 
   const colegio = await prisma.colegio.findUnique({ where: { id: req.params.colegioId } });
   if (!colegio) throw new AppError('Colegio no encontrado', 404);
   await prisma.colegio.update({ where: { id: req.params.colegioId }, data: { estado: 'SUSPENDIDO' } });
-  await prisma.licencia.create({ data: { colegioId: req.params.colegioId, planId: colegio.planId, estado: 'SUSPENDIDA', fechaFin: new Date(), motivo: motivo ?? 'Suspendida manualmente', creadoPorId: req.user!.id } });
+  await prisma.licencia.create({ data: { colegioId: req.params.colegioId, planId: colegio.planId, estado: 'SUSPENDIDA', fechaFin: new Date(), motivo: motivo ?? 'Suspendida manualmente', creadoPorId: req.user!.id } as Prisma.LicenciaUncheckedCreateInput });
   res.json({ ok: true });
 });
 
@@ -134,7 +134,7 @@ router.post('/renovar/:colegioId', isSuperAdmin, auditar({ modulo: 'LICENCIAS', 
   const fin = new Date();
   fin.setMonth(fin.getMonth() + meses);
   await prisma.colegio.update({ where: { id: req.params.colegioId }, data: { planId: planId ?? colegio.planId, licenciaInicio: inicio, licenciaFin: fin, estado: 'ACTIVO' } });
-  await prisma.licencia.create({ data: { colegioId: req.params.colegioId, planId: planId ?? colegio.planId, estado: 'ACTIVA', fechaInicio: inicio, fechaFin: fin, motivo: `Renovación ${meses} mes(es) — desde ${inicio.toLocaleDateString('es-PE')}`, creadoPorId: req.user!.id } });
+  await prisma.licencia.create({ data: { colegioId: req.params.colegioId, planId: planId ?? colegio.planId, estado: 'ACTIVA', fechaInicio: inicio, fechaFin: fin, motivo: `Renovación ${meses} mes(es) — desde ${inicio.toLocaleDateString('es-PE')}`, creadoPorId: req.user!.id } as Prisma.LicenciaUncheckedCreateInput });
   res.json({ ok: true, licenciaFin: fin, diasRestantes: Math.ceil((fin.getTime() - Date.now()) / 86400000) });
 });
 

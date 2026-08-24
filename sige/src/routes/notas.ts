@@ -173,7 +173,7 @@ router.post('/bulk', isDocente, auditar({ modulo: 'NOTAS', accion: AuditoriaAcci
         colegioId: req.colegioId!, estudianteId: n.estudianteId, cursoId: n.cursoId, periodo: n.periodo,
         calificacionLiteral: literal, calificacionNumerica: numerica, observacion: n.observacion ?? null,
         registradoPorId: req.user!.id,
-      },
+      } as Prisma.NotaUncheckedCreateInput,
       update: {
         calificacionLiteral: literal, calificacionNumerica: numerica, observacion: n.observacion ?? null,
         registradoPorId: req.user!.id,

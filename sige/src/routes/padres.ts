@@ -203,7 +203,7 @@ router.post(
           nombres:    padreData.nombres,
           apellidos:  padreData.apellidos,
           email:      padreData.email,
-        },
+        } as Prisma.UsuarioUncheckedCreateInput,
       });
       usuarioId = usuario.id;
     }
@@ -224,7 +224,7 @@ router.post(
           esPrincipal:  i === 0,
           estado:       'APROBADO', // vínculo creado por staff = ya verificado, no debe quedar pendiente
           aprobadoPorId: req.user!.id,
-        })),
+        })) as Prisma.PadreEstudianteCreateManyInput[],
         skipDuplicates: true,
       });
     }
@@ -262,7 +262,7 @@ router.post('/:id/vincular-estudiante', isStaff, async (req, res) => {
 
   await prisma.padreEstudiante.upsert({
     where: { padreId_estudianteId: { padreId: req.params.id, estudianteId: estudiante.id } },
-    create: { padreId: req.params.id, estudianteId: estudiante.id, parentesco, esPrincipal, estado: 'APROBADO', aprobadoPorId: req.user!.id },
+    create: { padreId: req.params.id, estudianteId: estudiante.id, parentesco, esPrincipal, estado: 'APROBADO', aprobadoPorId: req.user!.id } as Prisma.PadreEstudianteUncheckedCreateInput,
     update: { parentesco, esPrincipal, estado: 'APROBADO', aprobadoPorId: req.user!.id },
   });
   res.json({ ok: true });

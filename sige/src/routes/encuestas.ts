@@ -6,7 +6,7 @@ import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion, EncuestaEstado, RolNombre } from '@prisma/client';
+import { AuditoriaAccion, EncuestaEstado, RolNombre, Prisma } from '@prisma/client';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -108,8 +108,8 @@ router.post(
         creadaPorId: req.user!.id,
         fechaInicio: encData.fechaInicio ?? null,
         fechaFin:    encData.fechaFin    ?? null,
-        preguntas: { create: preguntas },
-      },
+        preguntas: { create: preguntas as Prisma.EncuestaPreguntaCreateWithoutEncuestaInput[] },
+      } as Prisma.EncuestaUncheckedCreateInput,
       include: { preguntas: true },
     });
     res.status(201).json({ ok: true, data: enc });

@@ -10,7 +10,7 @@ import prisma from '../config/prisma';
 import { authenticate } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { AppError } from '../utils/AppError';
-import { RolNombre } from '@prisma/client';
+import { RolNombre, Prisma } from '@prisma/client';
 import { enviarNotificacion } from '../services/notificacionService';
 
 const router = Router();
@@ -100,7 +100,7 @@ router.post('/conversaciones', async (req, res) => {
 
   const conversacion = await prisma.conversacion.upsert({
     where: { padreUsuarioId_docenteUsuarioId_estudianteId: { padreUsuarioId, docenteUsuarioId, estudianteId } },
-    create: { colegioId: req.colegioId!, padreUsuarioId, docenteUsuarioId, estudianteId },
+    create: { colegioId: req.colegioId!, padreUsuarioId, docenteUsuarioId, estudianteId } as Prisma.ConversacionUncheckedCreateInput,
     update: {},
     include: {
       padreUsuario:   { select: { id: true, nombres: true, apellidos: true, avatarUrl: true } },
@@ -134,7 +134,7 @@ router.post('/conversaciones/:id/mensajes', async (req, res) => {
   const conversacion = await verificarParticipante(req.params.id, req.user!.id);
 
   const mensaje = await prisma.mensaje.create({
-    data: { conversacionId: conversacion.id, autorId: req.user!.id, contenido },
+    data: { conversacionId: conversacion.id, autorId: req.user!.id, contenido } as Prisma.MensajeUncheckedCreateInput,
   });
   await prisma.conversacion.update({
     where: { id: conversacion.id },
