@@ -8,8 +8,8 @@
 // diseño de fábrica) — así los carnets existentes no se rompen.
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/lib/auth';
-import { useData } from '@/hooks/useApi';
+import { useAuth } from '../lib/auth';
+import { useData } from '../hooks/useApi';
 
 interface Props {
   estudiante: any;

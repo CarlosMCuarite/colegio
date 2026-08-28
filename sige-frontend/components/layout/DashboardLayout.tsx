@@ -2,10 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { AuthProvider, useAuth } from '@/lib/auth';
+import { AuthProvider, useAuth } from '../../lib/auth';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
-import ChatbotWidget from '@/components/chatbot/ChatbotWidget';
+import ChatbotWidget from '../chatbot/ChatbotWidget';
 
 interface Props {
   children: React.ReactNode;

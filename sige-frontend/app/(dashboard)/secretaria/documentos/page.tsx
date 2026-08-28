@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const TIPOS = ['CONSTANCIA', 'CERTIFICADO', 'SOLICITUD', 'AUTORIZACION', 'OTRO'];
@@ -93,7 +93,7 @@ export default function DocumentosPage() {
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         {['', ...Object.keys(ESTADO_CONF)].map(e => (
           <button key={e} onClick={() => setEstado(e)}
-            style={{ padding: '0.3rem 0.875rem', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+            style={{ padding: '0.3rem 0.875rem', borderRadius: 99, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
               background: estado === e ? 'var(--accent)' : 'var(--bg-card)',
               color: estado === e ? '#fff' : 'var(--text-secondary)',
               boxShadow: estado === e ? '0 2px 8px rgba(79,70,229,0.3)' : 'none',

@@ -3,6 +3,8 @@
 import { Router } from 'express';
 import prisma from '../config/prisma';
 import { AppError } from '../utils/AppError';
+import { getSignedUrlFromStoredValue } from '../services/storageService';
+import { BUCKETS } from '../config/supabase';
 
 const router = Router();
 
@@ -39,7 +41,13 @@ router.get('/colegio/:slug', async (req, res) => {
     }),
   ]);
 
-  res.json({ ok: true, data: { ...colegio, eventosProximos, comunicadosPublicos } });
+  const comunicadosConAdjunto = await Promise.all(comunicadosPublicos.map(async comunicado => ({
+    ...comunicado,
+    adjuntoUrl: comunicado.adjuntoUrl
+      ? await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, comunicado.adjuntoUrl)
+      : null,
+  })));
+  res.json({ ok: true, data: { ...colegio, eventosProximos, comunicadosPublicos: comunicadosConAdjunto } });
 });
 
 // ── GET /public/colegio/:slug/check — Verifica existencia (para resolver login) ─

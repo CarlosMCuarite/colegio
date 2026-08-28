@@ -2,10 +2,10 @@
 // app/(dashboard)/secretaria/permisos/page.tsx
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useMutation } from '@/hooks/useApi';
-import { useAuth } from '@/lib/auth';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useMutation } from '../../../../hooks/useApi';
+import { useAuth } from '../../../../lib/auth';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ESTADO_CONF: Record<string, { bg: string; text: string; icon: string; label: string }> = {
@@ -91,7 +91,7 @@ export default function PermisosPage() {
               <button key={e}
                 onClick={() => setEstadoFiltro(e)}
                 style={{
-                  padding: '0.35rem 0.875rem', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+                  padding: '0.35rem 0.875rem', borderRadius: 99, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
                   background: estadoFiltro === e ? 'var(--accent)' : 'var(--bg-card)',
                   color: estadoFiltro === e ? '#fff' : 'var(--text-secondary)',
                   boxShadow: estadoFiltro === e ? '0 2px 8px rgba(79,70,229,0.3)' : 'none',

@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import api from '@/lib/api';
+import api from '../../../lib/api';
 
 export default function PortalColegioPage() {
   const { slug } = useParams<{ slug: string }>();

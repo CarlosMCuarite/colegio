@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useEncuestas, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useEncuestas, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ESTADO_CONF: Record<string, { bg: string; text: string }> = {
@@ -94,7 +94,7 @@ export default function EncuestasPage() {
           <motion.div className="sige-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
             <motion.div className="sige-modal" style={{ maxWidth: 580 }} initial={{ scale: 0.94 }} animate={{ scale: 1 }} exit={{ scale: 0.94 }}>
-              <EncuestaForm onGuardar={async (form) => {
+              <EncuestaForm onGuardar={async (form: { titulo: string; descripcion: string; anonima: boolean; preguntas: Array<{ orden: number; pregunta: string; tipo: string; opciones: string[]; requerida: boolean }> }) => {
                 await save(async () => { await api.post('/encuestas', form); toast.success('Encuesta creada'); mutate(); setShowModal(false); });
               }} onCancelar={() => setShowModal(false)} saving={saving} />
             </motion.div>

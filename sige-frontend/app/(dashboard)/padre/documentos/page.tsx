@@ -9,10 +9,10 @@
 //    antes solo aparecía la fila, sin forma de ver el contenido.
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import ModalVoucher from '@/components/ModalVoucher';
-import { useData } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import ModalVoucher from '../../../../components/ModalVoucher';
+import { useData } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 type Filtro = 'TODOS' | 'DOCUMENTO' | 'PAGO' | 'COMUNICADO';

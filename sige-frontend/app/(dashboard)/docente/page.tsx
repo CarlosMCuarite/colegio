@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useData } from '../../../hooks/useApi';
 import { motion } from 'framer-motion';
 
 export default function DocenteDashboard() {

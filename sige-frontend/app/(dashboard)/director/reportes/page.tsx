@@ -3,8 +3,8 @@
 // Nueva — el diferenciador es "Alumnos en riesgo": cruza asistencia, notas
 // y pagos en un solo reporte, en vez de revisar 3 módulos por separado
 // para encontrar a los mismos alumnos que necesitan atención.
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData } from '../../../../hooks/useApi';
 
 const COLOR_FACTOR: Record<string, string> = {
   'Inasistencias frecuentes': '#f59e0b',

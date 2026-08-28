@@ -2,9 +2,9 @@
 // app/(dashboard)/secretaria/comunicados/page.tsx
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useComunicados, useNivelesGrados, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useComunicados, useNivelesGrados, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function ComunicadosPage() {

@@ -33,7 +33,9 @@ function Nodo({ nombre, valor, nivel, busqueda }: { nombre: string; valor: any; 
     );
   }
 
-  const entradas = esArreglo ? valor.map((v: any, i: number) => [String(i), v]) : Object.entries(valor);
+  const entradas: Array<[string, any]> = esArreglo
+    ? valor.map((v: any, i: number): [string, any] => [String(i), v])
+    : Object.entries(valor);
   const etiqueta = esArreglo ? `[ ${entradas.length} ]` : `{ ${entradas.length} }`;
 
   return (

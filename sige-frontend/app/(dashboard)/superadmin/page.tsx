@@ -1,7 +1,7 @@
 'use client';
 import { motion } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useData } from '../../../hooks/useApi';
 import Link from 'next/link';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 

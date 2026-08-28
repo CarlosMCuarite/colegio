@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/auth';
-import { useData } from '@/hooks/useApi';
-import api from '@/lib/api';
+import { useAuth } from '../../lib/auth';
+import { useData } from '../../hooks/useApi';
+import api from '../../lib/api';
 
 interface TopbarProps {
   title?: string;

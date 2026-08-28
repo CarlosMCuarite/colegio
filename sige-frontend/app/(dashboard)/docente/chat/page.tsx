@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import ChatDirecto from '@/components/ChatDirecto';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import ChatDirecto from '../../../../components/ChatDirecto';
 
 export default function ChatDocentePage() {
   return (

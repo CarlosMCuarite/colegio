@@ -6,9 +6,9 @@
 // de Recuperación es la lista de quienes no llegaron al mínimo (11 / B),
 // donde se puede registrar el resultado del examen de recuperación.
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useNivelesGrados, useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useNivelesGrados, useData, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const NOTA_MINIMA = 11;

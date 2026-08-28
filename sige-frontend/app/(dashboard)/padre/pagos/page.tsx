@@ -1,9 +1,9 @@
 'use client';
 import { useState, useRef } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { usePagos, useMutation, useData } from '@/hooks/useApi';
-import ModalVoucher from '@/components/ModalVoucher';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { usePagos, useMutation, useData } from '../../../../hooks/useApi';
+import ModalVoucher from '../../../../components/ModalVoucher';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 

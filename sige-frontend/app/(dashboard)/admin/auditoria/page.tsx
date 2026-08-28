@@ -1,8 +1,8 @@
 'use client';
 // app/(dashboard)/admin/auditoria/page.tsx
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useAuditoria } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useAuditoria } from '../../../../hooks/useApi';
 
 const ACCION_CONF: Record<string, { bg: string; text: string }> = {
   CREAR:     { bg: '#d1fae5', text: '#065f46' },

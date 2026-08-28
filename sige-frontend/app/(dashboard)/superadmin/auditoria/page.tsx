@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData } from '../../../../hooks/useApi';
 
 const ACCION_CONF: Record<string, { bg: string; text: string }> = {
   CREAR:      { bg: '#d1fae5', text: '#065f46' },

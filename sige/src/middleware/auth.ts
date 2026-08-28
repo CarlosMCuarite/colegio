@@ -34,13 +34,17 @@ declare global {
   }
 }
 
-export async function authenticate(req: Request, _res: Response, next: NextFunction) {
+export function extractAuthToken(req: Request): string | undefined {
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) {
+  return req.cookies?.sige_access_token
+    ?? (authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined);
+}
+
+export async function authenticate(req: Request, _res: Response, next: NextFunction) {
+  const token = extractAuthToken(req);
+  if (!token) {
     throw new AppError('Token de autenticación requerido', 401);
   }
-
-  const token = authHeader.split(' ')[1];
 
   // Verificar token con Supabase
   const { data: { user: supaUser }, error } = await supabaseAdmin.auth.getUser(token);

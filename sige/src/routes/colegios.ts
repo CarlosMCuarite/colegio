@@ -3,7 +3,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import multer from 'multer';
 import prisma from '../config/prisma';
-import { authenticate, isSuperAdmin } from '../middleware/auth';
+import { authenticate, isSuperAdmin, isAdminDir } from '../middleware/auth';
 import { resolveTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
@@ -144,7 +144,7 @@ router.post('/', isSuperAdmin, auditar({ modulo: 'COLEGIOS', accion: AuditoriaAc
 router.patch('/:id', auditar({ modulo: 'COLEGIOS', accion: AuditoriaAccion.ACTUALIZAR, getRecursoId: r => r.params.id }), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-  if (![RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR].includes(user.rol)) throw new AppError('No tienes permiso para editar los datos del colegio', 403);
+  if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR] as RolNombre[]).includes(user.rol)) throw new AppError('No tienes permiso para editar los datos del colegio', 403);
   // Eliminar campos no-Prisma antes de parsear
   const { generarUsuarios: _g, adminEmail: _a, ...bodyRest } = req.body;
   const data = colegioSchema.partial().parse(bodyRest);
@@ -230,7 +230,7 @@ router.patch('/:id/carnet-config',
   async (req, res) => {
     const user = req.user!;
     if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-    if (![RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA].includes(user.rol)) {
+    if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA] as RolNombre[]).includes(user.rol)) {
       throw new AppError('Solo el administrador o la secretaría del colegio pueden editar la plantilla del carnet', 403);
     }
     const data = carnetConfigSchema.parse(req.body);
@@ -251,7 +251,7 @@ router.patch('/:id/carnet-config',
 router.post('/:id/carnet-config/imagen', upload.single('imagen'), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-  if (![RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA].includes(user.rol)) {
+  if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA] as RolNombre[]).includes(user.rol)) {
     throw new AppError('Solo el administrador o la secretaría del colegio pueden editar la plantilla del carnet', 403);
   }
   const { campo } = z.object({ campo: z.enum(['firmaImagenUrl', 'marcaAguaImagenUrl']) }).parse(req.body);
@@ -273,7 +273,7 @@ router.post('/:id/carnet-config/imagen', upload.single('imagen'), async (req, re
 router.post('/:id/pago-qr', upload.single('imagen'), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-  if (![RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR].includes(user.rol)) throw new AppError('Sin permisos', 403);
+  if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR] as RolNombre[]).includes(user.rol)) throw new AppError('Sin permisos', 403);
   const { tipo } = z.object({ tipo: z.enum(['yape', 'plin', 'banco']) }).parse(req.body);
   if (!req.file) throw new AppError('Imagen requerida', 400);
   const result = await uploadFile(BUCKETS.LOGOS, req.file.buffer, req.file.originalname, req.file.mimetype, req.params.id);
@@ -282,7 +282,7 @@ router.post('/:id/pago-qr', upload.single('imagen'), async (req, res) => {
   res.json({ ok: true, data: colegio });
 });
 
-router.post('/:id/logo', upload.single('logo'), async (req, res) => {
+router.post('/:id/logo', isAdminDir, upload.single('logo'), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
   if (!req.file) throw new AppError('Archivo requerido', 400);
@@ -291,7 +291,7 @@ router.post('/:id/logo', upload.single('logo'), async (req, res) => {
   res.json({ ok: true, logoUrl: result.url });
 });
 
-router.post('/:id/portada', upload.single('portada'), async (req, res) => {
+router.post('/:id/portada', isAdminDir, upload.single('portada'), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
   if (!req.file) throw new AppError('Archivo requerido', 400);
@@ -300,7 +300,7 @@ router.post('/:id/portada', upload.single('portada'), async (req, res) => {
   res.json({ ok: true, imagenPortada: result.url });
 });
 
-router.post('/:id/galeria', upload.array('imagenes', 10), async (req, res) => {
+router.post('/:id/galeria', isAdminDir, upload.array('imagenes', 10), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
   // El tipo "Express.Multer.File" depende de que @types/multer logre

@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useData } from '../../../hooks/useApi';
 
 export default function InicioAuxiliarPage() {
   const { data: permisosData } = useData<any>('/permisos?limit=5');

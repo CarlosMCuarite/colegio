@@ -9,8 +9,8 @@
 // (motivo/atención en vez de "descripción/acción tomada" genérico).
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import { useData, useMutation } from '../hooks/useApi';
+import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 interface Props {

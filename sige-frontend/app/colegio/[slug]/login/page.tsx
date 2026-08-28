@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { AuthProvider, useAuth } from '@/lib/auth';
-import api from '@/lib/api';
+import { AuthProvider, useAuth } from '../../../../lib/auth';
+import api from '../../../../lib/api';
 
 function LoginColegioForm({ slug }: { slug: string }) {
   const { login } = useAuth();

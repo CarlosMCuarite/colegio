@@ -7,9 +7,9 @@
 // cuando quien pregunta es SUPERADMIN — solo faltaba esta pantalla.
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ROLES = ['SUPERADMIN','ADMINISTRADOR','DIRECTOR','SECRETARIA','DOCENTE','PADRE','AUXILIAR','PSICOLOGO','COORDINADOR','TUTOR','CONTADOR','ENFERMERIA'];

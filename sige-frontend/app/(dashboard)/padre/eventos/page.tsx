@@ -1,7 +1,7 @@
 'use client';
 import { useMemo } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useEventos } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useEventos } from '../../../../hooks/useApi';
 
 const TIPO_COLOR: Record<string,string> = { FERIADO:'#ef4444', SUSPENSION_CLASES:'#f59e0b', REUNION:'#3b82f6', ACTIVIDAD:'#10b981', OTRO:'#64748b' };
 

@@ -2,7 +2,7 @@
 // components/chatbot/ChatbotWidget.tsx
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '@/lib/api';
+import api from '../../lib/api';
 
 interface Mensaje {
   id: string;

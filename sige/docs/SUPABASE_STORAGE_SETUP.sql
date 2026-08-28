@@ -5,16 +5,11 @@
 INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
 VALUES
   ('logos',       'logos',       true,  false, 5242880,  ARRAY['image/png','image/jpeg','image/jpg','image/webp']),
-  ('vouchers',    'vouchers',    false, false, 5242880,  ARRAY['image/png','image/jpeg','image/jpg','image/webp','application/pdf']),
-  -- IMPORTANTE: "documentos" debe ser público=true. El backend genera las URLs
-  -- con getPublicUrl(), que arma un link /object/public/... — ese endpoint sólo
-  -- funciona si la bandera "public" del bucket está en true; las policies de
-  -- abajo NO alcanzan para habilitarlo por sí solas. Con public=false, la URL
-  -- devuelta "existe" pero al abrirla da error (por eso el <img> mostraba el
-  -- texto alternativo "Adjunto" en vez de la imagen, y el enlace de descarga
-  -- fallaba). Igual se agregan las policies para dejar el acceso ordenado.
-  ('documentos',  'documentos',  true,  false, 10485760, ARRAY['image/png','image/jpeg','image/webp','application/pdf']),
-  ('avatares',    'avatares',    true,  false, 2097152,  ARRAY['image/png','image/jpeg','image/jpg','image/webp'])
+  ('vouchers',    'vouchers',    false, false, 10485760, ARRAY['image/png','image/jpeg','image/jpg','image/webp','application/pdf']),
+  -- Documentos y adjuntos son privados. El backend entrega URLs firmadas de
+  -- corta duración solo después de validar tenant, rol y destinatario.
+  ('documentos',  'documentos',  false, false, 20971520, ARRAY['image/png','image/jpeg','image/webp','application/pdf']),
+  ('avatares',    'avatares',    true,  false, 3145728,  ARRAY['image/png','image/jpeg','image/jpg','image/webp'])
 ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
   file_size_limit = EXCLUDED.file_size_limit;
@@ -53,25 +48,15 @@ DROP POLICY IF EXISTS "vouchers_auth_all" ON storage.objects;
 CREATE POLICY "vouchers_auth_all" ON storage.objects
   FOR ALL USING (bucket_id = 'vouchers' AND auth.role() = 'authenticated');
 
--- ── Policies para bucket DOCUMENTOS ──────────────────────────────────────────
--- Lectura pública: la app muestra estos archivos con una URL directa
--- (getPublicUrl), sin sesión de Supabase en el navegador — restringir SELECT
--- a "authenticated" aquí causaba que el visor de Comunicados mostrara
--- "Bucket not found" al intentar ver el adjunto. Escritura sigue restringida.
+-- ── Bucket DOCUMENTOS privado ─────────────────────────────────────────────────
+-- Todas las operaciones pasan por supabaseAdmin (service_role), que omite RLS.
+-- No se conceden policies al cliente: ni conocer el path permite descargarlo.
 DROP POLICY IF EXISTS "documentos_auth_all" ON storage.objects;
 DROP POLICY IF EXISTS "documentos_public_read" ON storage.objects;
 DROP POLICY IF EXISTS "documentos_auth_insert" ON storage.objects;
 DROP POLICY IF EXISTS "documentos_auth_update" ON storage.objects;
 DROP POLICY IF EXISTS "documentos_auth_delete" ON storage.objects;
 
-CREATE POLICY "documentos_public_read" ON storage.objects
-  FOR SELECT USING (bucket_id = 'documentos');
-CREATE POLICY "documentos_auth_insert" ON storage.objects
-  FOR INSERT WITH CHECK (bucket_id = 'documentos' AND auth.role() = 'authenticated');
-CREATE POLICY "documentos_auth_update" ON storage.objects
-  FOR UPDATE USING (bucket_id = 'documentos' AND auth.role() = 'authenticated');
-CREATE POLICY "documentos_auth_delete" ON storage.objects
-  FOR DELETE USING (bucket_id = 'documentos' AND auth.role() = 'authenticated');
 
 -- ── Bucket BACKUPS (privado — solo service_role, sin policies de cliente) ────
 -- Los respaldos NUNCA deben ser públicos ni accesibles por usuarios normales.

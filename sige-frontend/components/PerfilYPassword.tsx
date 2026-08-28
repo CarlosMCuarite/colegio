@@ -7,8 +7,8 @@
 // app/(dashboard)/admin/configuracion/page.tsx que sí incluye Institución.
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '@/lib/auth';
-import api from '@/lib/api';
+import { useAuth } from '../lib/auth';
+import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 export default function PerfilYPassword() {

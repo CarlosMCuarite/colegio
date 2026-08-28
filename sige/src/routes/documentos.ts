@@ -8,7 +8,7 @@ import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, DocumentoEstado, DocumentoTipo, RolNombre, Prisma } from '@prisma/client';
-import { uploadFile, deleteFile } from '../services/storageService';
+import { uploadFile, deleteFile, getSignedUrlFromStoredValue, storagePathFromStoredUrl } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 import { enviarNotificacion } from '../services/notificacionService';
 
@@ -22,6 +22,11 @@ const docSchema = z.object({
   nombre:       z.string().min(3),
   descripcion:  z.string().optional().nullable(),
 });
+
+async function documentoConUrlFirmada<T extends { archivoUrl: string | null }>(doc: T): Promise<T> {
+  if (!doc.archivoUrl) return doc;
+  return { ...doc, archivoUrl: await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, doc.archivoUrl) };
+}
 
 // ── GET /documentos ───────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
@@ -59,13 +64,17 @@ router.get('/', async (req, res) => {
       },
     }),
   ]);
-  res.json({ ok: true, data: docs, meta: { total } });
+  res.json({ ok: true, data: await Promise.all(docs.map(documentoConUrlFirmada)), meta: { total } });
 });
 
 // ── GET /documentos/:id ───────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
+  const where: any = { id: req.params.id, colegioId: req.colegioId! };
+  if (req.user!.rol === RolNombre.PADRE) {
+    where.estudiante = { padreEstudiantes: { some: { padre: { usuarioId: req.user!.id } } } };
+  }
   const doc = await prisma.documento.findFirst({
-    where: { id: req.params.id, colegioId: req.colegioId! },
+    where,
     include: {
       estudiante:    true,
       solicitadoPor: { select: { nombres: true, apellidos: true } },
@@ -73,7 +82,7 @@ router.get('/:id', async (req, res) => {
     },
   });
   if (!doc) throw new AppError('Documento no encontrado', 404);
-  res.json({ ok: true, data: doc });
+  res.json({ ok: true, data: await documentoConUrlFirmada(doc) });
 });
 
 // ── POST /documentos — Solicitar documento ────────────────────────────────────
@@ -82,6 +91,12 @@ router.post(
   auditar({ modulo: 'DOCUMENTOS', accion: AuditoriaAccion.CREAR }),
   async (req, res) => {
     const data = docSchema.parse(req.body);
+    if (req.user!.rol === RolNombre.PADRE && data.estudianteId) {
+      const esSuHijo = await prisma.padreEstudiante.findFirst({
+        where: { estudianteId: data.estudianteId, padre: { usuarioId: req.user!.id, colegioId: req.colegioId! } },
+      });
+      if (!esSuHijo) throw new AppError('Sin permisos sobre este estudiante', 403);
+    }
     const doc = await prisma.documento.create({
       data: {
         ...data,
@@ -170,7 +185,7 @@ router.post(
         procesadoPorId:  req.user!.id,
       },
     });
-    res.json({ ok: true, archivoUrl: result.url });
+    res.json({ ok: true, archivoUrl: await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, result.url) });
   },
 );
 
@@ -200,14 +215,9 @@ router.delete(
     if (!doc) throw new AppError('Documento no encontrado', 404);
 
     if (doc.archivoUrl) {
-      // El path guardado en Storage es todo lo que sigue al nombre del bucket en la URL pública.
       try {
-        const marcador = `/${BUCKETS.DOCUMENTOS}/`;
-        const idx = doc.archivoUrl.indexOf(marcador);
-        if (idx !== -1) {
-          const path = doc.archivoUrl.slice(idx + marcador.length);
-          await deleteFile(BUCKETS.DOCUMENTOS, path);
-        }
+        const path = storagePathFromStoredUrl(BUCKETS.DOCUMENTOS, doc.archivoUrl);
+        if (path) await deleteFile(BUCKETS.DOCUMENTOS, path);
       } catch {
         // No bloquear el borrado del registro si el archivo ya no existe en Storage
       }

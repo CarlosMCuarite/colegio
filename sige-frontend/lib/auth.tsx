@@ -25,7 +25,6 @@ export interface AuthUser {
 
 interface AuthCtx {
   user: AuthUser | null;
-  token: string | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -34,7 +33,7 @@ interface AuthCtx {
 }
 
 const Ctx = createContext<AuthCtx>({
-  user: null, token: null, loading: true,
+  user: null, loading: true,
   login: async () => {}, logout: async () => {}, isRole: () => false,
   updateUser: () => {},
 });
@@ -56,48 +55,37 @@ const DESTINOS: Record<string, string> = {
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<AuthUser | null>(null);
-  const [token, setToken]     = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const savedToken = localStorage.getItem('sige-token');
     const savedUser  = localStorage.getItem('sige-user');
-    if (savedToken && savedUser) {
-      setToken(savedToken);
-      try { setUser(JSON.parse(savedUser)); } catch {}
+    if (savedUser) try { setUser(JSON.parse(savedUser)); } catch {}
+    localStorage.removeItem('sige-token');
 
-      // Resincroniza en segundo plano con el backend. Esto corrige sesiones
-      // guardadas por una versión anterior del frontend cuyo JSON cacheado
-      // no tenía campos nuevos (como colegio.slug) — sin esto, una sesión
-      // vieja queda atascada para siempre porque hasta el logout depende
-      // del slug, y el usuario nunca podría refrescarlo cerrando sesión.
-      api.get('/auth/me')
-        .then(res => {
-          const fresco = res.data?.data;
-          if (!fresco) return;
-          setUser(prev => {
-            const actualizado = { ...prev, ...fresco };
-            localStorage.setItem('sige-user', JSON.stringify(actualizado));
-            if (fresco.colegio?.slug) localStorage.setItem('sige-colegio-slug', fresco.colegio.slug);
-            return actualizado;
-          });
-        })
-        .catch(() => {}); // si falla (token vencido, etc.) el interceptor 401 ya maneja el logout
-    }
-    setLoading(false);
+    // La cookie HttpOnly es la fuente de verdad y JavaScript no puede leerla.
+    // /auth/me también renueva automáticamente una sesión cuyo access token venció.
+    api.get('/auth/me')
+      .then(res => {
+        const fresco = res.data?.data;
+        if (!fresco) return;
+        setUser(fresco);
+        localStorage.setItem('sige-user', JSON.stringify(fresco));
+        localStorage.setItem('sige-colegio-id', fresco.colegio?.id ?? '');
+        if (fresco.colegio?.slug) localStorage.setItem('sige-colegio-slug', fresco.colegio.slug);
+      })
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const res = await api.post<{ ok: boolean; token: string; refreshToken: string; usuario: AuthUser }>(
+    const res = await api.post<{ ok: boolean; usuario: AuthUser }>(
       '/auth/login', { email, password }
     );
-    const { token: tk, usuario } = res.data;
-    localStorage.setItem('sige-token',     tk);
+    const { usuario } = res.data;
     localStorage.setItem('sige-user',      JSON.stringify(usuario));
     localStorage.setItem('sige-colegio-id', usuario.colegio?.id ?? '');
     if (usuario.colegio?.slug) localStorage.setItem('sige-colegio-slug', usuario.colegio.slug);
-    setToken(tk);
     setUser(usuario);
     const destino = DESTINOS[usuario.rol] ?? '/admin';
     router.push(destino);
@@ -119,8 +107,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!slug) slug = localStorage.getItem('sige-colegio-slug');
 
     try { await api.post('/auth/logout'); } catch {}
-    localStorage.clear();
-    setToken(null);
+    localStorage.removeItem('sige-token');
+    localStorage.removeItem('sige-user');
+    localStorage.removeItem('sige-colegio-id');
+    localStorage.removeItem('sige-colegio-slug');
     setUser(null);
     // Los usuarios de un colegio vuelven a SU login, no al login global
     router.push(slug ? `/colegio/${slug}/login` : '/auth/login');
@@ -139,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <Ctx.Provider value={{ user, token, loading, login, logout, isRole, updateUser }}>
+    <Ctx.Provider value={{ user, loading, login, logout, isRole, updateUser }}>
       {children}
     </Ctx.Provider>
   );

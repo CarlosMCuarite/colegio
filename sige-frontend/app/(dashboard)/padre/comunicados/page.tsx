@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useComunicados } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useComunicados } from '../../../../hooks/useApi';
 
 export default function ComunicadosPadrePage() {
   const { data, isLoading } = useComunicados('limit=30');

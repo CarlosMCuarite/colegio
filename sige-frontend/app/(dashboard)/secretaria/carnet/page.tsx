@@ -1,2 +1,2 @@
 'use client';
-export { default } from '@/components/CarnetPlantillaEditor';
+export { default } from '../../../../components/CarnetPlantillaEditor';

@@ -2,9 +2,9 @@
 // app/(dashboard)/secretaria/eventos/page.tsx
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useEventos, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useEventos, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const TIPO_CONF: Record<string, { color: string; bg: string; icon: string }> = {

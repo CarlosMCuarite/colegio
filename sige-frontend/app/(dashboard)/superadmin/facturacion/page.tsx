@@ -2,12 +2,12 @@
 // app/(dashboard)/superadmin/facturacion/page.tsx
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import ModalVoucher from '@/components/ModalVoucher';
-import { usePagosLicencia, useConfigPlataforma, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import ModalVoucher from '../../../../components/ModalVoucher';
+import { usePagosLicencia, useConfigPlataforma, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
-import { QrUploader } from '@/components/QrUploader';
+import { QrUploader } from '../../../../components/QrUploader';
 
 const ESTADO_CONF: Record<string, any> = {
   PENDIENTE:   { bg: '#fef3c7', text: '#92400e', label: 'Pendiente' },
@@ -133,7 +133,7 @@ export default function FacturacionSuperadminPage() {
           <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
             {['', 'EN_REVISION', 'PENDIENTE', 'APROBADO', 'RECHAZADO'].map(e => (
               <button key={e} onClick={() => setEstadoFiltro(e)}
-                style={{ padding: '0.4rem 1rem', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+                style={{ padding: '0.4rem 1rem', borderRadius: 99, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
                   background: estadoFiltro === e ? 'var(--accent)' : 'var(--bg-card)', color: estadoFiltro === e ? '#fff' : 'var(--text-secondary)',
                   border: estadoFiltro === e ? 'none' : '1px solid var(--border-color)' } as any}>
                 {e === '' ? 'Todos' : ESTADO_CONF[e]?.label ?? e}

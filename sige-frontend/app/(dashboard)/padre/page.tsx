@@ -1,10 +1,10 @@
 'use client';
 // app/(dashboard)/padre/page.tsx
 import { useState, useRef } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useDashboardPadre, useMutation } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useDashboardPadre, useMutation } from '../../../hooks/useApi';
 import { motion, AnimatePresence } from 'framer-motion';
-import api from '@/lib/api';
+import api from '../../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function PadreDashboard() {

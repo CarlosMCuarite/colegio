@@ -8,7 +8,7 @@ import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, NivelEducativo, RolNombre, Prisma } from '@prisma/client';
-import { uploadFile } from '../services/storageService';
+import { uploadFile, getSignedUrlFromStoredValue } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 import { enviarNotificacion } from '../services/notificacionService';
 
@@ -31,6 +31,28 @@ const comunicadoSchema = z.object({
   venceEn:         z.coerce.date().optional().nullable(),
 });
 
+async function comunicadoConUrlFirmada<T extends { adjuntoUrl: string | null }>(comunicado: T): Promise<T> {
+  if (!comunicado.adjuntoUrl) return comunicado;
+  return { ...comunicado, adjuntoUrl: await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, comunicado.adjuntoUrl) };
+}
+
+async function alcanceComunicadosPadre(usuarioId: string, colegioId: string) {
+  const padre = await prisma.padre.findFirst({
+    where: { usuarioId, colegioId },
+    include: { padreEstudiantes: { include: { estudiante: { include: { matriculas: { where: { activa: true }, include: { nivelGrado: true }, take: 1 } } } } } },
+  });
+  const matriculas = padre?.padreEstudiantes.flatMap(pe => pe.estudiante.matriculas) ?? [];
+  const niveles = [...new Set(matriculas.map(m => m.nivelGrado.nivel))];
+  const grados = [...new Set(matriculas.map(m => m.nivelGradoId))];
+  const secciones = [...new Set(matriculas.map(m => m.seccionId).filter(Boolean))] as string[];
+  return [
+    { paraElColegio: true },
+    ...(niveles.length ? [{ nivelEducativo: { in: niveles } }] : []),
+    ...(grados.length ? [{ gradoId: { in: grados } }] : []),
+    ...(secciones.length ? [{ seccionId: { in: secciones } }] : []),
+  ];
+}
+
 // ── GET /comunicados ──────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   const { page = '1', limit = '20' } = req.query as Record<string,string>;
@@ -38,17 +60,7 @@ router.get('/', async (req, res) => {
 
   // Padres solo ven comunicados dirigidos a ellos o al colegio
   if (req.user!.rol === RolNombre.PADRE) {
-    const padre = await prisma.padre.findFirst({
-      where: { usuarioId: req.user!.id, colegioId: req.colegioId! },
-      include: { padreEstudiantes: { include: { estudiante: { include: { matriculas: { where: { activa: true }, include: { nivelGrado: true, seccion: true }, take: 1 } } } } } },
-    });
-    const matricula = padre?.padreEstudiantes[0]?.estudiante?.matriculas[0];
-    where.OR = [
-      { paraElColegio: true },
-      { nivelEducativo: matricula?.nivelGrado?.nivel },
-      { gradoId: matricula?.nivelGradoId },
-      { seccionId: matricula?.seccionId },
-    ];
+    where.OR = await alcanceComunicadosPadre(req.user!.id, req.colegioId!);
   }
 
   const [total, comunicados] = await Promise.all([
@@ -61,17 +73,21 @@ router.get('/', async (req, res) => {
       include: { creadoPor: { select: { nombres: true, apellidos: true, rol: true } } },
     }),
   ]);
-  res.json({ ok: true, data: comunicados, meta: { total } });
+  res.json({ ok: true, data: await Promise.all(comunicados.map(comunicadoConUrlFirmada)), meta: { total } });
 });
 
 // ── GET /comunicados/:id ──────────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
+  const where: any = { id: req.params.id, colegioId: req.colegioId!, activo: true };
+  if (req.user!.rol === RolNombre.PADRE) {
+    where.OR = await alcanceComunicadosPadre(req.user!.id, req.colegioId!);
+  }
   const c = await prisma.comunicado.findFirst({
-    where: { id: req.params.id, colegioId: req.colegioId! },
+    where,
     include: { creadoPor: { select: { nombres: true, apellidos: true } } },
   });
   if (!c) throw new AppError('Comunicado no encontrado', 404);
-  res.json({ ok: true, data: c });
+  res.json({ ok: true, data: await comunicadoConUrlFirmada(c) });
 });
 
 // ── POST /comunicados ─────────────────────────────────────────────────────────

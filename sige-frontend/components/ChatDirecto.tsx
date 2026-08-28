@@ -5,9 +5,9 @@
 // la conversación está abierta, que es suficiente para el volumen de
 // mensajes de un colegio y no requiere infraestructura nueva.
 import { useEffect, useRef, useState } from 'react';
-import { useAuth } from '@/lib/auth';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import { useAuth } from '../lib/auth';
+import { useData, useMutation } from '../hooks/useApi';
+import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 export default function ChatDirecto() {

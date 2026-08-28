@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
 
 import { errorHandler } from './middleware/errorHandler';
 import { rateLimiter } from './middleware/rateLimiter';
@@ -50,15 +51,33 @@ import backupsRoutes from './routes/backups';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
+  .split(',')
+  .map(origin => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean);
+
+if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
 // ─── Seguridad y parseo ──────────────────────────────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: (process.env.CORS_ORIGINS || 'http://localhost:3000').split(','),
+  origin: allowedOrigins,
   credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// Las cookies se envían automáticamente: una petición que modifica datos debe
+// proceder de uno de los frontends autorizados. Se permiten llamadas sin Origin
+// para integraciones servidor-a-servidor y herramientas administrativas.
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+  const origin = req.headers.origin?.replace(/\/$/, '');
+  if (origin && !allowedOrigins.includes(origin)) {
+    return res.status(403).json({ ok: false, error: 'Origen no autorizado' });
+  }
+  next();
+});
 app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 app.use(rateLimiter);
 

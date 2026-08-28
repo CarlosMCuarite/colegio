@@ -1,87 +1,137 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { AuthProvider, useAuth } from '@/lib/auth';
-import { useTheme } from '@/components/layout/ThemeProvider';
+import { motion, useReducedMotion } from 'framer-motion';
+import { ArrowRight, Books, ChartLineUp, Eye, EyeSlash, GraduationCap, LockKey, Moon, Sun, UsersThree } from '@phosphor-icons/react';
+import { AuthProvider, useAuth } from '../../../lib/auth';
+import { useTheme } from '../../../components/layout/ThemeProvider';
+
+const pilares = [
+  { icon: Books, label: 'Gestión académica' },
+  { icon: UsersThree, label: 'Comunidad conectada' },
+  { icon: ChartLineUp, label: 'Decisiones con información' },
+];
 
 function LoginForm() {
   const { login } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [email, setEmail]       = useState('');
+  const reduceMotion = useReducedMotion();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [loading, setLoading] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setFormError('');
+    const nextErrors: { email?: string; password?: string } = {};
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) nextErrors.email = 'Ingresa tu correo electrónico.';
+    else if (!/^\S+@\S+\.\S+$/.test(normalizedEmail)) nextErrors.email = 'Ingresa un correo electrónico válido.';
+    if (!password) nextErrors.password = 'Ingresa tu contraseña.';
+
+    setFieldErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     setLoading(true);
-    try { await login(email, password); }
-    finally { setLoading(false); }
+    try {
+      await login(normalizedEmail, password);
+    } catch {
+      setFormError('No pudimos iniciar sesión. Revisa tus datos e inténtalo nuevamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg-secondary)', display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}>
-      <button onClick={toggleTheme}
-        style={{ position:'fixed', top:16, right:16, background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:8, padding:'0.4rem 0.7rem', cursor:'pointer', color:'var(--text-secondary)' }}>
-        <i className={`bi ${theme === 'dark' ? 'bi-sun' : 'bi-moon'}`} />
-      </button>
-
-      <motion.div initial={{ opacity:0, y:24 }} animate={{ opacity:1, y:0 }} transition={{ duration:0.4 }} style={{ width:'100%', maxWidth:420 }}>
-        <div className="sige-card" style={{ padding:'2.5rem' }}>
-          {/* Logo dinámico */}
-          <div style={{ textAlign:'center', marginBottom:'2rem' }}>
-            <div style={{ width:60, height:60, borderRadius:14, background:'var(--accent)', margin:'0 auto 1rem', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 16px rgba(79,70,229,0.3)' }}>
-              <i className="bi bi-mortarboard" style={{ color:'#fff', fontSize:'1.8rem' }} />
+    <main className="auth-shell" id="main-content">
+      <section className="auth-story" aria-label="Presentación de SIGE">
+        <div className="auth-story__glow" aria-hidden="true" />
+        <div className="auth-brand">
+          <span className="auth-brand__mark" aria-hidden="true"><GraduationCap weight="duotone" size={28} /></span>
+          <span className="auth-brand__name">SIGE</span>
+        </div>
+        <div className="auth-story__content">
+          <h1>Toda la gestión escolar, en un solo lugar.</h1>
+          <p>Organiza el trabajo diario del colegio y mantén a cada familia cerca de lo que importa.</p>
+        </div>
+        <div className="auth-pillars" aria-label="Áreas principales del sistema">
+          {pilares.map(({ icon: Icon, label }) => (
+            <div className="auth-pillar" key={label}>
+              <Icon size={20} weight="duotone" aria-hidden="true" />
+              <span>{label}</span>
             </div>
-            <h1 style={{ fontSize:'1.4rem', fontWeight:800, color:'var(--text-primary)', marginBottom:6 }}>
-              Sistema de Gestión Escolar
-            </h1>
-            <p style={{ color:'var(--text-muted)', fontSize:'0.875rem', margin:0 }}>
-              Ingresa con tus credenciales institucionales
-            </p>
+          ))}
+        </div>
+      </section>
+
+      <section className="auth-access">
+        <button type="button" className="auth-theme-toggle" onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
+          title={theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}>
+          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+        </button>
+
+        <motion.div className="auth-form-wrap"
+          initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}>
+          <div className="auth-mobile-brand">
+            <span className="auth-brand__mark" aria-hidden="true"><GraduationCap weight="duotone" size={25} /></span>
+            <span className="auth-brand__name">SIGE</span>
           </div>
+          <header className="auth-form-heading">
+            <h2>Bienvenido de nuevo</h2>
+            <p>Accede con tus credenciales institucionales.</p>
+          </header>
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom:'1rem' }}>
-              <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:6 }}>
-                Correo electrónico
-              </label>
-              <div style={{ position:'relative' }}>
-                <i className="bi bi-envelope" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }} />
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="sige-input"
-                  style={{ paddingLeft:'2.25rem' }} placeholder="usuario@institucion.edu.pe" required />
+          <form onSubmit={handleSubmit} className="auth-form" noValidate>
+            <div className="auth-field">
+              <label htmlFor="login-email">Correo electrónico</label>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon" aria-hidden="true"><UsersThree size={19} /></span>
+                <input id="login-email" type="email" value={email} onChange={event => {
+                  setEmail(event.target.value);
+                  if (fieldErrors.email) setFieldErrors(current => ({ ...current, email: undefined }));
+                }} placeholder="usuario@institucion.edu.pe" autoComplete="email" inputMode="email" required
+                  aria-invalid={Boolean(fieldErrors.email || formError)}
+                  aria-describedby={[fieldErrors.email && 'login-email-error', formError && 'login-form-error'].filter(Boolean).join(' ') || undefined} />
               </div>
+              {fieldErrors.email && <p id="login-email-error" className="auth-field-error">{fieldErrors.email}</p>}
             </div>
-
-            <div style={{ marginBottom:'1.5rem' }}>
-              <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'var(--text-secondary)', marginBottom:6 }}>
-                Contraseña
-              </label>
-              <div style={{ position:'relative' }}>
-                <i className="bi bi-lock" style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', color:'var(--text-muted)' }} />
-                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
-                  className="sige-input" style={{ paddingLeft:'2.25rem', paddingRight:'2.5rem' }} placeholder="••••••••" required />
-                <button type="button" onClick={() => setShowPass(p => !p)}
-                  style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'var(--text-muted)' }}>
-                  <i className={`bi ${showPass ? 'bi-eye-slash' : 'bi-eye'}`} />
+            <div className="auth-field">
+              <label htmlFor="login-password">Contraseña</label>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon" aria-hidden="true"><LockKey size={19} /></span>
+                <input id="login-password" type={showPass ? 'text' : 'password'} value={password}
+                  onChange={event => {
+                    setPassword(event.target.value);
+                    if (fieldErrors.password) setFieldErrors(current => ({ ...current, password: undefined }));
+                  }} placeholder="Ingresa tu contraseña" autoComplete="current-password" required
+                  aria-invalid={Boolean(fieldErrors.password || formError)}
+                  aria-describedby={[fieldErrors.password && 'login-password-error', formError && 'login-form-error'].filter(Boolean).join(' ') || undefined} />
+                <button type="button" className="auth-password-toggle" onClick={() => setShowPass(value => !value)}
+                  aria-label={showPass ? 'Ocultar contraseña' : 'Mostrar contraseña'} aria-pressed={showPass}>
+                  {showPass ? <EyeSlash size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {fieldErrors.password && <p id="login-password-error" className="auth-field-error">{fieldErrors.password}</p>}
             </div>
-
-            <button type="submit" disabled={loading} className="btn-accent"
-              style={{ width:'100%', justifyContent:'center', padding:'0.65rem', fontSize:'0.9rem' }}>
-              {loading
-                ? <><span className="spinner-border spinner-border-sm me-2" />Ingresando...</>
-                : <><i className="bi bi-box-arrow-in-right me-1" />Ingresar al sistema</>}
+            <div className="auth-form-status" aria-live="polite">
+              {formError && <p id="login-form-error" className="auth-form-error">{formError}</p>}
+            </div>
+            <button type="submit" disabled={loading} className="auth-submit">
+              <span>{loading ? 'Verificando acceso...' : 'Ingresar al sistema'}</span>
+              {!loading && <ArrowRight size={20} weight="bold" aria-hidden="true" />}
             </button>
           </form>
-        </div>
+          <p className="auth-support">Si tienes problemas para ingresar, comunícate con la administración de tu colegio.</p>
+        </motion.div>
 
-        <p style={{ textAlign:'center', marginTop:'1rem', color:'var(--text-muted)', fontSize:'0.72rem' }}>
-          SIGE © {new Date().getFullYear()} — Sistema Integral de Gestión Escolar
-        </p>
-      </motion.div>
-    </div>
+        <footer className="auth-footer">SIGE © {new Date().getFullYear()}. Sistema Integral de Gestión Escolar</footer>
+      </section>
+    </main>
   );
 }
 

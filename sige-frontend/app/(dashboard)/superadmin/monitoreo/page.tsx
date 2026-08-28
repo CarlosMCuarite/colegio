@@ -1,7 +1,7 @@
 'use client';
 // app/(dashboard)/superadmin/monitoreo/page.tsx
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData } from '../../../../hooks/useApi';
 
 const ACCION_LABEL: Record<string, string> = {
   CREAR: 'creó', ACTUALIZAR: 'actualizó', ELIMINAR: 'eliminó', LOGIN: 'inició sesión',

@@ -5,8 +5,8 @@
 // o Asistencia). Reusa /asistencia/mis-aulas (ya filtra correctamente las
 // aulas del docente) + /estudiantes?seccionId=X para el roster.
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData } from '../../../../hooks/useApi';
 
 export default function MisAlumnosPage() {
   const [aulaId, setAulaId] = useState('');

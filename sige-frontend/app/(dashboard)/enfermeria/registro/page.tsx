@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import RegistroClinico from '@/components/RegistroClinico';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import RegistroClinico from '../../../../components/RegistroClinico';
 
 export default function RegistroEnfermeriaPage() {
   return (

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-28T00:00:00-05:00",
+  "title": "Design System: SIGE",
+  "extensions": {
+    "colorMeta": {
+      "primary-teal": { "role": "primary", "displayName": "Turquesa Institucional", "canonical": "#0f766e", "tonalRamp": ["#063d39", "#07534d", "#0a6962", "#0f766e", "#14a095", "#2dd4bf", "#99f6e4", "#e6fffa"] },
+      "institutional-petrol": { "role": "primary", "displayName": "Petróleo de Comunidad", "canonical": "#103d39", "tonalRamp": ["#071f1d", "#0b2d2a", "#103d39", "#17534e", "#216f68", "#4a9990", "#a8d4cf", "#edf8f6"] },
+      "teal-soft": { "role": "secondary", "displayName": "Menta de Apoyo", "canonical": "#ccfbf1", "tonalRamp": ["#123d38", "#1b5a53", "#27786f", "#3f9c90", "#66bfb3", "#99dfd4", "#ccfbf1", "#f1fffc"] },
+      "canvas": { "role": "neutral", "displayName": "Lienzo Claro", "canonical": "#ffffff", "tonalRamp": ["#262b2a", "#424846", "#606765", "#808785", "#a5aaa9", "#c9cccb", "#e8eae9", "#ffffff"] },
+      "surface-subtle": { "role": "neutral", "displayName": "Niebla Verdosa", "canonical": "#f5f7f6", "tonalRamp": ["#232927", "#3f4644", "#5e6663", "#7d8683", "#a1a8a6", "#c5cac8", "#e3e7e5", "#f5f7f6"] },
+      "ink": { "role": "neutral", "displayName": "Tinta Profunda", "canonical": "#152523", "tonalRamp": ["#101b1a", "#152523", "#263b38", "#405450", "#62736f", "#8d9b98", "#c0cac7", "#edf5f3"] },
+      "danger": { "role": "tertiary", "displayName": "Rojo de Alerta", "canonical": "#ef4444", "tonalRamp": ["#4a1010", "#741919", "#9e2525", "#c83232", "#ef4444", "#f57676", "#fbb4b4", "#feecec"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Mensajes institucionales de bienvenida." },
+      "headline": { "displayName": "Headline", "purpose": "Títulos de página, formulario o módulo." },
+      "body": { "displayName": "Body", "purpose": "Contenido e instrucciones cotidianas." },
+      "label": { "displayName": "Label", "purpose": "Campos, controles y estados precisos." }
+    },
+    "shadows": [
+      { "name": "rest", "value": "0 1px 1px rgba(15,45,42,.04), 0 2px 4px rgba(15,45,42,.04)", "purpose": "Separación ambiental de tarjetas y barras en reposo." },
+      { "name": "interactive", "value": "0 1px 2px rgba(15,45,42,.05), 0 8px 24px rgba(15,45,42,.06)", "purpose": "Respuesta de hover en superficies interactivas." },
+      { "name": "overlay", "value": "0 2px 4px rgba(15,45,42,.06), 0 16px 48px rgba(15,45,42,.10)", "purpose": "Modales y ventanas flotantes." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "0.2s cubic-bezier(.16,1,.3,1)", "purpose": "Cambios de color, borde, sombra y posición en controles." },
+      { "name": "entrance-auth", "value": "0.32s cubic-bezier(.16,1,.3,1)", "purpose": "Entrada discreta del formulario, anulada con movimiento reducido." }
+    ],
+    "breakpoints": [
+      { "name": "mobile", "value": "520px" },
+      { "name": "navigation", "value": "768px" },
+      { "name": "auth-single-column", "value": "920px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Acción principal de alta confianza para avanzar o confirmar.",
+      "html": "<button class=\"ds-btn-primary\"><span>Ingresar al sistema</span><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg></button>",
+      "css": ".ds-btn-primary{min-height:54px;padding:.8rem 1.1rem;display:inline-flex;align-items:center;justify-content:center;gap:.7rem;border:0;border-radius:12px;color:#f5fffd;background:var(--accent,#0f766e);box-shadow:0 1px 1px rgba(5,46,43,.08),0 7px 18px rgba(15,118,110,.16);font:750 .92rem Manrope,'Segoe UI',sans-serif;cursor:pointer;transition:background-color .2s cubic-bezier(.16,1,.3,1),transform .2s cubic-bezier(.16,1,.3,1),box-shadow .2s cubic-bezier(.16,1,.3,1)}.ds-btn-primary:hover{background:#115e59;transform:translateY(-1px);box-shadow:0 1px 1px rgba(5,46,43,.08),0 10px 24px rgba(15,118,110,.2)}.ds-btn-primary:focus-visible{outline:2px solid var(--accent,#0f766e);outline-offset:3px}.ds-btn-primary:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Institutional Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Campo de acceso claro, amplio y preparado para iconos auxiliares.",
+      "html": "<label class=\"ds-field\"><span>Correo electrónico</span><input placeholder=\"usuario@institucion.edu.pe\" type=\"email\"></label>",
+      "css": ".ds-field{display:grid;gap:.55rem;color:var(--text-primary,#152523);font:650 .85rem Manrope,'Segoe UI',sans-serif}.ds-field input{width:100%;min-height:54px;padding:.8rem 1rem;border:1px solid var(--border-color,#dce4e2);border-radius:12px;outline:none;color:var(--text-primary,#152523);background:var(--bg-card,#fff);font:400 .94rem Manrope,'Segoe UI',sans-serif;transition:border-color .2s cubic-bezier(.16,1,.3,1),box-shadow .2s cubic-bezier(.16,1,.3,1)}.ds-field input::placeholder{color:var(--text-muted,#71817e)}.ds-field input:hover{border-color:#b8c8c5}.ds-field input:focus{border-color:var(--accent,#0f766e);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent,#0f766e) 16%,transparent)}"
+    },
+    {
+      "name": "Theme Toggle",
+      "kind": "button",
+      "description": "Control secundario compacto con objetivo táctil accesible.",
+      "html": "<button class=\"ds-icon-button\" aria-label=\"Cambiar tema\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z\"/></svg></button>",
+      "css": ".ds-icon-button{width:44px;height:44px;display:grid;place-items:center;border:1px solid var(--border-color,#dce4e2);border-radius:12px;color:var(--text-secondary,#526461);background:var(--bg-card,#fff);cursor:pointer;transition:color .2s cubic-bezier(.16,1,.3,1),border-color .2s cubic-bezier(.16,1,.3,1),transform .2s cubic-bezier(.16,1,.3,1)}.ds-icon-button:hover{color:var(--accent,#0f766e);border-color:var(--accent,#0f766e);transform:translateY(-1px)}.ds-icon-button:focus-visible{outline:2px solid var(--accent,#0f766e);outline-offset:3px}.ds-icon-button:active{transform:translateY(1px)}"
+    },
+    {
+      "name": "Contained Card",
+      "kind": "card",
+      "description": "Superficie de trabajo cotidiana delimitada por tono, borde y sombra mínima.",
+      "html": "<section class=\"ds-card\"><h3>Resumen académico</h3><p>Información prioritaria presentada con una jerarquía serena.</p></section>",
+      "css": ".ds-card{max-width:360px;padding:1.25rem;background:var(--bg-card,#fff);border:1px solid var(--border-color,#dce4e2);border-radius:12px;box-shadow:0 1px 1px rgba(15,45,42,.04),0 2px 4px rgba(15,45,42,.04);color:var(--text-primary,#152523);font-family:Manrope,'Segoe UI',sans-serif;transition:box-shadow .2s cubic-bezier(.16,1,.3,1)}.ds-card:hover{box-shadow:0 1px 2px rgba(15,45,42,.05),0 8px 24px rgba(15,45,42,.06)}.ds-card h3{margin:0 0 .5rem;font-size:1.05rem}.ds-card p{margin:0;color:var(--text-secondary,#526461);font-size:.9rem;line-height:1.6}"
+    },
+    {
+      "name": "Sidebar Navigation Item",
+      "kind": "nav",
+      "description": "Elemento de navegación compacto con activo inequívoco.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M4 5h16v14H4zM8 9h8M8 13h5\"/></svg><span>Gestión académica</span></a>",
+      "css": ".ds-nav-item{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;border-radius:8px;color:#94a3b8;text-decoration:none;font:500 .875rem Manrope,'Segoe UI',sans-serif;background:transparent;cursor:pointer;transition:background-color .2s cubic-bezier(.16,1,.3,1),color .2s cubic-bezier(.16,1,.3,1)}.ds-nav-item:hover{background:rgba(255,255,255,.08);color:#f1f5f9}.ds-nav-item:focus-visible{outline:2px solid #2dd4bf;outline-offset:2px}.ds-nav-item-active{background:var(--accent,#0f766e);color:#fff}"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Comunidad Escolar Serena",
+    "overview": "SIGE se siente como una institución educativa contemporánea que ha ordenado su complejidad: confiable, humana y silenciosamente eficiente. El verde petróleo comunica estabilidad; el turquesa aporta cercanía y orientación sin convertir la interfaz en una pieza promocional.\n\nLa jerarquía es directa, las superficies están contenidas y la densidad es cómoda para personas con distintos roles y niveles de experiencia digital. La composición favorece mensajes breves, controles previsibles y espacios suficientes para comprender el siguiente paso.",
+    "keyCharacteristics": ["Institucional sin rigidez ni nostalgia académica.", "Verde petróleo como ancla y turquesa como señal de interacción.", "Manrope como voz única, legible y contemporánea.", "Superficies contenidas, bordes suaves y profundidad ambiental discreta.", "Respuesta móvil deliberada, foco visible y movimiento no esencial reducible."],
+    "rules": [
+      { "name": "The One Teal Voice Rule", "body": "El turquesa principal señala acciones o estados activos; no debe competir consigo mismo en grandes áreas decorativas.", "section": "colors" },
+      { "name": "The Semantic Color Rule", "body": "Éxito, advertencia, peligro e información conservan sus roles funcionales y nunca se usan como decoración.", "section": "colors" },
+      { "name": "The One-Family Rule", "body": "Toda la experiencia usa Manrope; la jerarquía se construye con tamaño, peso y espacio, no mezclando familias decorativas.", "section": "typography" },
+      { "name": "The Contained Task Rule", "body": "Cada tarea principal ocupa una columna legible o una superficie claramente delimitada; no se estira un formulario solo para llenar el viewport.", "section": "layout" },
+      { "name": "The Border-Before-Shadow Rule", "body": "La separación cotidiana nace del contraste tonal y el borde; la sombra se reserva para elevación real o respuesta interactiva.", "section": "elevation" },
+      { "name": "The Soft Precision Rule", "body": "Las esquinas son amables pero contenidas: 12px es el radio habitual y 16px el máximo para superficies principales.", "section": "shapes" }
+    ],
+    "dos": ["Do usar Manrope y una jerarquía de peso clara para que todos los roles reconozcan el mismo producto.", "Do mantener objetivos táctiles de al menos 44px y focos visibles en toda acción.", "Do usar transiciones discretas de 200–320ms con easing desacelerado y respetar prefers-reduced-motion.", "Do validar las composiciones a 375px, 768px, 1024px y 1440px.", "Do usar iconos SVG de una familia coherente y acompañarlos con etiquetas accesibles cuando su significado no sea obvio."],
+    "donts": ["Don't introducir serif académicas, ámbar promocional o nostalgia visual: contradicen la implementación institucional contemporánea.", "Don't usar sombras densas, gradientes vistosos o decoración que compita con las tareas escolares.", "Don't ocultar foco, error o estado solo mediante un cambio de color sutil.", "Don't comprimir el diseño de escritorio en móvil ni permitir desplazamiento horizontal accidental.", "Don't animar contenido esencial ni usar desplazamientos mayores de 16px para entradas de interfaz."]
+  }
+}

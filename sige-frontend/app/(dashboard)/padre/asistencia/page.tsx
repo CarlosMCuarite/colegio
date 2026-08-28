@@ -10,8 +10,8 @@
 // "resumen" mensual. Agregado: vista de calendario con el estado de cada
 // día, además de la tabla de siempre.
 import { useMemo, useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useDashboardPadre } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useDashboardPadre } from '../../../../hooks/useApi';
 
 const ESTADO_CONF: Record<string, { bg: string; text: string; icon: string; label: string; dot: string }> = {
   PRESENTE:    { bg: '#d1fae5', text: '#065f46', icon: 'bi-check-circle',  label: 'Presente',    dot: '#10b981' },

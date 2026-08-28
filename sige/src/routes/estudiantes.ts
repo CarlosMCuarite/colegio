@@ -103,6 +103,7 @@ router.get('/:id', isDocente, async (req, res) => {
 // ── POST /estudiantes ─────────────────────────────────────────────────────────
 router.post(
   '/',
+  isStaff,
   auditar({ modulo: 'ESTUDIANTES', accion: AuditoriaAccion.CREAR }),
   async (req, res) => {
     const colegioId = req.colegioId ?? req.user!.colegioId;
@@ -137,6 +138,7 @@ router.post(
 // ── PATCH /estudiantes/:id ────────────────────────────────────────────────────
 router.patch(
   '/:id',
+  isStaff,
   auditar({ modulo: 'ESTUDIANTES', accion: AuditoriaAccion.ACTUALIZAR, getRecursoId: r => r.params.id }),
   async (req, res) => {
     const colegioId = req.colegioId ?? req.user!.colegioId;
@@ -168,6 +170,12 @@ router.patch('/:id/salud', async (req, res) => {
       where: { estudianteId: req.params.id, padre: { usuarioId: req.user!.id } },
     });
     if (!esPadre) throw new AppError('Sin permisos sobre este estudiante', 403);
+  } else {
+    const rolesSalud: RolNombre[] = [
+      RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR,
+      RolNombre.SECRETARIA, RolNombre.PSICOLOGO, RolNombre.ENFERMERIA,
+    ];
+    if (!rolesSalud.includes(req.user!.rol)) throw new AppError('Sin permisos para editar información de salud', 403);
   }
   const colegioId = req.colegioId ?? req.user!.colegioId;
   const where: any = { id: req.params.id, deletedAt: null };
@@ -179,6 +187,7 @@ router.patch('/:id/salud', async (req, res) => {
 // ── DELETE /estudiantes/:id — Soft delete ─────────────────────────────────────
 router.delete(
   '/:id',
+  isStaff,
   auditar({ modulo: 'ESTUDIANTES', accion: AuditoriaAccion.ELIMINAR, getRecursoId: r => r.params.id }),
   async (req, res) => {
     const colegioId = req.colegioId ?? req.user!.colegioId;
@@ -193,7 +202,7 @@ router.delete(
 );
 
 // ── POST /estudiantes/:id/restaurar ──────────────────────────────────────────
-router.post('/:id/restaurar', async (req, res) => {
+router.post('/:id/restaurar', isStaff, async (req, res) => {
   const colegioId = req.colegioId ?? req.user!.colegioId;
   const where: any = { id: req.params.id };
   if (colegioId) where.colegioId = colegioId;

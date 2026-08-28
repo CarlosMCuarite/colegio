@@ -2,9 +2,9 @@
 // app/(dashboard)/secretaria/pagos/page.tsx
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { usePagos, useConceptosPago, useMutation } from '@/hooks/useApi';
-import ModalVoucher from '@/components/ModalVoucher';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { usePagos, useConceptosPago, useMutation } from '../../../../hooks/useApi';
+import ModalVoucher from '../../../../components/ModalVoucher';
 
 const MESES_LARGO = ['', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 function formatPeriodo(periodo?: string) {
@@ -12,7 +12,7 @@ function formatPeriodo(periodo?: string) {
   const [anio, mes] = periodo.split('-').map(Number);
   return mes ? `${MESES_LARGO[mes]} ${anio}` : periodo;
 }
-import api from '@/lib/api';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ESTADO_CONF: Record<string, { bg: string; text: string; icon: string; label: string }> = {
@@ -111,7 +111,7 @@ export default function PagosPage() {
         {['', 'PENDIENTE', 'EN_REVISION', 'APROBADO', 'RECHAZADO'].map(e => (
           <button key={e} onClick={() => { setEstadoFiltro(e); setPage(1); }}
             style={{
-              padding: '0.4rem 1rem', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+              padding: '0.4rem 1rem', borderRadius: 99, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
               background: estadoFiltro === e ? 'var(--accent)' : 'var(--bg-card)',
               color: estadoFiltro === e ? '#fff' : 'var(--text-secondary)',
               border: estadoFiltro === e ? 'none' : '1px solid var(--border-color)',

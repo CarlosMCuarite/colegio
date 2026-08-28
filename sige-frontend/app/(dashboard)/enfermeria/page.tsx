@@ -1,6 +1,6 @@
 'use client';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useData } from '../../../hooks/useApi';
 
 export default function InicioEnfermeriaPage() {
   const { data } = useData<any>('/observaciones?tipo=SALUD&limit=5');

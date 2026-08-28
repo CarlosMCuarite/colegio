@@ -9,9 +9,9 @@
 // si todavía no. La vista "Todos los registros" (la de antes) se mantiene
 // como pestaña aparte para ver el historial completo del día.
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ESTADO_CONF: Record<string, { bg: string; text: string; label: string }> = {

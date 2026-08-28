@@ -4,8 +4,8 @@
 // del navegador en vez de generar un PDF en el servidor — mismo criterio
 // que ya usamos para Horarios, más simple y ya se ve profesional).
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useDashboardPadre } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useDashboardPadre } from '../../../../hooks/useApi';
 
 const BIMESTRE_LABEL: Record<string, string> = { BIMESTRE_1: 'B1', BIMESTRE_2: 'B2', BIMESTRE_3: 'B3', BIMESTRE_4: 'B4' };
 const COLOR_LITERAL: Record<string, string> = { AD: '#10b981', A: '#3b82f6', B: '#f59e0b', C: '#ef4444' };

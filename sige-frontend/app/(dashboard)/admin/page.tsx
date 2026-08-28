@@ -1,7 +1,7 @@
 'use client';
 // app/(dashboard)/admin/page.tsx
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useDashboardEjecutivo } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useDashboardEjecutivo } from '../../../hooks/useApi';
 import { motion } from 'framer-motion';
 import {
   AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,

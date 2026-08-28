@@ -1,8 +1,8 @@
 'use client';
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import HorarioGrid from '@/components/HorarioGrid';
-import { useHorarios } from '@/hooks/useApi';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import HorarioGrid from '../../../../components/HorarioGrid';
+import { useHorarios } from '../../../../hooks/useApi';
 const DIAS = ['','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 export default function HorariosPadrePage() {
   const [vista, setVista] = useState<'tabla' | 'lista'>('tabla');

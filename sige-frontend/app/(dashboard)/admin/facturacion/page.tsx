@@ -2,10 +2,10 @@
 // app/(dashboard)/admin/facturacion/page.tsx
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import ModalVoucher from '@/components/ModalVoucher';
-import { usePagosLicencia, useConfigPlataforma, useMutation, useData } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import ModalVoucher from '../../../../components/ModalVoucher';
+import { usePagosLicencia, useConfigPlataforma, useMutation, useData } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ESTADO_CONF: Record<string, any> = {

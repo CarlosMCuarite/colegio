@@ -10,6 +10,7 @@ import path from 'path';
 type Bucket = (typeof BUCKETS)[keyof typeof BUCKETS];
 
 const IMAGE_MIMETYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+const DOCUMENT_MIMETYPES = [...IMAGE_MIMETYPES, 'application/pdf'];
 const MAX_WEBP_DIMENSION = 1920;
 
 interface UploadResult {
@@ -44,21 +45,41 @@ export async function uploadFile(
   mimetype: string,
   carpeta?: string,
 ): Promise<UploadResult> {
+  const allowedMimes = bucket === BUCKETS.LOGOS || bucket === BUCKETS.AVATARES
+    ? IMAGE_MIMETYPES
+    : DOCUMENT_MIMETYPES;
+  if (!allowedMimes.includes(mimetype)) {
+    throw new AppError('Tipo de archivo no permitido', 422);
+  }
+
+  const isPdf = buffer.length >= 5 && buffer.subarray(0, 5).toString('ascii') === '%PDF-';
+  const isPng = buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]));
+  const isJpeg = buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  const isWebp = buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP';
+  const contenidoValido = mimetype === 'application/pdf'
+    ? isPdf
+    : mimetype === 'image/png'
+      ? isPng
+      : (mimetype === 'image/jpeg' || mimetype === 'image/jpg')
+        ? isJpeg
+        : mimetype === 'image/webp' && isWebp;
+  if (!contenidoValido) {
+    throw new AppError('El contenido del archivo no coincide con su tipo declarado', 422);
+  }
+
   let fileBuffer = buffer;
   let finalMime = mimetype;
   let finalExt = path.extname(originalName).toLowerCase();
   let finalName = path.basename(originalName, finalExt);
 
   // ── Conversión a WebP ────────────────────────────────────────────────────
-  if (IMAGE_MIMETYPES.includes(mimetype) && mimetype !== 'image/webp') {
+  if (IMAGE_MIMETYPES.includes(mimetype)) {
     try {
-      fileBuffer = await sharp(buffer)
-        .resize(MAX_WEBP_DIMENSION, MAX_WEBP_DIMENSION, {
-          fit: 'inside',
-          withoutEnlargement: true,
-        })
-        .webp({ quality: 82 })
-        .toBuffer();
+      const imagen = sharp(buffer).resize(MAX_WEBP_DIMENSION, MAX_WEBP_DIMENSION, {
+        fit: 'inside',
+        withoutEnlargement: true,
+      });
+      fileBuffer = mimetype === 'image/webp' ? await imagen.toBuffer() : await imagen.webp({ quality: 82 }).toBuffer();
       finalMime = 'image/webp';
       finalExt = '.webp';
       logger.debug(`Imagen convertida a WebP: ${originalName}`);
@@ -110,6 +131,29 @@ export async function uploadFile(
     nombre:   `${finalName}${finalExt}`,
     tamañoKB: Math.round(fileBuffer.byteLength / 1024),
   };
+}
+
+/** Extrae el path interno tanto de URLs públicas antiguas como de paths directos. */
+export function storagePathFromStoredUrl(bucket: Bucket, storedValue: string): string | null {
+  try {
+    const pathname = new URL(storedValue).pathname;
+    const markers = [`/storage/v1/object/public/${bucket}/`, `/storage/v1/object/sign/${bucket}/`, `/${bucket}/`];
+    for (const marker of markers) {
+      const idx = pathname.indexOf(marker);
+      if (idx !== -1) return decodeURIComponent(pathname.slice(idx + marker.length));
+    }
+  } catch {
+    const clean = storedValue.replace(/^\/+/, '');
+    return clean.startsWith(`${bucket}/`) ? clean.slice(bucket.length + 1) : clean || null;
+  }
+  return null;
+}
+
+/** Convierte el valor persistido en una URL temporal apta para buckets privados. */
+export async function getSignedUrlFromStoredValue(bucket: Bucket, storedValue: string, expiresInSeconds = 300): Promise<string> {
+  const storagePath = storagePathFromStoredUrl(bucket, storedValue);
+  if (!storagePath) throw new AppError('Ruta de archivo inválida', 500);
+  return getSignedUrl(bucket, storagePath, expiresInSeconds);
 }
 
 /** Verifica que todos los buckets requeridos existan (para diagnóstico al iniciar) */

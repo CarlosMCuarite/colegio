@@ -2,10 +2,10 @@
 // app/(dashboard)/admin/exportaciones/page.tsx
 import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
-import JsonViewer from '@/components/JsonViewer';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData } from '../../../../hooks/useApi';
+import JsonViewer from '../../../../components/JsonViewer';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 import JSZip from 'jszip';
 

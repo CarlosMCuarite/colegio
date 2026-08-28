@@ -138,7 +138,7 @@ router.post('/consulta', async (req, res) => {
     if (msg.includes('matrícula') || msg.includes('matricula')) {
       tipo = 'MATRICULAS';
       const año = new Date().getFullYear();
-      const total = await prisma.matricula.count({ where: { colegioId, añoEscolar: año, activa: true } });
+      const total = await prisma.matricula.count({ where: { colegioId, anoEscolar: año, activa: true } });
       respuesta = `📋 Matrículas activas ${año}: ${total}`;
     }
     else if (msg.includes('estudiante') || msg.includes('alumno')) {

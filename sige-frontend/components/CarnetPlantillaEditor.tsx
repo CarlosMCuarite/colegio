@@ -7,10 +7,10 @@
 // (incluyendo la marca de agua) como un editor tipo Canva.
 import { useEffect, useState } from 'react';
 import { Rnd } from 'react-rnd';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useAuth } from '@/lib/auth';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from './layout/DashboardLayout';
+import { useAuth } from '../lib/auth';
+import { useData, useMutation } from '../hooks/useApi';
+import api from '../lib/api';
 import toast from 'react-hot-toast';
 import {
   CarnetFrente, CarnetAtras, CARD_W, CARD_H,

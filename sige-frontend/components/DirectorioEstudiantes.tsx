@@ -4,7 +4,7 @@
 // roles como Psicología o Auxiliar, que necesitan ubicar a cualquier
 // estudiante rápido, no solo a los de un aula fija como un Docente/Tutor.
 import { useState } from 'react';
-import { useData } from '@/hooks/useApi';
+import { useData } from '../hooks/useApi';
 
 export default function DirectorioEstudiantes() {
   const [busqueda, setBusqueda] = useState('');

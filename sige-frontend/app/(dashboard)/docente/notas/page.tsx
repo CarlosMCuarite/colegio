@@ -6,9 +6,9 @@
 // usan AD/A/B/C, secundaria usa 0-20 — así nadie tiene que acordarse de la
 // escala correcta.
 import { useEffect, useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useData, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const BIMESTRES = [

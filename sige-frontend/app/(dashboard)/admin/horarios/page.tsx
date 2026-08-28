@@ -1,10 +1,10 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import HorarioGrid from '@/components/HorarioGrid';
-import { useHorarios, useNivelesGrados, useMutation, useData } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import HorarioGrid from '../../../../components/HorarioGrid';
+import { useHorarios, useNivelesGrados, useMutation, useData } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const DIAS = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
@@ -128,13 +128,13 @@ export default function HorariosPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
           <div style={{ display: 'flex', gap: '0.4rem' }}>
             <button onClick={() => setVista('tabla')}
-              style={{ padding: '0.35rem 0.875rem', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+              style={{ padding: '0.35rem 0.875rem', borderRadius: 8, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
                 background: vista === 'tabla' ? 'var(--accent)' : 'var(--bg-card)', color: vista === 'tabla' ? '#fff' : 'var(--text-secondary)',
                 border: vista !== 'tabla' ? '1px solid var(--border-color)' : 'none' } as any}>
               <i className="bi bi-grid-3x3 me-1" />Vista de tabla
             </button>
             <button onClick={() => setVista('lista')}
-              style={{ padding: '0.35rem 0.875rem', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
+              style={{ padding: '0.35rem 0.875rem', borderRadius: 8, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
                 background: vista === 'lista' ? 'var(--accent)' : 'var(--bg-card)', color: vista === 'lista' ? '#fff' : 'var(--text-secondary)',
                 border: vista !== 'lista' ? '1px solid var(--border-color)' : 'none' } as any}>
               <i className="bi bi-list-ul me-1" />Vista de lista

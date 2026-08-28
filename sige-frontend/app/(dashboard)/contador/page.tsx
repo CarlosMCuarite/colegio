@@ -5,8 +5,8 @@
 // se le redirigía a /admin al iniciar sesión, y esa página solo permite
 // ADMINISTRADOR/DIRECTOR — así que un Contador quedaba bloqueado
 // inmediatamente después de iniciar sesión, sin ver ni un solo módulo.
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useData } from '@/hooks/useApi';
+import DashboardLayout from '../../../components/layout/DashboardLayout';
+import { useData } from '../../../hooks/useApi';
 
 export default function InicioContadorPage() {
   const { data } = useData<any>('/pagos?limit=1');

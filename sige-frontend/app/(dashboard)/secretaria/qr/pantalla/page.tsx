@@ -7,9 +7,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { AuthProvider, useAuth } from '@/lib/auth';
-import { useQRSesion } from '@/hooks/useApi';
-import api from '@/lib/api';
+import { AuthProvider, useAuth } from '../../../../../lib/auth';
+import { useQRSesion } from '../../../../../hooks/useApi';
+import api from '../../../../../lib/api';
 import toast from 'react-hot-toast';
 
 interface ScanResult {

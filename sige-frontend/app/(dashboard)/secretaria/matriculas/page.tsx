@@ -1,9 +1,9 @@
 'use client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useMatriculas, useNivelesGrados, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useMatriculas, useNivelesGrados, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function MatriculasPage() {
@@ -48,7 +48,7 @@ export default function MatriculasPage() {
         {niveles.slice(0, 6).map((n: any) => (
           <button key={n.id} onClick={() => setNivelGradoId(nivelGradoId === n.id ? '' : n.id)}
             style={{
-              padding: '0.3rem 0.875rem', borderRadius: 99, border: 'none', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+              padding: '0.3rem 0.875rem', borderRadius: 99, cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
               background: nivelGradoId === n.id ? 'var(--accent)' : 'var(--bg-card)',
               color: nivelGradoId === n.id ? '#fff' : 'var(--text-secondary)',
               border: nivelGradoId !== n.id ? '1px solid var(--border-color)' : 'none',

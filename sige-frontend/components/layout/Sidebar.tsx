@@ -2,9 +2,9 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '@/lib/auth';
+import { useAuth } from '../../lib/auth';
 import { useTheme } from './ThemeProvider';
-import { useData } from '@/hooks/useApi';
+import { useData } from '../../hooks/useApi';
 import clsx from 'clsx';
 
 interface NavItem { href: string; icon: string; label: string; }

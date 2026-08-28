@@ -1,6 +1,6 @@
 // hooks/useApi.ts
 import useSWR, { SWRConfiguration } from 'swr';
-import { fetcher } from '@/lib/api';
+import { fetcher } from '../lib/api';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 

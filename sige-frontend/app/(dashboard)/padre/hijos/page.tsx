@@ -1,9 +1,9 @@
 'use client';
 // app/(dashboard)/padre/hijos/page.tsx
 import { useState, useRef } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import { useDashboardPadre } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import { useDashboardPadre } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function MisHijosPage() {

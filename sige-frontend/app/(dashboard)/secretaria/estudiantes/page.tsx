@@ -2,10 +2,10 @@
 // app/(dashboard)/secretaria/estudiantes/page.tsx
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '@/components/layout/DashboardLayout';
-import CarnetEstudiante from '@/components/CarnetEstudiante';
-import { useEstudiantes, useNivelesGrados, useMutation } from '@/hooks/useApi';
-import api from '@/lib/api';
+import DashboardLayout from '../../../../components/layout/DashboardLayout';
+import CarnetEstudiante from '../../../../components/CarnetEstudiante';
+import { useEstudiantes, useNivelesGrados, useMutation } from '../../../../hooks/useApi';
+import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
 const ESTADO_COLORS: Record<string, { bg: string; text: string }> = {
