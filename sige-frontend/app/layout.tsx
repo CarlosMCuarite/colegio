@@ -5,7 +5,7 @@ import { ThemeProvider } from '../components/layout/ThemeProvider';
 import BootstrapClient from '../components/layout/BootstrapClient';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import '@/app/globals.css';
+import './globals.css';
 
 const SYSTEM_NAME = process.env.NEXT_PUBLIC_SYSTEM_NAME || 'SIGE';
 const SYSTEM_SUBTITLE = process.env.NEXT_PUBLIC_SYSTEM_SUBTITLE || 'Sistema Integral de Gestión Escolar';

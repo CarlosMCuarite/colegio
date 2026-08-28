@@ -69,7 +69,7 @@ services:
       - key: NODE_ENV
         value: production
       - key: NEXT_PUBLIC_API_URL
-        value: https://sige-backend.onrender.com/api/v1
+        value: https://sige-backend-wzmn.onrender.com/api/v1
       # Opcionales — solo si quieres cambiar el nombre/subtítulo que se ve
       # en el navegador (tienen "SIGE" y el nombre completo por defecto):
       # NEXT_PUBLIC_SYSTEM_NAME, NEXT_PUBLIC_SYSTEM_SUBTITLE
