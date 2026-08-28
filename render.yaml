@@ -62,7 +62,7 @@ services:
     plan: free
     region: oregon
     rootDir: sige-frontend
-    buildCommand: npm install && npm run build
+    buildCommand: npm install --include=dev && npm run build
     startCommand: npm start
     autoDeploy: true
     envVars:
