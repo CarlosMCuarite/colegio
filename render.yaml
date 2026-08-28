@@ -38,7 +38,7 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: https://sige-frontend.onrender.com   # cámbialo si tu URL de frontend queda distinta
+        value: https://sige-frontend-ygeu.onrender.com
       # ⚠️ IMPORTANTE — seguridad: estos dos tienen un valor de respaldo
       # escrito directo en el código (src/routes/auth.ts) para que el
       # sistema no se rompa si faltan, pero ese valor ya quedó público al

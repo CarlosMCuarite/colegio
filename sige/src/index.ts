@@ -51,10 +51,13 @@ import backupsRoutes from './routes/backups';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000')
-  .split(',')
+const allowedOrigins = Array.from(new Set([
+  'http://localhost:3000',
+  'https://sige-frontend-ygeu.onrender.com',
+  ...(process.env.CORS_ORIGINS || '').split(','),
+]
   .map(origin => origin.trim().replace(/\/$/, ''))
-  .filter(Boolean);
+  .filter(Boolean)));
 
 if (process.env.NODE_ENV === 'production') app.set('trust proxy', 1);
 
