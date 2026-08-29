@@ -157,19 +157,43 @@ export async function getSignedUrlFromStoredValue(bucket: Bucket, storedValue: s
 }
 
 /** Verifica que todos los buckets requeridos existan (para diagnóstico al iniciar) */
-export async function verificarBuckets(): Promise<{ ok: boolean; faltantes: string[] }> {
+const BUCKET_CONFIG: Record<string, { public: boolean; fileSizeLimit: number; allowedMimeTypes: string[] }> = {
+  [BUCKETS.LOGOS]: { public: true, fileSizeLimit: 5 * 1024 * 1024, allowedMimeTypes: IMAGE_MIMETYPES },
+  [BUCKETS.VOUCHERS]: { public: false, fileSizeLimit: 10 * 1024 * 1024, allowedMimeTypes: DOCUMENT_MIMETYPES },
+  [BUCKETS.DOCUMENTOS]: { public: false, fileSizeLimit: 20 * 1024 * 1024, allowedMimeTypes: DOCUMENT_MIMETYPES },
+  [BUCKETS.AVATARES]: { public: true, fileSizeLimit: 3 * 1024 * 1024, allowedMimeTypes: IMAGE_MIMETYPES },
+  [BUCKETS.BACKUPS]: { public: false, fileSizeLimit: 50 * 1024 * 1024, allowedMimeTypes: ['application/json'] },
+};
+
+/**
+ * Verifica y autocrea buckets faltantes. Render puede iniciar sobre un proyecto
+ * Supabase recién configurado sin depender de una intervención manual. Esto no
+ * sustituye una SERVICE_ROLE_KEY válida: si la clave es anon, Supabase bloqueará
+ * correctamente la creación y el log indicará la variable exacta que corregir.
+ */
+export async function asegurarBuckets(): Promise<{ ok: boolean; faltantes: string[] }> {
   const { data, error } = await supabaseAdmin.storage.listBuckets();
   if (error) {
     logger.error('No se pudo verificar buckets de Storage — revisa SUPABASE_SERVICE_ROLE_KEY', error);
     return { ok: false, faltantes: Object.values(BUCKETS) };
   }
   const existentes = new Set((data ?? []).map(b => b.name));
-  const faltantes = Object.values(BUCKETS).filter(b => !existentes.has(b));
-  if (faltantes.length) {
-    logger.warn(`Buckets faltantes en Supabase Storage: ${faltantes.join(', ')}. Ejecuta docs/SUPABASE_STORAGE_SETUP.sql`);
+  const faltantesIniciales = Object.values(BUCKETS).filter(b => !existentes.has(b));
+  for (const bucket of faltantesIniciales) {
+    const config = BUCKET_CONFIG[bucket];
+    const { error: createError } = await supabaseAdmin.storage.createBucket(bucket, config);
+    if (createError) {
+      logger.error(`No se pudo autocrear el bucket "${bucket}". Verifica SUPABASE_SERVICE_ROLE_KEY.`, createError);
+    } else {
+      logger.info(`Bucket de Storage autocreado: ${bucket}`);
+      existentes.add(bucket);
+    }
   }
+  const faltantes = Object.values(BUCKETS).filter(b => !existentes.has(b));
   return { ok: faltantes.length === 0, faltantes };
 }
+
+export const verificarBuckets = asegurarBuckets;
 
 /** Elimina un archivo del Storage */
 export async function deleteFile(bucket: Bucket, filePath: string): Promise<void> {

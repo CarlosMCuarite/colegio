@@ -5,7 +5,7 @@
 INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
 VALUES
   ('logos',       'logos',       true,  false, 5242880,  ARRAY['image/png','image/jpeg','image/jpg','image/webp']),
-  ('vouchers',    'vouchers',    false, false, 10485760, ARRAY['image/png','image/jpeg','image/jpg','image/webp','application/pdf']),
+  ('vales',       'vales',       false, false, 10485760, ARRAY['image/png','image/jpeg','image/jpg','image/webp','application/pdf']),
   -- Documentos y adjuntos son privados. El backend entrega URLs firmadas de
   -- corta duración solo después de validar tenant, rol y destinatario.
   ('documentos',  'documentos',  false, false, 20971520, ARRAY['image/png','image/jpeg','image/webp','application/pdf']),
@@ -46,7 +46,8 @@ CREATE POLICY "avatares_auth_insert" ON storage.objects
 DROP POLICY IF EXISTS "vales_auth_all" ON storage.objects;
 DROP POLICY IF EXISTS "vouchers_auth_all" ON storage.objects;
 CREATE POLICY "vouchers_auth_all" ON storage.objects
-  FOR ALL USING (bucket_id = 'vouchers' AND auth.role() = 'authenticated');
+  FOR ALL USING (bucket_id = 'vales' AND auth.role() = 'authenticated')
+  WITH CHECK (bucket_id = 'vales' AND auth.role() = 'authenticated');
 
 -- ── Bucket DOCUMENTOS privado ─────────────────────────────────────────────────
 -- Todas las operaciones pasan por supabaseAdmin (service_role), que omite RLS.

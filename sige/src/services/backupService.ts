@@ -10,11 +10,25 @@ const BACKUP_MAX    = parseInt(process.env.BACKUP_MAX_VERSIONES || '7', 10);
 const BACKUP_CRON   = process.env.BACKUP_CRON || '0 * * * *'; // Cada hora
 
 export function initBackupCron(): void {
+  if (!cron.validate(BACKUP_CRON)) {
+    throw new Error(`BACKUP_CRON inválido: "${BACKUP_CRON}"`);
+  }
+  let ejecutando = false;
+  const timezone = process.env.BACKUP_TIMEZONE || 'America/Lima';
   cron.schedule(BACKUP_CRON, async () => {
+    if (ejecutando) {
+      logger.warn('Backup omitido: la ejecución anterior todavía continúa.');
+      return;
+    }
+    ejecutando = true;
     logger.info('🔄 Iniciando backup programado...');
-    await ejecutarBackup();
-  });
-  logger.info(`✅ Backup cron iniciado [${BACKUP_CRON}] — retención: ${BACKUP_MAX} versiones — bucket: ${BACKUP_BUCKET}`);
+    try {
+      await ejecutarBackup();
+    } finally {
+      ejecutando = false;
+    }
+  }, { timezone });
+  logger.info(`✅ Backup cron iniciado [${BACKUP_CRON}] (${timezone}) — retención: ${BACKUP_MAX} versiones — bucket: ${BACKUP_BUCKET}`);
 }
 
 /**
