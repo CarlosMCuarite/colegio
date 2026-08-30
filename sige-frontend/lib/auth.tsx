@@ -12,6 +12,7 @@ export interface AuthUser {
   rol: string;
   telefono?: string | null;
   avatarUrl?: string;
+  supportMode?: boolean;
   colegio?: {
     id: string;
     nombre: string;
@@ -67,8 +68,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // /auth/me también renueva automáticamente una sesión cuyo access token venció.
     api.get('/auth/me')
       .then(res => {
-        const fresco = res.data?.data;
+        let fresco = res.data?.data;
         if (!fresco) return;
+        if (fresco.rol === 'SUPERADMIN') {
+          try {
+            const soporte = JSON.parse(localStorage.getItem('sige-support-context') || 'null');
+            if (soporte?.id) fresco = { ...fresco, colegio: soporte, supportMode: true };
+          } catch { localStorage.removeItem('sige-support-context'); }
+        }
         setUser(fresco);
         localStorage.setItem('sige-user', JSON.stringify(fresco));
         localStorage.setItem('sige-colegio-id', fresco.colegio?.id ?? '');
@@ -83,6 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       '/auth/login', { email, password }
     );
     const { usuario } = res.data;
+    localStorage.removeItem('sige-support-context');
     localStorage.setItem('sige-user',      JSON.stringify(usuario));
     localStorage.setItem('sige-colegio-id', usuario.colegio?.id ?? '');
     if (usuario.colegio?.slug) localStorage.setItem('sige-colegio-slug', usuario.colegio.slug);
@@ -111,6 +119,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem('sige-user');
     localStorage.removeItem('sige-colegio-id');
     localStorage.removeItem('sige-colegio-slug');
+    localStorage.removeItem('sige-support-context');
     setUser(null);
     // Los usuarios de un colegio vuelven a SU login, no al login global
     router.push(slug ? `/colegio/${slug}/login` : '/auth/login');

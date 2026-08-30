@@ -76,7 +76,7 @@ api.interceptors.response.use(
       : err.response?.data?.error ?? err.message;
 
     const esColegioBloqueado = err.response?.status === 403 &&
-      (msg?.includes('suspendido') || msg?.includes('inactivo'));
+      (msg?.includes('suspendido') || msg?.includes('inactivo') || msg?.includes('licencia') || msg?.includes('venció'));
 
     if (err.response?.status === 401 || esColegioBloqueado) {
       const slug = typeof window !== 'undefined' ? localStorage.getItem('sige-colegio-slug') : null;

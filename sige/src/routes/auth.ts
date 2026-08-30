@@ -42,7 +42,7 @@ router.post('/login', authLimiter, async (req, res) => {
 
   const usuario = await prisma.usuario.findUnique({
     where: { supabaseId: data.user.id },
-    include: { colegio: { select: { id: true, nombre: true, logoUrl: true, estado: true, whatsappNumero: true, whatsappMensaje: true, whatsappHorario: true, colorPrimario: true, colorSecundario: true, slug: true } } },
+    include: { colegio: { select: { id: true, nombre: true, logoUrl: true, estado: true, licenciaFin: true, whatsappNumero: true, whatsappMensaje: true, whatsappHorario: true, colorPrimario: true, colorSecundario: true, slug: true } } },
   });
   if (!usuario) throw new AppError('Usuario no registrado en el sistema', 401);
   if (!usuario.activo) throw new AppError('Tu cuenta está desactivada. Contacta al administrador.', 403);
@@ -50,6 +50,7 @@ router.post('/login', authLimiter, async (req, res) => {
     if (!usuario.colegio) throw new AppError('Sin colegio asignado', 403);
     if (usuario.colegio.estado === 'SUSPENDIDO') throw new AppError('El colegio está suspendido. Contacta con soporte.', 403);
     if (usuario.colegio.estado === 'INACTIVO')   throw new AppError('El colegio está inactivo. Contacta con soporte.', 403);
+    if (usuario.colegio.licenciaFin && usuario.colegio.licenciaFin < new Date()) throw new AppError('La licencia del colegio venció. El acceso está cerrado; contacta con SIGE para renovarla.', 403);
   }
   await prisma.usuario.update({ where: { id: usuario.id }, data: { ultimoLogin: new Date() } });
   await prisma.auditoria.create({ data: { colegioId: usuario.colegioId, usuarioId: usuario.id, accion: AuditoriaAccion.LOGIN, modulo: 'AUTH', ip: (req.headers['x-forwarded-for'] as string)?.split(',')[0] ?? req.ip, userAgent: req.headers['user-agent'] ?? null } as Prisma.AuditoriaUncheckedCreateInput }).catch(() => {});

@@ -1,12 +1,16 @@
 // hooks/useApi.ts
-import useSWR, { SWRConfiguration } from 'swr';
+import useSWR, { mutate as revalidarGlobal, SWRConfiguration } from 'swr';
 import { fetcher } from '../lib/api';
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 
 export function useData<T>(url: string | null, opts?: SWRConfiguration) {
   const { data, error, isLoading, mutate } = useSWR<T>(url, fetcher, {
-    revalidateOnFocus: false,
+    refreshInterval: 10000,
+    revalidateOnFocus: true,
+    revalidateOnReconnect: true,
+    refreshWhenHidden: false,
+    dedupingInterval: 2000,
     ...opts,
   });
   return { data, error, isLoading, mutate };
@@ -21,6 +25,9 @@ export function useMutation<TData = unknown>() {
     setLoading(true);
     try {
       const result = await fn();
+      // Toda mutación refresca inmediatamente las consultas visibles. Las
+      // demás se mantienen al día mediante polling ligero cada 10 segundos.
+      await revalidarGlobal(key => typeof key === 'string' && key.startsWith('/'), undefined, { revalidate: true });
       if (opts?.successMsg) toast.success(opts.successMsg);
       return result;
     } catch (err: any) {

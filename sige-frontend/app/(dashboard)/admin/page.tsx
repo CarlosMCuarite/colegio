@@ -19,7 +19,7 @@ export default function AdminDashboard() {
   const { data, isLoading } = useDashboardEjecutivo();
 
   if (isLoading) return (
-    <DashboardLayout title="Dashboard" allowedRoles={['ADMINISTRADOR','DIRECTOR']}>
+      <DashboardLayout title="Dashboard" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR']}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(200px,1fr))', gap: '1rem' }}>
         {[...Array(4)].map((_, i) => (
           <div key={i} className="sige-card animate-pulse" style={{ height: 100, background: 'var(--bg-secondary)' }} />
@@ -50,7 +50,7 @@ export default function AdminDashboard() {
   }));
 
   return (
-    <DashboardLayout title="Dashboard Ejecutivo" allowedRoles={['ADMINISTRADOR','DIRECTOR']}>
+    <DashboardLayout title="Dashboard Ejecutivo" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR']}>
       <PlanActivoCard colegio={d?.colegio} licencia={d?.licencia} />
       {/* Alerta licencia */}
       {d?.licencia?.alerta && (

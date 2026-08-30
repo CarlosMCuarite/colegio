@@ -5,6 +5,7 @@ import DashboardLayout from '../../../../components/layout/DashboardLayout';
 import { useData, useMutation } from '../../../../hooks/useApi';
 import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../../../lib/auth';
 
 const ESTADO_CONF: Record<string, { bg: string; text: string; label: string }> = {
   ACTIVO:     { bg: '#d1fae5', text: '#065f46', label: 'Activo'     },
@@ -14,6 +15,7 @@ const ESTADO_CONF: Record<string, { bg: string; text: string; label: string }> =
 };
 
 export default function ColegiosPage() {
+  const { updateUser } = useAuth();
   const [q, setQ]                 = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando]   = useState<any>(null);
@@ -78,16 +80,17 @@ export default function ColegiosPage() {
   };
 
   const ingresarComo = async (c: any) => {
-    if (!confirm(`¿Ingresar como soporte al sistema de "${c.nombre}"? Esta acción queda registrada en auditoría.`)) return;
+    if (!confirm(`¿Abrir el colegio “${c.nombre}” en modo soporte?\n\nConservarás tu identidad de Super Admin y cada acción quedará registrada a tu nombre.`)) return;
     await save(async () => {
       const res = await api.post(`/colegios/${c.id}/soporte-acceso`);
-      const link = res.data?.data?.actionLink;
-      if (link) {
-        toast.success(`Abriendo acceso a ${c.nombre}...`);
-        window.open(link, '_blank');
-      } else {
-        toast.error('No se pudo generar el enlace de acceso');
-      }
+      const colegio = res.data?.data?.colegio;
+      if (!colegio?.id) throw new Error('El backend no devolvió el contexto del colegio');
+      localStorage.setItem('sige-support-context', JSON.stringify(colegio));
+      localStorage.setItem('sige-colegio-id', colegio.id);
+      if (colegio.slug) localStorage.setItem('sige-colegio-slug', colegio.slug);
+      updateUser({ colegio, supportMode: true });
+      toast.success(`Modo soporte activo: ${colegio.nombre}`);
+      window.location.assign('/admin');
     });
   };
 
@@ -189,9 +192,9 @@ export default function ColegiosPage() {
                       <td>
                         <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                           <button onClick={() => ingresarComo(c)}
-                            disabled={c.estado !== 'ACTIVO'}
-                            style={{ background: '#ede9fe', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: c.estado === 'ACTIVO' ? 'pointer' : 'not-allowed', color: '#5b21b6', opacity: c.estado === 'ACTIVO' ? 1 : 0.4 }}
-                            title="Ingresar como colegio (soporte)">
+                            disabled={c.estado === 'INACTIVO'}
+                            style={{ background: '#ede9fe', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: c.estado !== 'INACTIVO' ? 'pointer' : 'not-allowed', color: '#5b21b6', opacity: c.estado !== 'INACTIVO' ? 1 : 0.4 }}
+                            title={c.estado === 'INACTIVO' ? 'Activa el colegio antes de abrir soporte' : 'Abrir modo soporte auditado'}>
                             <i className="bi bi-box-arrow-in-right" />
                           </button>
                           <button onClick={() => abrirEditar(c)}

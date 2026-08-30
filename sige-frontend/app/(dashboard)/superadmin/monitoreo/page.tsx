@@ -17,7 +17,7 @@ function fmtUptime(seg: number) {
 }
 
 export default function MonitoreoPage() {
-  const { data, isLoading } = useData<any>('/dashboard/monitoreo', { refreshInterval: 30000 });
+  const { data, isLoading } = useData<any>('/dashboard/monitoreo', { refreshInterval: 5000 });
   const d = (data as any)?.data;
 
   if (isLoading || !d) {
@@ -36,29 +36,65 @@ export default function MonitoreoPage() {
   return (
     <DashboardLayout title="Monitoreo del sistema" allowedRoles={['SUPERADMIN']}>
       <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-        Se actualiza automáticamente cada 30 segundos.
+        Vista operativa en vivo · se actualiza automáticamente cada 5 segundos.
       </p>
 
       {/* Estado general */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
-        <div className="sige-card" style={{ borderLeft: `4px solid ${dbColor}` }}>
+        <div className="sige-card" style={{ boxShadow: `inset 0 3px 0 ${dbColor}` }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}><i className="bi bi-database me-1" />Base de datos</div>
           <div style={{ fontSize: '1.2rem', fontWeight: 800, color: dbColor }}>{dbLabel}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{d.baseDatos.latenciaMs} ms de latencia</div>
         </div>
-        <div className="sige-card" style={{ borderLeft: '4px solid #4f46e5' }}>
+        <div className="sige-card" style={{ boxShadow: 'inset 0 3px 0 #4f46e5' }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}><i className="bi bi-hdd-stack me-1" />Servidor</div>
           <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{fmtUptime(d.servidor.uptimeSegundos)}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>en línea · {d.servidor.memoriaUsadaMB} / {d.servidor.memoriaTotalMB} MB · Node {d.servidor.nodeVersion}</div>
         </div>
-        <div className="sige-card" style={{ borderLeft: '4px solid #10b981' }}>
+        <div className="sige-card" style={{ boxShadow: 'inset 0 3px 0 #10b981' }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}><i className="bi bi-people me-1" />Usuarios en línea</div>
           <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{d.usuarios.activosUltimos15min}</div>
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{d.usuarios.activosUltimaHora} activos en la última hora</div>
         </div>
-        <div className="sige-card" style={{ borderLeft: `4px solid ${d.colegiosSuspendidos > 0 ? '#ef4444' : '#10b981'}` }}>
+        <div className="sige-card" style={{ boxShadow: `inset 0 3px 0 ${d.colegiosSuspendidos > 0 ? '#ef4444' : '#10b981'}` }}>
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}><i className="bi bi-building-slash me-1" />Colegios suspendidos</div>
           <div style={{ fontSize: '1.2rem', fontWeight: 800, color: d.colegiosSuspendidos > 0 ? '#ef4444' : 'var(--text-primary)' }}>{d.colegiosSuspendidos}</div>
+        </div>
+      </div>
+
+      {/* Accesos recientes */}
+      <div className="sige-card" style={{ marginBottom: '1.25rem' }}>
+        <div className="enterprise-section-title">
+          <div>
+            <div className="enterprise-eyebrow">Sesiones</div>
+            <h3><i className="bi bi-person-check me-2" />Últimos accesos detectados</h3>
+          </div>
+          <span className="estado-badge" style={{ background: '#dcfce7', color: '#166534' }}>
+            <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: '#22c55e', marginRight: 6 }} />En vivo
+          </span>
+        </div>
+        <div style={{ overflowX: 'auto' }}>
+          <table className="sige-table">
+            <thead><tr><th>Usuario</th><th>Rol</th><th>Colegio</th><th>Último acceso</th></tr></thead>
+            <tbody>
+              {(d.usuarios.ultimosAccesos ?? []).map((u: any) => (
+                <tr key={u.id}>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '.65rem' }}>
+                      {u.avatarUrl
+                        ? <img src={u.avatarUrl} alt="" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+                        : <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'grid', placeItems: 'center', fontWeight: 800 }}>{u.nombres?.[0]}{u.apellidos?.[0]}</span>}
+                      <div><strong>{u.nombres} {u.apellidos}</strong><div style={{ fontSize: '.72rem', color: 'var(--text-muted)' }}>{u.email}</div></div>
+                    </div>
+                  </td>
+                  <td><span className="estado-badge" style={{ background: 'var(--accent-soft)', color: 'var(--accent)' }}>{u.rol}</span></td>
+                  <td>{u.colegio?.nombre ?? 'Plataforma SIGE'}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{u.ultimoLogin ? new Date(u.ultimoLogin).toLocaleString('es-PE') : '—'}</td>
+                </tr>
+              ))}
+              {(d.usuarios.ultimosAccesos ?? []).length === 0 && <tr><td colSpan={4} style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Todavía no hay accesos registrados.</td></tr>}
+            </tbody>
+          </table>
         </div>
       </div>
 

@@ -188,7 +188,7 @@ const NAV: Record<string, NavSection[]> = {
 interface SidebarProps { open?: boolean; onClose?: () => void; }
 
 export default function Sidebar({ open = true, onClose }: SidebarProps) {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const pathname = usePathname();
   if (!user) return null;
@@ -200,9 +200,20 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
   // — un contador viendo "Gestión de Usuarios", "Matrículas", etc., nada de
   // lo cual debe tocar). Ahora tiene su propio nav (arriba), igual que
   // Enfermería/Psicología/Auxiliar.
-  const rolNav = ['COORDINADOR','TUTOR'].includes(user.rol)
+  const soporteActivo = user.rol === 'SUPERADMIN' && !!user.supportMode && !!user.colegio?.id;
+  const rolNav = soporteActivo
+    ? NAV.ADMINISTRADOR
+    : ['COORDINADOR','TUTOR'].includes(user.rol)
     ? NAV.DOCENTE
     : NAV[user.rol] ?? [];
+
+  const salirSoporte = () => {
+    localStorage.removeItem('sige-support-context');
+    localStorage.removeItem('sige-colegio-id');
+    localStorage.removeItem('sige-colegio-slug');
+    updateUser({ colegio: undefined, supportMode: false });
+    window.location.assign('/superadmin/colegios');
+  };
 
   // Badge de mensajes sin leer — solo para los roles que tienen Chat
   // (Padre y la familia de roles tipo Docente). Se refresca cada 15s, no
@@ -251,6 +262,12 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
               </div>
             </div>
           </div>
+          {soporteActivo && (
+            <button className="sidebar-support-mode" onClick={salirSoporte} title="Volver al panel global">
+              <span><i className="bi bi-headset" /> Modo soporte</span>
+              <small>Salir al panel global <i className="bi bi-arrow-return-left" /></small>
+            </button>
+          )}
         </div>
 
         {/* Navegación */}

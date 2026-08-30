@@ -347,13 +347,13 @@ router.get('/:id/stats', isSuperAdmin, async (req, res) => {
 });
 
 router.post('/:id/soporte-acceso', isSuperAdmin, auditar({ modulo: 'SOPORTE_GLOBAL', accion: AuditoriaAccion.ACCESO_SOPORTE, getRecursoId: r => r.params.id }), async (req, res) => {
-  const colegio = await prisma.colegio.findUnique({ where: { id: req.params.id } });
+  const colegio = await prisma.colegio.findUnique({ where: { id: req.params.id }, select: { id: true, nombre: true, slug: true, logoUrl: true, estado: true } });
   if (!colegio) throw new AppError('Colegio no encontrado', 404);
-  const adminColegio = await prisma.usuario.findFirst({ where: { colegioId: colegio.id, rol: RolNombre.ADMINISTRADOR, activo: true } });
-  if (!adminColegio) throw new AppError('Este colegio no tiene un administrador activo', 404);
-  const { data, error } = await supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email: adminColegio.email });
-  if (error) throw new AppError(`No se pudo generar acceso: ${error.message}`, 500);
-  res.json({ ok: true, data: { colegio: { id: colegio.id, nombre: colegio.nombre, slug: colegio.slug }, adminEmail: adminColegio.email, actionLink: data.properties?.action_link } });
+  if (colegio.estado === 'INACTIVO') throw new AppError('No se puede abrir soporte sobre un colegio inactivo', 409);
+  // No se suplanta al administrador ni se generan magic links. El SuperAdmin
+  // conserva su identidad y el frontend envía X-Colegio-Id; cada acción queda
+  // atribuida al operador real en Auditoría.
+  res.json({ ok: true, data: { colegio, modo: 'SOPORTE_AUDITADO' } });
 });
 
 export default router;

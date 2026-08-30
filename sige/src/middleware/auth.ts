@@ -77,13 +77,11 @@ export async function authenticate(req: Request, _res: Response, next: NextFunct
     if (usuario.colegio?.estado === 'SUSPENDIDO') throw new AppError('El colegio está suspendido. Contacta con soporte.', 403);
     if (usuario.colegio?.estado === 'INACTIVO')   throw new AppError('El colegio está inactivo. Contacta con soporte.', 403);
 
-    // Licencia vencida: se bloquea a todos MENOS al Administrador (necesita
-    // poder entrar para ver Facturación y renovar). Antes bajar la fecha de
-    // licencia en SuperAdmin no tenía ningún efecto real — quedaba solo un
-    // dato decorativo. Ahora si `licenciaFin` ya pasó, se aplica de verdad.
+    // La licencia es un corte real, no una advertencia decorativa. Al vencer,
+    // se bloquean también las sesiones ya abiertas en su siguiente petición.
     const licenciaVencida = usuario.colegio?.licenciaFin && usuario.colegio.licenciaFin < new Date();
-    if (licenciaVencida && usuario.rol !== RolNombre.ADMINISTRADOR) {
-      throw new AppError('La licencia del colegio venció. Contacta al administrador de tu colegio.', 403);
+    if (licenciaVencida) {
+      throw new AppError('La licencia del colegio venció. El acceso fue cerrado; contacta con SIGE para renovarla.', 403);
     }
 
     // Rol vs. plan contratado: si el colegio bajó de plan (ej. de Premium a

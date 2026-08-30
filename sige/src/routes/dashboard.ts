@@ -217,13 +217,23 @@ router.get('/monitoreo', async (req, res) => {
   const [
     backups24h, backups7d, backupsFallidosRecientes,
     usuariosActivos15min, usuariosActivos1h,
-    coleigiosSuspendidos, erroresAuditoriaRecientes,
+    ultimosAccesos, coleigiosSuspendidos, erroresAuditoriaRecientes,
   ] = await Promise.all([
     prisma.backup.groupBy({ by: ['estado'], where: { createdAt: { gte: hace24h } }, _count: true }),
     prisma.backup.groupBy({ by: ['estado'], where: { createdAt: { gte: hace7d } }, _count: true }),
     prisma.backup.findMany({ where: { estado: 'FALLIDO', createdAt: { gte: hace24h } }, include: { colegio: { select: { nombre: true } } }, orderBy: { createdAt: 'desc' }, take: 10 }),
     prisma.usuario.count({ where: { ultimoLogin: { gte: hace15min } } }),
     prisma.usuario.count({ where: { ultimoLogin: { gte: hace1h } } }),
+    prisma.usuario.findMany({
+      where: { ultimoLogin: { not: null }, activo: true },
+      orderBy: { ultimoLogin: 'desc' },
+      take: 12,
+      select: {
+        id: true, nombres: true, apellidos: true, email: true, rol: true,
+        avatarUrl: true, ultimoLogin: true,
+        colegio: { select: { nombre: true } },
+      },
+    }),
     prisma.colegio.count({ where: { estado: 'SUSPENDIDO' } }),
     prisma.auditoria.findMany({ orderBy: { createdAt: 'desc' }, take: 25, include: { colegio: { select: { nombre: true } }, usuario: { select: { nombres: true, apellidos: true, rol: true } } } }),
   ]);
@@ -251,7 +261,7 @@ router.get('/monitoreo', async (req, res) => {
         ultimos7d:  { total: totalBackups7d, exitosos: okBackups7d, fallidos: contarEstado(backups7d, 'FALLIDO'), tasaExito: totalBackups7d ? Math.round((okBackups7d / totalBackups7d) * 100) : null },
         fallosRecientes: backupsFallidosRecientes,
       },
-      usuarios: { activosUltimos15min: usuariosActivos15min, activosUltimaHora: usuariosActivos1h },
+      usuarios: { activosUltimos15min: usuariosActivos15min, activosUltimaHora: usuariosActivos1h, ultimosAccesos },
       colegiosSuspendidos: coleigiosSuspendidos,
       actividadReciente: erroresAuditoriaRecientes,
     },
