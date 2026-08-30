@@ -2,16 +2,16 @@
 name: SIGE
 description: Gestión escolar multirol, institucional, contemporánea y cercana.
 colors:
-  primary-teal: "#0f766e"
-  primary-teal-hover: "#115e59"
-  institutional-petrol: "#103d39"
-  teal-soft: "#ccfbf1"
+  primary-blue: "#2563eb"
+  primary-blue-hover: "#1d4ed8"
+  institutional-navy: "#071a3d"
+  blue-soft: "#e8f0ff"
   canvas: "#ffffff"
-  surface-subtle: "#f5f7f6"
-  ink: "#152523"
-  ink-secondary: "#526461"
-  ink-muted: "#71817e"
-  border: "#dce4e2"
+  surface-subtle: "#f5f8ff"
+  ink: "#102044"
+  ink-secondary: "#445472"
+  ink-muted: "#6d7c99"
+  border: "#dce5f4"
   danger: "#ef4444"
 typography:
   display:
@@ -52,14 +52,14 @@ spacing:
   3xl: "64px"
 components:
   button-primary:
-    backgroundColor: "{colors.primary-teal}"
+    backgroundColor: "{colors.primary-blue}"
     textColor: "#f5fffd"
     rounded: "{rounded.control}"
     padding: "0.8rem 1.1rem"
     height: "54px"
     typography: "{typography.label}"
   button-primary-hover:
-    backgroundColor: "{colors.primary-teal-hover}"
+    backgroundColor: "{colors.primary-blue-hover}"
     textColor: "#f5fffd"
     rounded: "{rounded.control}"
   input:
@@ -79,16 +79,17 @@ Este contrato se creó mediante un flujo **code-first autorizado**, partiendo de
 
 ## Overview
 
-**Creative North Star: "La Comunidad Escolar Serena"**
+**Creative North Star: "El Centro de Control Escolar Vivo"**
 
-SIGE se siente como una institución educativa contemporánea que ha ordenado su complejidad: confiable, humana y silenciosamente eficiente. El verde petróleo comunica estabilidad; el turquesa aporta cercanía y orientación sin convertir la interfaz en una pieza promocional.
+SIGE se siente como una institución educativa contemporánea que ha convertido su complejidad en claridad: confiable, humana y activa. El azul profundo comunica estabilidad; el azul vivo orienta las acciones, mientras el búho institucional acompaña estados relevantes con gestos contenidos.
 
 La jerarquía es directa, las superficies están contenidas y la densidad es cómoda para personas con distintos roles y niveles de experiencia digital. La composición favorece mensajes breves, controles previsibles y espacios suficientes para comprender el siguiente paso.
 
 **Key Characteristics:**
 
 - Institucional sin rigidez ni nostalgia académica.
-- Verde petróleo como ancla y turquesa como señal de interacción.
+- Azul marino como ancla y azul eléctrico como señal de interacción.
+- El búho azul aparece como guía contextual, nunca como decoración repetitiva.
 - Manrope como voz única, legible y contemporánea.
 - Superficies contenidas, bordes suaves y profundidad ambiental discreta.
 - Respuesta móvil deliberada, foco visible y movimiento no esencial reducible.

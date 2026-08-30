@@ -14,7 +14,7 @@ const manrope = Manrope({ subsets: ['latin'], display: 'swap', variable: '--font
 export const metadata: Metadata = {
   title: `${SYSTEM_NAME} | ${SYSTEM_SUBTITLE}`,
   description: SYSTEM_SUBTITLE,
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: '/favicon.png', apple: '/favicon.png' },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

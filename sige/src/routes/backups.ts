@@ -5,10 +5,10 @@ import { authenticate, isSuperAdmin } from '../middleware/auth';
 import { resolveTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
-import { AuditoriaAccion } from '@prisma/client';
-import { ejecutarBackup, urlDescargaBackup } from '../services/backupService';
+import { AuditoriaAccion, BackupEstado } from '@prisma/client';
+import { BACKUP_BUCKET, ejecutarBackup, restaurarBackupSeguro, urlDescargaBackup } from '../services/backupService';
 import { supabaseAdmin } from '../config/supabase';
-import { BUCKETS } from '../config/supabase';
+import { createHash } from 'crypto';
 
 const router = Router();
 router.use(authenticate, resolveTenant, isSuperAdmin);
@@ -60,34 +60,45 @@ router.get('/:id/verificar', async (req, res) => {
   const backup = await prisma.backup.findUnique({ where: { id: req.params.id } });
   if (!backup) throw new AppError('Backup no encontrado', 404);
 
-  const carpeta = backup.rutaArchivo.split('/').slice(0, -1).join('/');
-
   const { data: jsonData, error: jsonError } = await supabaseAdmin.storage
-    .from(BUCKETS.BACKUPS)
+    .from(BACKUP_BUCKET)
     .download(backup.rutaArchivo);
 
   let jsonValido = false;
+  let integridadValida = false;
   let registros = 0;
+  let archivosRespaldados = 0;
+  let archivosFaltantes = 0;
+  let archivosNoDisponibles = 0;
   if (!jsonError && jsonData) {
     try {
       const texto = await jsonData.text();
       const parsed = JSON.parse(texto);
       jsonValido = true;
-      registros = (parsed.estudiantes?.length ?? 0) + (parsed.padres?.length ?? 0) + (parsed.usuarios?.length ?? 0);
+      const snapshot = { colegio: parsed.colegio, tablas: parsed.tablas };
+      const hash = createHash('sha256').update(JSON.stringify(snapshot)).digest('hex');
+      integridadValida = !!parsed.tablas && hash === parsed.meta?.hashContenido;
+      registros = parsed.meta?.totalRegistros ?? Object.values(parsed.tablas ?? {}).reduce((n: number, rows: any) => n + (Array.isArray(rows) ? rows.length : 0), parsed.colegio ? 1 : 0);
+      const manifest = Array.isArray(parsed.meta?.archivos) ? parsed.meta.archivos : [];
+      archivosRespaldados = manifest.length;
+      archivosFaltantes = Array.isArray(parsed.meta?.archivosFaltantes) ? parsed.meta.archivosFaltantes.length : 0;
+      for (const archivo of manifest) {
+        const { error } = await supabaseAdmin.storage.from(BACKUP_BUCKET).download(archivo.backupPath);
+        if (error) archivosNoDisponibles++;
+      }
     } catch { jsonValido = false; }
   }
-
-  const { data: archivosCarpeta } = await supabaseAdmin.storage
-    .from(BUCKETS.BACKUPS)
-    .list(`${carpeta}/archivos`, { limit: 1000 });
 
   res.json({
     ok: true,
     data: {
       jsonValido,
+      integridadValida,
       registrosEnJson: registros,
-      archivosRespaldados: archivosCarpeta?.length ?? 0,
-      recuperable: jsonValido,
+      archivosRespaldados,
+      archivosFaltantes,
+      archivosNoDisponibles,
+      recuperable: jsonValido && integridadValida && archivosNoDisponibles === 0,
     },
   });
 });
@@ -100,7 +111,7 @@ router.post('/purgar-rotos', async (req, res) => {
   const backups = await prisma.backup.findMany({ where: { estado: 'COMPLETADO' } });
   let purgados = 0;
   for (const b of backups) {
-    const { error } = await supabaseAdmin.storage.from(BUCKETS.BACKUPS).download(b.rutaArchivo);
+    const { error } = await supabaseAdmin.storage.from(BACKUP_BUCKET).download(b.rutaArchivo);
     if (error) {
       await prisma.backup.delete({ where: { id: b.id } }).catch(() => {});
       purgados++;
@@ -109,6 +120,21 @@ router.post('/purgar-rotos', async (req, res) => {
   res.json({ ok: true, purgados, revisados: backups.length });
 });
 
+// Restaura por fusión: inserta únicamente datos faltantes, reactiva registros
+// eliminados lógicamente y nunca reemplaza datos ni archivos actuales.
+router.post(
+  '/:id/restaurar',
+  auditar({ modulo: 'BACKUPS', accion: AuditoriaAccion.ACTUALIZAR, getRecursoId: r => r.params.id }),
+  async (req, res) => {
+    if (req.body?.confirmacion !== 'RESTAURAR SIN BORRAR') throw new AppError('Confirmación de restauración inválida', 400);
+    const backup = await prisma.backup.findUnique({ where: { id: req.params.id }, include: { colegio: { select: { nombre: true } } } });
+    if (!backup) throw new AppError('Backup no encontrado', 404);
+    if (backup.estado !== BackupEstado.COMPLETADO) throw new AppError('Solo se puede restaurar un backup completado', 409);
+    const resultado = await restaurarBackupSeguro(backup.rutaArchivo, backup.colegioId);
+    res.json({ ok: true, message: `Restauración segura completada para ${backup.colegio.nombre}. No se eliminó ni sobrescribió información actual.`, data: resultado });
+  },
+);
+
 // ── DELETE /backups/:id ───────────────────────────────────────────────────────
 router.delete(
   '/:id',
@@ -116,7 +142,7 @@ router.delete(
   async (req, res) => {
     const backup = await prisma.backup.findUnique({ where: { id: req.params.id } });
     if (!backup) throw new AppError('Backup no encontrado', 404);
-    await supabaseAdmin.storage.from(BUCKETS.BACKUPS).remove([backup.rutaArchivo]).catch(() => {});
+    await supabaseAdmin.storage.from(BACKUP_BUCKET).remove([backup.rutaArchivo]).catch(() => {});
     await prisma.backup.delete({ where: { id: req.params.id } });
     res.json({ ok: true });
   },

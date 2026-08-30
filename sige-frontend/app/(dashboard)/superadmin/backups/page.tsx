@@ -23,8 +23,27 @@ export default function BackupsPage() {
 
   const dispararBackup = async () => {
     await save(async () => {
-      await api.post('/backups', colegioSel ? { colegioId: colegioSel } : {});
-      toast.success(colegioSel ? 'Backup del colegio generado' : 'Backup de todos los colegios activos generado');
+      const res = await api.post('/backups', colegioSel ? { colegioId: colegioSel } : {});
+      const resultado = res.data?.data;
+      if (resultado?.backups?.length) {
+        toast.success(`${resultado.backups.length} respaldo(s) generado(s) y verificado(s)`);
+      } else if (resultado?.bloqueados?.length) {
+        toast.error(`Protección activada: ${resultado.bloqueados.join(' · ')}`, { duration: 10000 });
+      } else if (resultado?.omitidos?.length) {
+        toast.success('No hubo cambios desde el último respaldo; no se consumió almacenamiento adicional.');
+      }
+      mutate();
+    });
+  };
+
+  const restaurar = async (id: string, colegio: string) => {
+    if (!confirm(`¿Restaurar los datos faltantes de ${colegio}?\n\nModo seguro: no borra ni reemplaza información actual; solo recupera registros/archivos ausentes y reactiva eliminados lógicamente.`)) return;
+    await save(async () => {
+      const res = await api.post(`/backups/${id}/restaurar`, { confirmacion: 'RESTAURAR SIN BORRAR' });
+      const r = res.data?.data;
+      const insertados = Object.values(r?.insertados ?? {}).reduce((n: number, v: any) => n + Number(v || 0), 0);
+      const reactivados = Object.values(r?.reactivados ?? {}).reduce((n: number, v: any) => n + Number(v || 0), 0);
+      toast.success(`Restauración segura: ${insertados} registros recuperados, ${reactivados} reactivados y ${r?.archivosRestaurados ?? 0} archivos restaurados.`, { duration: 9000 });
       mutate();
     });
   };
@@ -50,9 +69,10 @@ export default function BackupsPage() {
       const res = await api.get(`/backups/${id}/verificar`);
       const v = res.data?.data;
       if (v?.recuperable) {
-        toast.success(`✅ Verificado: JSON válido con ${v.registrosEnJson} registros · ${v.archivosRespaldados} carpeta(s) de archivos respaldados`, { duration: 8000 });
+        const aviso = v.archivosFaltantes ? ` · ${v.archivosFaltantes} referencia(s) ya no existían en Storage` : '';
+        toast.success(`Verificado: ${v.registrosEnJson} registros · ${v.archivosRespaldados} archivos vigentes${aviso}`, { duration: 8000 });
       } else {
-        toast.error('⚠️ Este backup no pasó la verificación — el JSON no es válido o no se pudo leer');
+        toast.error(`Este respaldo no es recuperable: ${v?.archivosNoDisponibles ?? 0} archivo(s) del espejo no están disponibles o falló la integridad del JSON.`);
       }
     } catch (err: any) {
       toast.error(err?.response?.data?.error ?? 'No se pudo verificar el backup');
@@ -83,10 +103,9 @@ export default function BackupsPage() {
 
       <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1.25rem', fontSize: '0.82rem', color: 'var(--accent)' }}>
         <i className="bi bi-shield-check me-2" />
-        Los respaldos incluyen todos los datos del colegio (estudiantes, padres, matrículas,
-        asistencias, pagos, comunicados, documentos, eventos, encuestas, horarios y usuarios)
-        junto con las URLs de sus archivos alojados en Supabase Storage. Se generan
-        automáticamente cada hora y se conservan las últimas 7 versiones por colegio.
+        Cada versión incluye todas las tablas y archivos deduplicados por contenido. Se conservan hasta 7 versiones,
+        no se repiten datos sin cambios y una caída anormal de registros bloquea la copia para proteger la última versión sana.
+        La restauración funciona por fusión: recupera lo faltante sin borrar ni sobrescribir información actual.
       </div>
 
       <div className="sige-card" style={{ marginBottom: '1.25rem' }}>
@@ -142,6 +161,11 @@ export default function BackupsPage() {
                             {b.error}
                           </div>
                         )}
+                        {b.estado === 'COMPLETADO' && b.error && (
+                          <div style={{ fontSize: '0.68rem', color: '#92400e', marginTop: 2, maxWidth: 260 }} title={b.error}>
+                            <i className="bi bi-exclamation-triangle me-1" />{b.error}
+                          </div>
+                        )}
                       </td>
                       <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(b.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
                       <td>
@@ -153,6 +177,9 @@ export default function BackupsPage() {
                               </button>
                               <button onClick={() => descargar(b.id, b.nombre)} className="btn-accent" style={{ fontSize: '0.75rem', padding: '3px 8px' }}>
                                 <i className="bi bi-download me-1" />Descargar
+                              </button>
+                              <button onClick={() => restaurar(b.id, b.colegio?.nombre ?? 'este colegio')} disabled={saving} style={{ background: '#ede9fe', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#5b21b6', fontSize: '0.75rem', fontWeight: 700 }}>
+                                <i className="bi bi-arrow-counterclockwise me-1" />Restaurar
                               </button>
                             </>
                           )}

@@ -1,19 +1,14 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ArrowRight, Books, ChartLineUp, Eye, EyeSlash, GraduationCap, LockKey, Moon, Sun, UsersThree } from '@phosphor-icons/react';
+import { ArrowRight, CheckCircle, EnvelopeSimple, Eye, EyeSlash, GraduationCap, LockKey, ShieldCheck } from '@phosphor-icons/react';
 import { AuthProvider, useAuth } from '../../../lib/auth';
-import { useTheme } from '../../../components/layout/ThemeProvider';
-
-const pilares = [
-  { icon: Books, label: 'Gestión académica' },
-  { icon: UsersThree, label: 'Comunidad conectada' },
-  { icon: ChartLineUp, label: 'Decisiones con información' },
-];
+import SigeOwlWave from '../../../components/brand/SigeOwlWave';
 
 function LoginForm() {
   const { login } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const reduceMotion = useReducedMotion();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +16,12 @@ function LoginForm() {
   const [showPass, setShowPass] = useState(false);
   const [formError, setFormError] = useState('');
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+  const [remember, setRemember] = useState(true);
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('sige-remember-email');
+    if (rememberedEmail) setEmail(rememberedEmail);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -37,60 +38,56 @@ function LoginForm() {
 
     setLoading(true);
     try {
+      if (remember) localStorage.setItem('sige-remember-email', normalizedEmail);
+      else localStorage.removeItem('sige-remember-email');
       await login(normalizedEmail, password);
-    } catch {
-      setFormError('No pudimos iniciar sesión. Revisa tus datos e inténtalo nuevamente.');
+    } catch (error: any) {
+      const noHayConexion = error?.code === 'ERR_NETWORK' || !error?.response;
+      setFormError(noHayConexion
+        ? 'No pudimos conectar con el servidor local. Verifica que el backend esté encendido en el puerto 4000.'
+        : error?.response?.data?.error ?? 'El correo o la contraseña no coinciden. Revisa los datos e inténtalo nuevamente.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="auth-shell" id="main-content">
-      <section className="auth-story" aria-label="Presentación de SIGE">
-        <div className="auth-story__glow" aria-hidden="true" />
-        <div className="auth-brand">
-          <span className="auth-brand__mark" aria-hidden="true"><GraduationCap weight="duotone" size={28} /></span>
-          <span className="auth-brand__name">SIGE</span>
+    <main className="auth-shell auth-shell--immersive" id="main-content">
+      <section className="auth-story auth-story--illustrated" aria-label="SIGE, tu colegio inteligente y conectado" />
+      <div className="auth-owl-scene" aria-hidden="true">
+        <div className="auth-scene-owl auth-scene-owl--studying">
+          <Image src="/brand/owl/studying.png" alt="" fill priority sizes="220px" />
         </div>
-        <div className="auth-story__content">
-          <h1>Toda la gestión escolar, en un solo lugar.</h1>
-          <p>Organiza el trabajo diario del colegio y mantén a cada familia cerca de lo que importa.</p>
+        <div className="auth-scene-owl auth-scene-owl--celebrating">
+          <Image src="/brand/owl/celebrating.png" alt="" fill priority sizes="220px" />
         </div>
-        <div className="auth-pillars" aria-label="Áreas principales del sistema">
-          {pilares.map(({ icon: Icon, label }) => (
-            <div className="auth-pillar" key={label}>
-              <Icon size={20} weight="duotone" aria-hidden="true" />
-              <span>{label}</span>
-            </div>
-          ))}
+        <div className="auth-scene-owl auth-scene-owl--thinking">
+          <Image src="/brand/owl/thinking.png" alt="" fill sizes="190px" />
         </div>
-      </section>
+        <SigeOwlWave className="auth-scene-owl auth-scene-owl--welcome" />
+      </div>
 
       <section className="auth-access">
-        <button type="button" className="auth-theme-toggle" onClick={toggleTheme}
-          aria-label={theme === 'dark' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro'}
-          title={theme === 'dark' ? 'Tema claro' : 'Tema oscuro'}>
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-        </button>
-
         <motion.div className="auth-form-wrap"
-          initial={reduceMotion ? false : { opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}>
+          initial={reduceMotion ? false : { opacity: 0.25, scale: 0.975, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+          transition={{ duration: 0.58, ease: [0.16, 1, 0.3, 1] }}>
           <div className="auth-mobile-brand">
             <span className="auth-brand__mark" aria-hidden="true"><GraduationCap weight="duotone" size={25} /></span>
             <span className="auth-brand__name">SIGE</span>
           </div>
-          <header className="auth-form-heading">
-            <h2>Bienvenido de nuevo</h2>
-            <p>Accede con tus credenciales institucionales.</p>
-          </header>
+          <div className="auth-form-panel">
+            <header className="auth-form-heading">
+              <span className="auth-form-mark" aria-hidden="true"><GraduationCap size={32} weight="fill" /></span>
+              <h2>Bienvenido a <strong>SIGE</strong></h2>
+              <p>Accede con tus credenciales institucionales</p>
+            </header>
 
-          <form onSubmit={handleSubmit} className="auth-form" noValidate>
+            <form onSubmit={handleSubmit} className="auth-form" noValidate>
             <div className="auth-field">
               <label htmlFor="login-email">Correo electrónico</label>
               <div className="auth-input-wrap">
-                <span className="auth-input-icon" aria-hidden="true"><UsersThree size={19} /></span>
+                <span className="auth-input-icon" aria-hidden="true"><EnvelopeSimple size={19} /></span>
                 <input id="login-email" type="email" value={email} onChange={event => {
                   setEmail(event.target.value);
                   if (fieldErrors.email) setFieldErrors(current => ({ ...current, email: undefined }));
@@ -121,12 +118,22 @@ function LoginForm() {
             <div className="auth-form-status" aria-live="polite">
               {formError && <p id="login-form-error" className="auth-form-error">{formError}</p>}
             </div>
-            <button type="submit" disabled={loading} className="auth-submit">
-              <span>{loading ? 'Verificando acceso...' : 'Ingresar al sistema'}</span>
-              {!loading && <ArrowRight size={20} weight="bold" aria-hidden="true" />}
-            </button>
-          </form>
-          <p className="auth-support">Si tienes problemas para ingresar, comunícate con la administración de tu colegio.</p>
+            <label className="auth-remember">
+              <input type="checkbox" checked={remember} onChange={event => setRemember(event.target.checked)} />
+              <span>Recordar mi correo en este equipo</span>
+            </label>
+              <button type="submit" disabled={loading} className="auth-submit">
+                <span>{loading ? 'Verificando acceso...' : 'Ingresar al sistema'}</span>
+                {!loading && <ArrowRight size={20} weight="bold" aria-hidden="true" />}
+              </button>
+            </form>
+            <Link className="auth-recovery" href="/auth/recuperacion-x7k9">¿Olvidaste tu contraseña?</Link>
+            <div className="auth-security">
+              <ShieldCheck size={32} weight="duotone" aria-hidden="true" />
+              <span><strong>Acceso seguro y protegido</strong><small>Tus datos están protegidos con encriptación de nivel institucional.</small></span>
+              <CheckCircle size={22} weight="fill" aria-hidden="true" />
+            </div>
+          </div>
         </motion.div>
 
         <footer className="auth-footer">SIGE © {new Date().getFullYear()}. Sistema Integral de Gestión Escolar</footer>

@@ -10,7 +10,7 @@ import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, RolNombre } from '@prisma/client';
 import { supabaseAdmin } from '../config/supabase';
-import { uploadFile } from '../services/storageService';
+import { uploadFile, deleteFile, storagePathFromStoredUrl } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 
 const router = Router();
@@ -215,9 +215,18 @@ router.post('/:id/avatar', upload.single('avatar'), async (req, res) => {
   if (user.id !== req.params.id && !([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR] as string[]).includes(user.rol))
     throw new AppError('Sin permisos', 403);
   if (!req.file) throw new AppError('Archivo requerido', 400);
+  const anterior = await prisma.usuario.findUnique({ where: { id: req.params.id }, select: { avatarUrl: true } });
+  if (!anterior) throw new AppError('Usuario no encontrado', 404);
   const colegioId = req.colegioId ?? user.colegioId ?? 'global';
   const result = await uploadFile(BUCKETS.AVATARES, req.file.buffer, req.file.originalname, req.file.mimetype, colegioId);
-  await prisma.usuario.update({ where: { id: req.params.id }, data: { avatarUrl: result.url } });
+  try {
+    await prisma.usuario.update({ where: { id: req.params.id }, data: { avatarUrl: result.url } });
+  } catch (error) {
+    await deleteFile(BUCKETS.AVATARES, result.path);
+    throw error;
+  }
+  const pathAnterior = anterior.avatarUrl ? storagePathFromStoredUrl(BUCKETS.AVATARES, anterior.avatarUrl) : null;
+  if (pathAnterior && pathAnterior !== result.path) await deleteFile(BUCKETS.AVATARES, pathAnterior);
   res.json({ ok: true, avatarUrl: result.url });
 });
 

@@ -6,6 +6,7 @@ import { AuthProvider, useAuth } from '../../lib/auth';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import ChatbotWidget from '../chatbot/ChatbotWidget';
+import SigeOwl from '../brand/SigeOwl';
 
 interface Props {
   children: React.ReactNode;
@@ -29,12 +30,12 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
   }, [user, loading, allowedRoles, router]);
 
   if (loading) return (
-    <div style={{ height:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg-secondary)' }}>
-      <div style={{ textAlign:'center' }}>
-        <div style={{ width:40, height:40, borderRadius:'50%', border:'3px solid var(--accent)', borderTopColor:'transparent', animation:'spin 0.7s linear infinite', margin:'0 auto 12px' }} />
-        <div style={{ color:'var(--text-muted)', fontSize:'0.875rem' }}>Cargando sistema...</div>
+    <div className="sige-loading-state">
+      <div className="sige-loading-state__content">
+        <SigeOwl mood="thinking" size="md" label="Búho SIGE preparando el sistema" />
+        <strong>Preparando tu espacio</strong>
+        <span style={{ color:'var(--text-muted)', fontSize:'0.82rem' }}>Organizando la información de tu rol…</span>
       </div>
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 

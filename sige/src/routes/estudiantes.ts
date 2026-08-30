@@ -8,7 +8,7 @@ import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, EstudianteEstado, RolNombre, Prisma } from '@prisma/client';
-import { uploadFile, BUCKETS } from '../services/storageService';
+import { uploadFile, deleteFile, storagePathFromStoredUrl, BUCKETS } from '../services/storageService';
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 3 * 1024 * 1024 } });
 
@@ -258,7 +258,14 @@ router.post('/:id/foto', upload.single('foto'), async (req, res) => {
   if (!estudiante) throw new AppError('Estudiante no encontrado', 404);
 
   const result = await uploadFile(BUCKETS.AVATARES, req.file.buffer, req.file.originalname, req.file.mimetype, `estudiantes/${estudiante.id}`);
-  await prisma.estudiante.update({ where: { id: estudiante.id }, data: { fotoUrl: result.url } });
+  try {
+    await prisma.estudiante.update({ where: { id: estudiante.id }, data: { fotoUrl: result.url } });
+  } catch (error) {
+    await deleteFile(BUCKETS.AVATARES, result.path);
+    throw error;
+  }
+  const pathAnterior = estudiante.fotoUrl ? storagePathFromStoredUrl(BUCKETS.AVATARES, estudiante.fotoUrl) : null;
+  if (pathAnterior && pathAnterior !== result.path) await deleteFile(BUCKETS.AVATARES, pathAnterior);
   res.json({ ok: true, fotoUrl: result.url });
 });
 

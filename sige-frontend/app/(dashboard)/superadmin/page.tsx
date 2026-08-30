@@ -10,7 +10,7 @@ const COLORS = ['#4f46e5','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#06
 
 function KpiCard({ label, value, icon, color, bg, href, sub }: any) {
   const content = (
-    <motion.div className="kpi-card" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+    <motion.div className="kpi-card executive-kpi" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
       style={{ cursor: href ? 'pointer' : 'default' }} whileHover={href ? { y: -2 } : {}}>
       <div className="kpi-icon" style={{ background: bg, color }}><i className={`bi ${icon}`} /></div>
       <div>
@@ -57,10 +57,24 @@ export default function SuperadminDashboard() {
 
   const totalAlertas = (d?.alertas?.colegiosVencidos?.length ?? 0) + (d?.alertas?.colegiosPorVencer?.length ?? 0)
     + (d?.alertas?.pagosPendientesRevision ?? 0) + (d?.alertas?.backupsFallidos24h ?? 0);
+  const salud = totalAlertas === 0 ? 'Operación saludable' : totalAlertas <= 3 ? 'Atención preventiva' : 'Requiere intervención';
+  const saludClase = totalAlertas === 0 ? 'healthy' : totalAlertas <= 3 ? 'warning' : 'critical';
 
   return (
     <DashboardLayout title="Panel Superadministrador" allowedRoles={['SUPERADMIN']}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(180px,1fr))', gap: '0.875rem', marginBottom: '1.5rem' }}>
+      <motion.section className="executive-hero" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+        <div>
+          <span className="executive-eyebrow"><i className="bi bi-stars" /> Centro de comando SIGE</span>
+          <h1>Vista ejecutiva de la plataforma</h1>
+          <p>Ingresos, adopción, continuidad y riesgos operativos en una sola lectura.</p>
+        </div>
+        <div className="executive-hero-actions">
+          <div className={`platform-health ${saludClase}`}><span />{salud}<strong>{totalAlertas} alertas</strong></div>
+          <Link href="/superadmin/monitoreo" className="executive-action">Ver monitoreo <i className="bi bi-arrow-up-right" /></Link>
+        </div>
+      </motion.section>
+
+      <div className="executive-kpi-grid">
         {kpis.map((k) => <KpiCard key={k.label} {...k} />)}
       </div>
 
@@ -102,14 +116,14 @@ export default function SuperadminDashboard() {
         </motion.div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
-        <div className="sige-card">
+      <div className="executive-chart-grid">
+        <div className="sige-card executive-chart-card">
           <h3 style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '1rem', color: 'var(--text-primary)' }}><i className="bi bi-building me-2" />Colegios por estado</h3>
           {barEstado.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Sin colegios</div>
           ) : (
             <>
-              <ResponsiveContainer width="100%" height={160}>
+              <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={barEstado} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
@@ -130,13 +144,13 @@ export default function SuperadminDashboard() {
           )}
         </div>
 
-        <div className="sige-card">
+        <div className="sige-card executive-chart-card">
           <h3 style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '1rem', color: 'var(--text-primary)' }}><i className="bi bi-people me-2" />Usuarios por rol</h3>
           {pieRoles.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Sin datos</div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <ResponsiveContainer width="50%" height={160}>
+              <ResponsiveContainer width="50%" height={220}>
                 <PieChart>
                   <Pie data={pieRoles} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
                     {pieRoles.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
@@ -157,13 +171,13 @@ export default function SuperadminDashboard() {
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
-        <div className="sige-card">
+      <div className="executive-chart-grid">
+        <div className="sige-card executive-chart-card">
           <h3 style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '1rem', color: 'var(--text-primary)' }}><i className="bi bi-graph-up me-2" />Crecimiento — Matrículas últimos meses</h3>
           {lineMatriculas.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Sin matrículas registradas</div>
           ) : (
-            <ResponsiveContainer width="100%" height={160}>
+            <ResponsiveContainer width="100%" height={220}>
               <LineChart data={lineMatriculas} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                 <XAxis dataKey="mes" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />
@@ -175,12 +189,12 @@ export default function SuperadminDashboard() {
           )}
         </div>
 
-        <div className="sige-card">
+        <div className="sige-card executive-chart-card">
           <h3 style={{ fontWeight: 700, fontSize: '0.875rem', marginBottom: '1rem', color: 'var(--text-primary)' }}><i className="bi bi-cash-coin me-2" />Ingresos por suscripción — últimos 12 meses</h3>
           {lineIngresos.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Sin pagos de suscripción aprobados todavía</div>
           ) : (
-            <ResponsiveContainer width="100%" height={160}>
+            <ResponsiveContainer width="100%" height={220}>
               <LineChart data={lineIngresos} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
                 <XAxis dataKey="mes" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} />

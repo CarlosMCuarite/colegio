@@ -6,6 +6,7 @@ import { useAuth } from '../../lib/auth';
 import { useTheme } from './ThemeProvider';
 import { useData } from '../../hooks/useApi';
 import clsx from 'clsx';
+import SigeOwl from '../brand/SigeOwl';
 
 interface NavItem { href: string; icon: string; label: string; }
 interface NavSection { label: string; items: NavItem[]; }
@@ -237,9 +238,7 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
             {user.colegio?.logoUrl ? (
               <img src={user.colegio.logoUrl} alt="logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
             ) : (
-              <div style={{ width: 36, height: 36, borderRadius: 8, background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <i className="bi bi-mortarboard" style={{ color: '#fff', fontSize: '1.1rem' }} />
-              </div>
+              <SigeOwl mood="proud" size="sm" className="sidebar-owl" label="Búho azul de SIGE" />
             )}
             <div style={{ minWidth: 0 }}>
               <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
