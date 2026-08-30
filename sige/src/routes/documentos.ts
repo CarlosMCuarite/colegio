@@ -178,14 +178,18 @@ router.post(
     await prisma.documento.update({
       where: { id: req.params.id },
       data: {
-        archivoUrl:      result.url,
+        archivoUrl:      result.path,
         archivoNombre:   result.nombre,
         archivoTamanoKB: result.tamañoKB,
         estado:          DocumentoEstado.LISTO,
         procesadoPorId:  req.user!.id,
       },
     });
-    res.json({ ok: true, archivoUrl: await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, result.url) });
+    if (doc.archivoUrl) {
+      const anterior = storagePathFromStoredUrl(BUCKETS.DOCUMENTOS, doc.archivoUrl);
+      if (anterior && anterior !== result.path) await deleteFile(BUCKETS.DOCUMENTOS, anterior);
+    }
+    res.json({ ok: true, archivoUrl: await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, result.path) });
   },
 );
 

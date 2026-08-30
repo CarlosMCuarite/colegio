@@ -12,7 +12,7 @@ import { resolveTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, RolNombre, PagoEstado, Prisma } from '@prisma/client';
-import { uploadFile, getSignedUrl, BUCKETS } from '../services/storageService';
+import { uploadFile, getSignedUrlFromStoredValue, BUCKETS } from '../services/storageService';
 
 const router = Router();
 router.use(authenticate, resolveTenant);
@@ -95,7 +95,7 @@ router.get('/:id/voucher-url', async (req, res) => {
   if (req.user!.rol !== RolNombre.SUPERADMIN) where.colegioId = req.colegioId!;
   const pago = await prisma.pagoLicencia.findFirst({ where });
   if (!pago?.voucherUrl) throw new AppError('Este pago no tiene voucher adjunto', 404);
-  const url = await getSignedUrl(BUCKETS.VOUCHERS, pago.voucherUrl, 300);
+  const url = await getSignedUrlFromStoredValue(BUCKETS.VOUCHERS, pago.voucherUrl, 300);
   res.json({ ok: true, data: { url } });
 });
 

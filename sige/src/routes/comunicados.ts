@@ -8,7 +8,7 @@ import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, NivelEducativo, RolNombre, Prisma } from '@prisma/client';
-import { uploadFile, getSignedUrlFromStoredValue } from '../services/storageService';
+import { uploadFile, getSignedUrlFromStoredValue, storagePathFromStoredUrl, deleteFile } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 import { enviarNotificacion } from '../services/notificacionService';
 
@@ -124,7 +124,7 @@ router.post(
 
     if (req.file) {
       const r = await uploadFile(BUCKETS.DOCUMENTOS, req.file.buffer, req.file.originalname, req.file.mimetype, `${req.colegioId}/comunicados`);
-      adjuntoUrl    = r.url;
+      adjuntoUrl    = r.path;
       adjuntoNombre = r.nombre;
     }
 
@@ -167,14 +167,23 @@ router.patch(
 
     let adjuntoUrl    = existente.adjuntoUrl;
     let adjuntoNombre = existente.adjuntoNombre;
+    let adjuntoAnteriorAEliminar: string | null = null;
 
     if (req.file) {
       // Se subió un archivo nuevo: reemplaza al anterior.
       const r = await uploadFile(BUCKETS.DOCUMENTOS, req.file.buffer, req.file.originalname, req.file.mimetype, `${req.colegioId}/comunicados`);
-      adjuntoUrl    = r.url;
+      adjuntoUrl    = r.path;
       adjuntoNombre = r.nombre;
+      if (existente.adjuntoUrl) {
+        const anterior = storagePathFromStoredUrl(BUCKETS.DOCUMENTOS, existente.adjuntoUrl);
+        if (anterior && anterior !== r.path) adjuntoAnteriorAEliminar = anterior;
+      }
     } else if (eliminarAdjunto === 'true' || eliminarAdjunto === true) {
       // El usuario pidió quitar el adjunto sin reemplazarlo.
+      if (existente.adjuntoUrl) {
+        const anterior = storagePathFromStoredUrl(BUCKETS.DOCUMENTOS, existente.adjuntoUrl);
+        if (anterior) adjuntoAnteriorAEliminar = anterior;
+      }
       adjuntoUrl    = null;
       adjuntoNombre = null;
     }
@@ -192,6 +201,7 @@ router.patch(
         venceEn: data.venceEn ?? undefined,
       },
     });
+    if (adjuntoAnteriorAEliminar) await deleteFile(BUCKETS.DOCUMENTOS, adjuntoAnteriorAEliminar);
     res.json({ ok: true });
   },
 );

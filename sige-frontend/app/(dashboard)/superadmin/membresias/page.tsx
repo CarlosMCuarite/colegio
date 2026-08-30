@@ -110,7 +110,7 @@ export default function MembresiasPage() {
       )}
 
       <div className="plans-heading">
-        <div><span className="enterprise-eyebrow">Catálogo comercial</span><h3>Planes del sistema</h3></div>
+        <div><h3>Planes del sistema</h3><p>Compara capacidad, cobertura y adopción antes de editar.</p></div>
         <div className="plans-summary"><strong>{planes.filter((p: any) => p.activo).length}</strong> activos <span>·</span> {planes.length} en total</div>
       </div>
 
@@ -124,39 +124,32 @@ export default function MembresiasPage() {
             const badge = badgeFor(plan.nombre);
             return (
               <motion.div key={plan.id} className="sige-card plan-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.875rem' }}>
-                  <div>
-                    <h4 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, marginBottom: 4 }}>{plan.nombre}</h4>
-                    <span style={{ fontSize: '0.72rem', background: plan.activo ? '#d1fae5' : '#fee2e2', color: plan.activo ? '#065f46' : '#991b1b', padding: '1px 8px', borderRadius: 99, fontWeight: 600 }}>
-                      {plan.activo ? '● Activo' : '○ Inactivo'}
-                    </span>
+                <div className="plan-card-top">
+                  <div className="plan-identity">
+                    <span className="plan-mark"><i className="bi bi-layers" /></span>
+                    <div><h4>{plan.nombre}</h4><span className={plan.activo ? 'plan-status is-active' : 'plan-status'}>{plan.activo ? 'Activo' : 'Inactivo'}</span></div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent)' }}>S/ {Number(plan.precio).toFixed(0)}</div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>cada {plan.duracionDias} días</div>
-                  </div>
+                  <div className="plan-price"><strong><small>S/</small>{Number(plan.precio).toFixed(0)}</strong><span>por {plan.duracionDias} días</span></div>
                 </div>
                 <p className="plan-description">{plan.descripcion || 'Plan configurable para la operación institucional.'}</p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 8 }}>
+                <div className="plan-client-line"><i className="bi bi-buildings" /><strong>{plan._count?.colegios ?? 0}</strong> colegio{plan._count?.colegios === 1 ? '' : 's'} vinculado{plan._count?.colegios === 1 ? '' : 's'}</div>
+                <div className="plan-capacity-grid">
                   {[
                     { icon: 'bi-person-badge', label: 'Estudiantes', value: plan.maxEstudiantes.toLocaleString() },
                     { icon: 'bi-people', label: 'Usuarios', value: plan.maxUsuarios.toLocaleString() },
-                    { icon: 'bi-hdd', label: 'Almacenamiento', value: `${plan.maxAlmacenamientoGB} GB` },
+                    { icon: 'bi-cloud', label: 'Storage', value: `${plan.maxAlmacenamientoGB} GB` },
                   ].map(item => (
-                    <div key={item.label} style={{ display: 'flex', gap: '0.5rem', fontSize: '0.8rem', alignItems: 'center' }}>
-                      <i className={`bi ${item.icon}`} style={{ color: 'var(--accent)', width: 16 }} />
-                      <span style={{ flex: 1 }}>{item.label}</span><strong>{item.value}</strong>
-                    </div>
+                    <div key={item.label}><i className={`bi ${item.icon}`} /><strong>{item.value}</strong><span>{item.label}</span></div>
                   ))}
                 </div>
+                <div className="plan-coverage">
+                  <span><i className="bi bi-grid" />{(plan.modulosActivos ?? []).includes('ALL') ? 'Todos los módulos' : `${(plan.modulosActivos ?? []).length} módulos`}</span>
+                  <span><i className="bi bi-person-lock" />{(plan.rolesHabilitados ?? []).length} roles opcionales</span>
+                </div>
                 {(plan.rolesHabilitados ?? []).length > 0 && (
-                  <div style={{ marginBottom: '0.875rem' }}>
-                    <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: 4 }}>ROLES INCLUIDOS</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                      {plan.rolesHabilitados.map((r: string) => (
-                        <span key={r} style={{ fontSize: '0.65rem', background: badge.bg, color: badge.text, padding: '1px 7px', borderRadius: 99, fontWeight: 600 }}>{r}</span>
-                      ))}
-                    </div>
+                  <div className="plan-role-list">
+                    {plan.rolesHabilitados.slice(0, 4).map((r: string) => <span key={r} style={{ background: badge.bg, color: badge.text }}>{r}</span>)}
+                    {plan.rolesHabilitados.length > 4 && <span>+{plan.rolesHabilitados.length - 4}</span>}
                   </div>
                 )}
                 <div className="plan-actions">

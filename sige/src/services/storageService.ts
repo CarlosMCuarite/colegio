@@ -27,7 +27,22 @@ interface UploadResult {
  * comprobantes de pago con solo adivinar la URL.
  */
 export async function getSignedUrl(bucket: Bucket, storagePath: string, expiresInSeconds = 300): Promise<string> {
-  const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(storagePath, expiresInSeconds);
+  // Acepta tanto paths nuevos como URLs públicas/firmadas guardadas por
+  // versiones anteriores. Firmar una URL completa produce un enlace válido
+  // sintácticamente, pero Supabase responde "Object not found" al abrirlo.
+  const normalizedPath = storagePathFromStoredUrl(bucket, storagePath);
+  if (!normalizedPath) throw new AppError('La ruta del archivo guardado es inválida', 422);
+
+  const parts = normalizedPath.split('/');
+  const fileName = parts.pop()!;
+  const directory = parts.join('/');
+  const { data: objects, error: listError } = await supabaseAdmin.storage.from(bucket).list(directory, { search: fileName, limit: 100 });
+  if (listError) throw new AppError(`No se pudo verificar el archivo: ${listError.message}`, 500);
+  if (!(objects ?? []).some(item => item.name === fileName)) {
+    throw new AppError('El archivo ya no existe en el almacenamiento. Vuelve a adjuntarlo para continuar.', 404);
+  }
+
+  const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(normalizedPath, expiresInSeconds);
   if (error || !data?.signedUrl) {
     throw new AppError(`No se pudo generar el enlace del archivo: ${error?.message ?? 'desconocido'}`, 500);
   }
@@ -151,9 +166,7 @@ export function storagePathFromStoredUrl(bucket: Bucket, storedValue: string): s
 
 /** Convierte el valor persistido en una URL temporal apta para buckets privados. */
 export async function getSignedUrlFromStoredValue(bucket: Bucket, storedValue: string, expiresInSeconds = 300): Promise<string> {
-  const storagePath = storagePathFromStoredUrl(bucket, storedValue);
-  if (!storagePath) throw new AppError('Ruta de archivo inválida', 500);
-  return getSignedUrl(bucket, storagePath, expiresInSeconds);
+  return getSignedUrl(bucket, storedValue, expiresInSeconds);
 }
 
 /** Verifica que todos los buckets requeridos existan (para diagnóstico al iniciar) */

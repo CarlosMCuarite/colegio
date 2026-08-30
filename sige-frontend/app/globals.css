@@ -966,14 +966,25 @@ a, button, input, select, textarea { accent-color: var(--accent); }
 .billing-metric small{color:var(--text-secondary);font-size:.75rem}
 .billing-filters{display:flex;gap:.5rem;margin-bottom:1rem;overflow-x:auto;padding-bottom:2px}
 .plans-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:1rem;margin-bottom:1rem}
-.plans-heading h3{font-size:1.05rem;margin:.15rem 0 0}
+.plans-heading h3{font-size:1.08rem;margin:0}.plans-heading p{font-size:.78rem;color:var(--text-muted);margin:.2rem 0 0}
 .plans-summary{font-size:.78rem;color:var(--text-muted)}
 .plans-summary strong{color:var(--accent);font-size:1.05rem}.plans-summary span{margin-inline:.35rem}
 .plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr));grid-auto-rows:1fr;gap:1rem}
-.plan-card{display:flex;flex-direction:column;height:100%;padding:1.25rem}
-.plan-description{font-size:.78rem;line-height:1.55;color:var(--text-muted);margin:0 0 .875rem;min-height:2.45em}
+.plan-card{display:flex;flex-direction:column;height:100%;padding:1.35rem;transition:transform .2s ease,box-shadow .2s ease}
+.plan-card:hover{transform:translateY(-2px);box-shadow:0 1px 2px rgba(15,23,42,.04),0 14px 32px rgba(37,99,235,.08)}
+.plan-card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:1rem}
+.plan-identity{display:flex;align-items:center;gap:.7rem;min-width:0}.plan-identity h4{font-size:1rem;font-weight:800;line-height:1.25;margin:0 0 .25rem;overflow-wrap:anywhere}
+.plan-mark{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;flex:0 0 auto;color:var(--accent);background:var(--accent-soft);font-size:1.05rem}
+.plan-status{display:inline-flex;align-items:center;gap:.3rem;font-size:.68rem;font-weight:750;color:#991b1b}.plan-status::before{content:"";width:6px;height:6px;border-radius:50%;background:#ef4444}.plan-status.is-active{color:#047857}.plan-status.is-active::before{background:#10b981}
+.plan-price{text-align:right;flex:0 0 auto}.plan-price strong{display:block;color:var(--text-primary);font-size:1.65rem;line-height:1;font-weight:800;letter-spacing:-.035em}.plan-price strong small{font-size:.7rem;margin-right:.2rem;color:var(--text-muted);letter-spacing:0}.plan-price span{display:block;font-size:.68rem;color:var(--text-muted);margin-top:.25rem}
+.plan-description{font-size:.78rem;line-height:1.55;color:var(--text-muted);margin:0 0 .8rem;min-height:2.45em}
+.plan-client-line{display:flex;align-items:center;gap:.4rem;color:var(--text-secondary);font-size:.75rem;padding:.55rem .65rem;margin-bottom:.8rem;background:var(--bg-secondary);border-radius:10px}.plan-client-line i{color:var(--accent)}.plan-client-line strong{color:var(--text-primary)}
+.plan-capacity-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.45rem;margin-bottom:.8rem}.plan-capacity-grid>div{min-width:0;padding:.7rem .45rem;border:1px solid var(--border-color);border-radius:10px;text-align:center}.plan-capacity-grid i{display:block;color:var(--accent);font-size:.9rem;margin-bottom:.3rem}.plan-capacity-grid strong{display:block;font-size:.82rem;color:var(--text-primary);overflow-wrap:anywhere}.plan-capacity-grid span{display:block;font-size:.61rem;color:var(--text-muted);margin-top:.15rem}
+.plan-coverage{display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.65rem}.plan-coverage span{display:flex;align-items:center;gap:.35rem;font-size:.68rem;color:var(--text-secondary)}.plan-coverage i{color:var(--accent)}
+.plan-role-list{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.85rem}.plan-role-list span{font-size:.62rem;font-weight:700;padding:.16rem .48rem;border-radius:999px}
 .plan-actions{display:flex;gap:.5rem;margin-top:auto;padding-top:.25rem}
-@media(max-width:760px){.billing-metrics{grid-template-columns:1fr}.billing-metric{min-height:84px}.plans-heading{align-items:flex-start;flex-direction:column}.billing-config-card [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important}}
+@media(max-width:760px){.billing-metrics{grid-template-columns:1fr}.billing-metric{min-height:84px}.plans-heading{align-items:flex-start;flex-direction:column}.billing-config-card [style*="grid-template-columns: 1fr 1fr"]{grid-template-columns:1fr!important}.plan-actions{flex-wrap:wrap}.plan-actions .btn-accent{flex-basis:100%!important}}
+@media(prefers-reduced-motion:reduce){.plan-card{transition:none}.plan-card:hover{transform:none}}
 @media(max-width:1000px){.enterprise-config-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}@media(max-width:650px){.enterprise-config-hero,.enterprise-section-title{align-items:flex-start;flex-direction:column}.enterprise-config-status{width:100%}.enterprise-config-grid{grid-template-columns:1fr}}
 
 /* Login inmersivo: la ilustración ocupa el lienzo completo y el formulario

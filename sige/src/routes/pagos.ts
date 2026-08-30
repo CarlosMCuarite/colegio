@@ -8,7 +8,7 @@ import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, PagoEstado, PagoTipo, RolNombre, Prisma } from '@prisma/client';
-import { uploadFile, getSignedUrl, BUCKETS } from '../services/storageService';
+import { uploadFile, getSignedUrlFromStoredValue, deleteFile, storagePathFromStoredUrl, BUCKETS } from '../services/storageService';
 import { enviarNotificacion } from '../services/notificacionService';
 
 const router = Router();
@@ -290,6 +290,11 @@ router.patch(
 
     const result = await uploadFile(BUCKETS.VOUCHERS, req.file.buffer, req.file.originalname, req.file.mimetype, `${req.colegioId}/${pago.padreId}`);
 
+    if (pago.voucherUrl) {
+      const anterior = storagePathFromStoredUrl(BUCKETS.VOUCHERS, pago.voucherUrl);
+      if (anterior && anterior !== result.path) await deleteFile(BUCKETS.VOUCHERS, anterior);
+    }
+
     const updated = await prisma.pago.update({
       where: { id: pago.id },
       data: {
@@ -349,13 +354,7 @@ router.get('/:id/voucher-url', async (req, res) => {
   }
   const pago = await prisma.pago.findFirst({ where });
   if (!pago?.voucherUrl) throw new AppError('Este pago no tiene voucher adjunto', 404);
-  // Compatibilidad con registros viejos que guardaron la URL pública completa
-  // (rota, de antes de este fix) en vez del path relativo.
-  const marcador = `/${BUCKETS.VOUCHERS}/`;
-  const rutaGuardada = pago.voucherUrl.includes(marcador)
-    ? pago.voucherUrl.slice(pago.voucherUrl.indexOf(marcador) + marcador.length)
-    : pago.voucherUrl;
-  const url = await getSignedUrl(BUCKETS.VOUCHERS, rutaGuardada, 300);
+  const url = await getSignedUrlFromStoredValue(BUCKETS.VOUCHERS, pago.voucherUrl, 300);
   res.json({ ok: true, data: { url } });
 });
 

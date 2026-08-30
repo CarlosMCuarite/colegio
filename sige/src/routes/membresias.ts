@@ -26,7 +26,10 @@ const planSchema = z.object({
 
 // ── PLANES ────────────────────────────────────────────────────────────────────
 router.get('/planes', async (_req, res) => {
-  const planes = await prisma.plan.findMany({ orderBy: { precio: 'asc' } });
+  const planes = await prisma.plan.findMany({
+    orderBy: { precio: 'asc' },
+    include: { _count: { select: { colegios: true } } },
+  });
   res.json({ ok: true, data: planes });
 });
 
