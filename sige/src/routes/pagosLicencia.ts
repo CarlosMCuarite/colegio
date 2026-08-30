@@ -39,17 +39,26 @@ router.get('/', async (req, res) => {
   } else {
     throw new AppError('Sin acceso', 403);
   }
+  const resumenWhere = { ...where };
   if (estado) where.estado = estado as PagoEstado;
 
-  const [total, pagos] = await Promise.all([
+  const [total, pagos, resumen] = await Promise.all([
     prisma.pagoLicencia.count({ where }),
     prisma.pagoLicencia.findMany({
       where, skip: (parseInt(page) - 1) * parseInt(limit), take: parseInt(limit),
       orderBy: { createdAt: 'desc' },
       include: { colegio: { select: { nombre: true, slug: true } }, aprobadoPor: { select: { nombres: true, apellidos: true } } },
     }),
+    prisma.pagoLicencia.groupBy({ by: ['estado'], where: resumenWhere, _count: true, _sum: { monto: true } }),
   ]);
-  res.json({ ok: true, data: pagos, meta: { total } });
+  res.json({
+    ok: true,
+    data: pagos,
+    meta: {
+      total,
+      resumen: resumen.map(item => ({ estado: item.estado, cantidad: item._count, monto: item._sum.monto ?? 0 })),
+    },
+  });
 });
 
 // ── POST /pagos-licencia — admin de colegio sube su voucher de suscripción ───

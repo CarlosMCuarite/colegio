@@ -14,6 +14,7 @@ import { rateLimiter } from './middleware/rateLimiter';
 import { logger } from './utils/logger';
 import { initFirebase } from './config/firebase';
 import { initBackupCron } from './services/backupService';
+import { initAuditoriaRetention } from './services/auditoriaRetentionService';
 import { verificarBuckets } from './services/storageService';
 
 // Rutas
@@ -141,6 +142,7 @@ async function main() {
       );
     }
     initBackupCron();
+    initAuditoriaRetention();
     app.listen(PORT, () => {
       logger.info(`🚀 SIGE Backend corriendo en puerto ${PORT} [${process.env.NODE_ENV}]`);
     });

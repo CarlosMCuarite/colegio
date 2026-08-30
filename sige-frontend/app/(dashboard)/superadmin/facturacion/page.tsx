@@ -19,14 +19,16 @@ const ESTADO_CONF: Record<string, any> = {
 export default function FacturacionSuperadminPage() {
   const [tab, setTab] = useState<'pagos' | 'config'>('pagos');
   const [estadoFiltro, setEstadoFiltro] = useState('');
-  const { data, mutate } = usePagosLicencia(`estado=${estadoFiltro}`);
+  const { data, mutate } = usePagosLicencia(`estado=${estadoFiltro}&limit=100`);
   const { data: configData, mutate: mutateConfig } = useConfigPlataforma();
   const { loading, mutate: act } = useMutation();
   const [voucherUrl, setVoucherUrl] = useState<string | null>(null);
   const [motivoRechazo, setMotivoRechazo] = useState<{ id: string; motivo: string } | null>(null);
 
   const pagos = (data as any)?.data ?? [];
+  const resumen = (data as any)?.meta?.resumen ?? [];
   const config = (configData as any)?.data ?? {};
+  const metrica = (estado: string) => resumen.find((item: any) => item.estado === estado) ?? { cantidad: 0, monto: 0 };
 
   const [form, setForm] = useState<any>(null);
   // BUG REAL: antes el efecto disparaba sobre `config` (que ya venía con un
@@ -88,7 +90,8 @@ export default function FacturacionSuperadminPage() {
 
   return (
     <DashboardLayout title="Facturación / Pagos del SaaS" allowedRoles={['SUPERADMIN']}>
-      <div className="sige-card" style={{ display: 'flex', padding: 6, marginBottom: '1.25rem', gap: 4, maxWidth: 420 }}>
+      <div className="billing-shell">
+      <div className="sige-card billing-tabs">
         {[{ id: 'pagos', label: 'Pagos de colegios', icon: 'bi-receipt' }, { id: 'config', label: 'Datos de cobro', icon: 'bi-qr-code' }].map(t => (
           <button key={t.id} onClick={() => setTab(t.id as any)}
             style={{ flex: 1, padding: '0.55rem', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem',
@@ -99,7 +102,7 @@ export default function FacturacionSuperadminPage() {
       </div>
 
       {tab === 'config' && form && (
-        <div className="sige-card" style={{ maxWidth: 560 }}>
+        <div className="sige-card billing-config-card">
           <h3 style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem' }}><i className="bi bi-qr-code me-2" />Datos de cobro de la plataforma</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
             Esto es lo que ven los administradores de cada colegio para pagar su suscripción a SIGE — no confundir con los datos de pago del colegio (esos son para que los padres paguen pensiones).
@@ -130,7 +133,21 @@ export default function FacturacionSuperadminPage() {
 
       {tab === 'pagos' && (
         <>
-          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <div className="billing-metrics">
+            {[
+              { label: 'Por revisar', estado: 'EN_REVISION', icon: 'bi-hourglass-split', tone: '#2563eb' },
+              { label: 'Aprobados', estado: 'APROBADO', icon: 'bi-check2-circle', tone: '#059669' },
+              { label: 'Rechazados', estado: 'RECHAZADO', icon: 'bi-x-circle', tone: '#dc2626' },
+            ].map(item => {
+              const valor = metrica(item.estado);
+              return <div className="sige-card billing-metric" key={item.estado}>
+                <span className="billing-metric-icon" style={{ color: item.tone, background: `${item.tone}14` }}><i className={`bi ${item.icon}`} /></span>
+                <div><span>{item.label}</span><strong>{valor.cantidad}</strong><small>S/ {Number(valor.monto).toFixed(2)}</small></div>
+              </div>;
+            })}
+          </div>
+
+          <div className="billing-filters">
             {['', 'EN_REVISION', 'PENDIENTE', 'APROBADO', 'RECHAZADO'].map(e => (
               <button key={e} onClick={() => setEstadoFiltro(e)}
                 style={{ padding: '0.4rem 1rem', borderRadius: 99, cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600,
@@ -144,10 +161,10 @@ export default function FacturacionSuperadminPage() {
           <div className="sige-card" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ overflowX: 'auto' }}>
               <table className="sige-table">
-                <thead><tr><th>Colegio</th><th>Monto</th><th>Período</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr></thead>
+                <thead><tr><th>Colegio</th><th>Monto</th><th>Período</th><th>Operación</th><th>Estado</th><th>Registro</th><th>Revisado por</th><th>Acciones</th></tr></thead>
                 <tbody>
                   {pagos.length === 0 ? (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Sin pagos de suscripción todavía</td></tr>
+                    <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>Sin pagos de suscripción todavía</td></tr>
                   ) : pagos.map((p: any) => {
                     const conf = ESTADO_CONF[p.estado] ?? {};
                     return (
@@ -155,8 +172,10 @@ export default function FacturacionSuperadminPage() {
                         <td style={{ fontWeight: 600, fontSize: '0.875rem' }}>{p.colegio?.nombre}</td>
                         <td style={{ fontWeight: 700, color: '#059669' }}>S/ {Number(p.monto).toFixed(2)}</td>
                         <td>{p.periodoPago ?? '—'}</td>
+                        <td><div style={{ fontSize: '.8rem', fontWeight: 600 }}>{p.banco ?? '—'}</div><div style={{ fontSize: '.7rem', color: 'var(--text-muted)' }}>{p.operacion ?? 'Sin código'}</div></td>
                         <td><span className="estado-badge" style={{ background: conf.bg, color: conf.text }}>{conf.label}</span></td>
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{new Date(p.createdAt).toLocaleDateString('es-PE')}</td>
+                        <td style={{ fontSize: '.78rem', color: 'var(--text-secondary)' }}>{p.aprobadoPor ? `${p.aprobadoPor.nombres} ${p.aprobadoPor.apellidos}` : '—'}{p.observaciones && <div style={{ color: '#b91c1c', maxWidth: 180 }}>{p.observaciones}</div>}</td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.4rem' }}>
                             {p.voucherUrl && (
@@ -199,6 +218,7 @@ export default function FacturacionSuperadminPage() {
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
     </DashboardLayout>
   );
 }

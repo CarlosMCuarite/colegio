@@ -75,6 +75,7 @@ export default function MembresiasPage() {
 
   return (
     <DashboardLayout title="Membresías y Planes" allowedRoles={['SUPERADMIN']}>
+      <div className="plans-shell">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', gap: '0.75rem', flexWrap: 'wrap' }}>
         <div style={{ background: 'var(--accent-soft)', border: '1px solid var(--accent)', borderRadius: 8, padding: '0.65rem 1rem', fontSize: '0.8rem', color: 'var(--accent)', flex: 1, minWidth: 260 }}>
           <i className="bi bi-info-circle me-2" />
@@ -108,18 +109,21 @@ export default function MembresiasPage() {
         </div>
       )}
 
-      <h3 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>Planes del sistema ({planes.length})</h3>
+      <div className="plans-heading">
+        <div><span className="enterprise-eyebrow">Catálogo comercial</span><h3>Planes del sistema</h3></div>
+        <div className="plans-summary"><strong>{planes.filter((p: any) => p.activo).length}</strong> activos <span>·</span> {planes.length} en total</div>
+      </div>
 
       {planes.length === 0 ? (
         <div className="sige-card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
           <i className="bi bi-credit-card" style={{ fontSize: '2.5rem', display: 'block', marginBottom: 12 }} />Sin planes aún. Crea el primero.
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(300px,1fr))', gap: '1rem' }}>
+        <div className="plans-grid">
           {planes.map((plan: any, i: number) => {
             const badge = badgeFor(plan.nombre);
             return (
-              <motion.div key={plan.id} className="sige-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+              <motion.div key={plan.id} className="sige-card plan-card" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.875rem' }}>
                   <div>
                     <h4 style={{ fontWeight: 800, fontSize: '1rem', margin: 0, marginBottom: 4 }}>{plan.nombre}</h4>
@@ -132,7 +136,7 @@ export default function MembresiasPage() {
                     <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>cada {plan.duracionDias} días</div>
                   </div>
                 </div>
-                {plan.descripcion && <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.875rem' }}>{plan.descripcion}</p>}
+                <p className="plan-description">{plan.descripcion || 'Plan configurable para la operación institucional.'}</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '1rem', padding: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 8 }}>
                   {[
                     { icon: 'bi-person-badge', label: 'Estudiantes', value: plan.maxEstudiantes.toLocaleString() },
@@ -155,7 +159,7 @@ export default function MembresiasPage() {
                     </div>
                   </div>
                 )}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div className="plan-actions">
                   <button onClick={() => setEditando(plan)} className="btn-accent" style={{ flex: 1, justifyContent: 'center', fontSize: '0.82rem', padding: '0.45rem' }}><i className="bi bi-pencil me-1" />Editar</button>
                   <button onClick={() => togglePlan(plan)} disabled={saving} style={{ background: plan.activo ? '#fee2e2' : '#d1fae5', border: 'none', borderRadius: 8, padding: '0.45rem 0.75rem', cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem', color: plan.activo ? '#991b1b' : '#065f46' }}>
                     {plan.activo ? 'Desactivar' : 'Activar'}
@@ -186,6 +190,7 @@ export default function MembresiasPage() {
         )}
         {showRenovar && <ModalRenovar colegio={showRenovar} planes={planes} onRenovar={renovar} onCancelar={() => setShowRenovar(null)} saving={saving} />}
       </AnimatePresence>
+      </div>
     </DashboardLayout>
   );
 }
