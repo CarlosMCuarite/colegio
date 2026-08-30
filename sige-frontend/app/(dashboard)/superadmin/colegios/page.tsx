@@ -80,7 +80,8 @@ export default function ColegiosPage() {
   };
 
   const ingresarComo = async (c: any) => {
-    if (!confirm(`¿Abrir el colegio “${c.nombre}” en modo soporte?\n\nConservarás tu identidad de Super Admin y cada acción quedará registrada a tu nombre.`)) return;
+    // Acceso directo y auditado. Evitamos `window.confirm`: algunos navegadores
+    // embebidos bloquean ese diálogo y el botón aparenta no responder.
     await save(async () => {
       const res = await api.post(`/colegios/${c.id}/soporte-acceso`);
       const colegio = res.data?.data?.colegio;
@@ -192,10 +193,11 @@ export default function ColegiosPage() {
                       <td>
                         <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
                           <button onClick={() => ingresarComo(c)}
-                            disabled={c.estado === 'INACTIVO'}
-                            style={{ background: '#ede9fe', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: c.estado !== 'INACTIVO' ? 'pointer' : 'not-allowed', color: '#5b21b6', opacity: c.estado !== 'INACTIVO' ? 1 : 0.4 }}
+                            disabled={c.estado === 'INACTIVO' || saving}
+                            style={{ background: '#ede9fe', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: c.estado !== 'INACTIVO' && !saving ? 'pointer' : 'not-allowed', color: '#5b21b6', opacity: c.estado !== 'INACTIVO' && !saving ? 1 : 0.4 }}
+                            aria-label={`Abrir ${c.nombre} en modo soporte`}
                             title={c.estado === 'INACTIVO' ? 'Activa el colegio antes de abrir soporte' : 'Abrir modo soporte auditado'}>
-                            <i className="bi bi-box-arrow-in-right" />
+                            <i className={`bi ${saving ? 'bi-arrow-repeat' : 'bi-headset'}`} />
                           </button>
                           <button onClick={() => abrirEditar(c)}
                             style={{ background: 'var(--accent-soft)', border: 'none', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', color: 'var(--accent)' }}
