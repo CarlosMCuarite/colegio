@@ -232,8 +232,10 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
       </AnimatePresence>
 
       <aside className={clsx('sige-sidebar', open && 'open')}>
+        <span className="sidebar-watermark sidebar-watermark--one" aria-hidden="true" />
+        <span className="sidebar-watermark sidebar-watermark--two" aria-hidden="true" />
         {/* Encabezado colegio */}
-        <div style={{ padding: '1.25rem 1rem 0.875rem', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="sidebar-brand-panel">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {user.colegio?.logoUrl ? (
               <img src={user.colegio.logoUrl} alt="logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
@@ -252,7 +254,7 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
         </div>
 
         {/* Navegación */}
-        <nav style={{ flex: 1, overflowY: 'auto', padding: '0.5rem 0' }}>
+        <nav className="sidebar-navigation">
           {rolNav.map((section) => (
             <div key={section.label}>
               <div className="sidebar-section-label">{section.label}</div>
@@ -278,7 +280,7 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
         </nav>
 
         {/* Footer usuario */}
-        <div style={{ padding: '0.75rem', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="sidebar-account-panel">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
             <div style={{
               width: 32, height: 32, borderRadius: '50%',

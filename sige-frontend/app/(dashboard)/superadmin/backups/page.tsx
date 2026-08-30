@@ -98,6 +98,14 @@ export default function BackupsPage() {
     });
   };
 
+  const diagnosticarStorage = async () => {
+    await save(async () => {
+      const res = await api.post('/backups/diagnostico-storage');
+      const d = res.data?.data;
+      toast.success(`Storage operativo: escritura y limpieza verificadas en el bucket “${d?.bucket ?? 'backups'}”.`, { duration: 7000 });
+    });
+  };
+
   return (
     <DashboardLayout title="Backups del Sistema" allowedRoles={['SUPERADMIN']}>
 
@@ -134,6 +142,10 @@ export default function BackupsPage() {
             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.3rem 0.75rem', cursor: 'pointer', color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 600 }}>
             <i className="bi bi-eraser me-1" />Purgar rotos
           </button>
+          <button onClick={diagnosticarStorage} disabled={saving}
+            style={{ background: 'var(--accent-soft)', border: '1px solid color-mix(in srgb,var(--accent) 30%,transparent)', borderRadius: 8, padding: '0.3rem 0.75rem', cursor: 'pointer', color: 'var(--accent)', fontSize: '0.75rem', fontWeight: 700 }}>
+            <i className="bi bi-heart-pulse me-1" />Probar Storage
+          </button>
         </div>
         {backups.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
@@ -158,7 +170,7 @@ export default function BackupsPage() {
                         </span>
                         {b.estado === 'FALLIDO' && b.error && (
                           <div style={{ fontSize: '0.68rem', color: '#991b1b', marginTop: 2, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={b.error}>
-                            {b.error}
+                            Histórico: {b.error}
                           </div>
                         )}
                         {b.estado === 'COMPLETADO' && b.error && (

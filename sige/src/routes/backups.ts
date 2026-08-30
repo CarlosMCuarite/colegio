@@ -120,6 +120,26 @@ router.post('/purgar-rotos', async (req, res) => {
   res.json({ ok: true, purgados, revisados: backups.length });
 });
 
+// Prueba real y autocontenida de escritura. No expone claves y elimina el
+// archivo de diagnóstico inmediatamente después de comprobar Storage.
+router.post('/diagnostico-storage', async (_req, res) => {
+  const ruta = `_healthchecks/${Date.now()}-storage.json`;
+  const { error: uploadError } = await supabaseAdmin.storage.from(BACKUP_BUCKET)
+    .upload(ruta, Buffer.from(JSON.stringify({ servicio: 'SIGE', prueba: true })), { contentType: 'application/json', upsert: false });
+  if (uploadError) {
+    const rls = /row-level security|policy/i.test(uploadError.message);
+    throw new AppError(
+      rls
+        ? 'Storage rechazó la escritura: la variable SUPABASE_SERVICE_ROLE_KEY de este entorno no corresponde a service_role.'
+        : `Storage no está operativo: ${uploadError.message}`,
+      503,
+    );
+  }
+  const { error: cleanupError } = await supabaseAdmin.storage.from(BACKUP_BUCKET).remove([ruta]);
+  if (cleanupError) throw new AppError(`Storage permite escribir, pero no limpiar archivos de prueba: ${cleanupError.message}`, 503);
+  res.json({ ok: true, data: { bucket: BACKUP_BUCKET, escritura: true, limpieza: true } });
+});
+
 // Restaura por fusión: inserta únicamente datos faltantes, reactiva registros
 // eliminados lógicamente y nunca reemplaza datos ni archivos actuales.
 router.post(

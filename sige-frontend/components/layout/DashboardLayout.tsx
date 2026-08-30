@@ -32,9 +32,13 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
   if (loading) return (
     <div className="sige-loading-state">
       <div className="sige-loading-state__content">
-        <SigeOwl mood="thinking" size="md" label="Búho SIGE preparando el sistema" />
+        <div className="sige-loading-state__visual">
+          <span className="sige-loading-state__orbit" aria-hidden="true" />
+          <SigeOwl mood="thinking" size="md" priority label="Búho SIGE preparando el sistema" />
+        </div>
         <strong>Preparando tu espacio</strong>
-        <span style={{ color:'var(--text-muted)', fontSize:'0.82rem' }}>Organizando la información de tu rol…</span>
+        <span>Organizando la información de tu rol…</span>
+        <div className="sige-loading-state__dots" aria-label="Cargando"><i /><i /><i /></div>
       </div>
     </div>
   );
