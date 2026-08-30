@@ -325,6 +325,8 @@ function ColegioForm({ inicial, planes, onGuardar, onDirtyChange, onCancelar, sa
     email:        inicial?.email        ?? '',
     planId:       inicial?.planId       ?? (planes[0]?.id ?? ''),
     licenciaFin:  inicial?.licenciaFin  ? inicial.licenciaFin.split('T')[0] : '',
+    colorPrimario: inicial?.colorPrimario ?? '#2563EB',
+    colorSecundario: inicial?.colorSecundario ?? '#16A8E4',
     generarUsuarios: !inicial,
   });
   const [slugTocado, setSlugTocado] = useState(!!inicial);
@@ -421,6 +423,30 @@ function ColegioForm({ inicial, planes, onGuardar, onDirtyChange, onCancelar, sa
               SuperAdmin debe poder poner cualquier fecha, pasada o futura. */}
           <input type="date" value={form.licenciaFin} onChange={set('licenciaFin')} className="sige-input" />
           <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Puedes poner una fecha pasada para simular una licencia vencida (pruebas).</span>
+        </div>
+
+        <div style={{ gridColumn: '1 / -1' }}>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 8 }}>Identidad visual del colegio</label>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8 }}>
+            {[
+              { nombre: 'Azul', primario: '#2563EB', secundario: '#16A8E4' },
+              { nombre: 'Rojo', primario: '#D34242', secundario: '#F06A62' },
+              { nombre: 'Verde', primario: '#168A55', secundario: '#35B979' },
+              { nombre: 'Amarillo', primario: '#D99000', secundario: '#F2B72B' },
+            ].map(tema => {
+              const activo = form.colorPrimario?.toUpperCase() === tema.primario;
+              return (
+                <button key={tema.nombre} type="button" onClick={() => {
+                  onDirtyChange?.(true);
+                  setForm(p => ({ ...p, colorPrimario: tema.primario, colorSecundario: tema.secundario }));
+                }} aria-pressed={activo} style={{ minHeight: 66, borderRadius: 12, border: activo ? `2px solid ${tema.primario}` : '1px solid var(--border-color)', background: activo ? `${tema.primario}14` : 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer', display: 'grid', placeItems: 'center', gap: 4 }}>
+                  <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: '50%', background: `linear-gradient(135deg, ${tema.primario}, ${tema.secundario})`, boxShadow: activo ? `0 0 0 4px ${tema.primario}22` : 'none' }} />
+                  <span style={{ fontSize: '.76rem', fontWeight: 700 }}>{tema.nombre}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p style={{ fontSize: '.72rem', color: 'var(--text-muted)', margin: '7px 0 0' }}>Web y aplicativo usarán automáticamente esta paleta al reconocer el colegio.</p>
         </div>
 
         {!inicial && (
