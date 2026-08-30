@@ -14,7 +14,7 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import {
   CarnetFrente, CarnetAtras, CARD_W, CARD_H,
-  DEFAULT_LAYOUT, DEFAULT_LAYOUT_ATRAS,
+  DEFAULT_LAYOUT, DEFAULT_LAYOUT_ATRAS, HEADER_H, REVERSO_HEADER_H,
 } from './CarnetEstudiante';
 import { QrUploader } from './QrUploader';
 
@@ -42,7 +42,7 @@ const ELEMENTOS_ATRAS: { clave: string; label: string; icon: string }[] = [
 
 export default function CarnetPlantillaEditor() {
   return (
-    <DashboardLayout title="Plantilla de Carnet" allowedRoles={['SUPERADMIN','ADMINISTRADOR','SECRETARIA']}>
+    <DashboardLayout title="Diseñador de carnet" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR','SECRETARIA']}>
       <Contenido />
     </DashboardLayout>
   );
@@ -91,7 +91,9 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
   const [modo, setModo] = useState<ModoEdicion>('ninguno');
   const [elementoActivo, setElementoActivo] = useState<string | null>(null);
   useEffect(() => { setForm(null); }, [colegioId]);
-  useEffect(() => { if (data && !form) setForm(data); }, [data]);
+  // La API responde { ok, data }. Usar el sobre completo hacía que el editor
+  // ignorara la configuración guardada y enviara una estructura inválida.
+  useEffect(() => { if (data && !form) setForm((data as any).data ?? {}); }, [data, form]);
 
   if (error) {
     return (
@@ -132,14 +134,14 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
   // rechazaba de forma silenciosa (guardaba un error 400 que quizás no se
   // notaba) — eso también hacía que "no se guardara nada" en esa sesión.
   const clamp = (n: number) => Math.max(0, Math.min(100, Math.round(n * 100) / 100));
-  const setBoxPx = (layoutKey: 'layout' | 'layoutAtras', clave: string, defaults: any, xPx: number, yPx: number, wPx: number, hPx: number) => {
+  const setBoxPx = (layoutKey: 'layout' | 'layoutAtras', clave: string, defaults: any, xPx: number, yPx: number, wPx: number, hPx: number, editableHeight: number) => {
     setForm((f: any) => {
       const layout = { ...(f[layoutKey] ?? defaults) };
       layout[clave] = {
         xPct: clamp((xPx / CARD_W) * 100),
-        yPct: clamp((yPx / CARD_H) * 100),
+        yPct: clamp((yPx / editableHeight) * 100),
         wPct: clamp((wPx / CARD_W) * 100),
-        hPct: clamp((hPx / CARD_H) * 100),
+        hPct: clamp((hPx / editableHeight) * 100),
       };
       return { ...f, [layoutKey]: layout };
     });
@@ -147,9 +149,10 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
 
   const guardar = async () => {
     await save(async () => {
-      await api.patch(`/colegios/${colegioId}/carnet-config`, form);
+      const { __colegioNombre, __colegioLogoUrl, __colegioDireccion, __colegioTelefono, ...configurable } = form;
+      await api.patch(`/colegios/${colegioId}/carnet-config`, configurable);
       toast.success('Plantilla de carnet guardada — ya se aplica a todos los carnets');
-      mutate();
+      await mutate();
     });
   };
 
@@ -180,21 +183,23 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
 
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-        <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0, maxWidth: 560 }}>
-          Personaliza el diseño del carnet de tus estudiantes. Los cambios se aplican automáticamente
-          a todos los carnets — no hay que editar cada uno por separado.
-        </p>
+      <section className="carnet-editor-intro">
+        <div>
+          <h2>Diseña la identidad estudiantil</h2>
+          <p>Configura una plantilla institucional para todos los estudiantes. Revisa ambos lados antes de guardar.</p>
+        </div>
+        <span className="carnet-editor-status"><i className="bi bi-lightning-charge-fill" /> Vista previa en vivo</span>
         {volverASeleccionar && (
-          <button onClick={volverASeleccionar} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.4rem 0.9rem', cursor: 'pointer', fontSize: '0.78rem', color: 'var(--text-primary)', whiteSpace: 'nowrap' }}>
+          <button onClick={volverASeleccionar} className="carnet-editor-secondary-action">
             <i className="bi bi-arrow-left me-1" />Cambiar de colegio
           </button>
         )}
-      </div>
+      </section>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 380px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
+      <div className="carnet-editor-grid">
         {/* ── Formulario ── */}
-        <div className="sige-card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="sige-card carnet-editor-controls" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="carnet-editor-section-title"><i className="bi bi-palette2" /><span>Identidad visual<small>Colores y mensaje institucional</small></span></div>
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             <div style={{ flex: 1 }}>
               <label className="sige-label">Color primario</label>
@@ -212,12 +217,14 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="carnet-editor-section-title"><i className="bi bi-eye" /><span>Datos visibles<small>Elige la información del reverso</small></span></div>
             <label className="sige-check"><input type="checkbox" checked={form.mostrarDireccionEstudiante ?? true} onChange={e => set('mostrarDireccionEstudiante', e.target.checked)} /> Mostrar dirección del estudiante</label>
             <label className="sige-check"><input type="checkbox" checked={form.mostrarTipoSangre ?? false} onChange={e => set('mostrarTipoSangre', e.target.checked)} /> Mostrar tipo de sangre <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>(no esencial, apagado por defecto)</span></label>
             <label className="sige-check"><input type="checkbox" checked={form.mostrarDireccionColegio ?? true} onChange={e => set('mostrarDireccionColegio', e.target.checked)} /> Mostrar dirección/teléfono del colegio (pie de página)</label>
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem' }}>
+            <div className="carnet-editor-section-title"><i className="bi bi-layers" /><span>Marca de agua<small>Protección e identidad del colegio</small></span></div>
             <label className="sige-check"><input type="checkbox" checked={form.mostrarMarcaAgua ?? false} onChange={e => set('mostrarMarcaAgua', e.target.checked)} /> Marca de agua de fondo</label>
             {form.mostrarMarcaAgua && (
               <div style={{ marginTop: 6, display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -239,6 +246,7 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+            <div className="carnet-editor-section-title"><i className="bi bi-vector-pen" /><span>Firma institucional<small>Responsable que valida el carnet</small></span></div>
             <QrUploader label="Firma del director (imagen)" urlActual={form.firmaImagenUrl} onSubir={file => subirImagen('firmaImagenUrl', file)} />
             <div style={{ display: 'flex', gap: '0.75rem' }}>
               <div style={{ flex: 1 }}>
@@ -253,6 +261,7 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
           </div>
 
           <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="carnet-editor-section-title"><i className="bi bi-bounding-box-circles" /><span>Composición<small>Mueve y redimensiona cada elemento</small></span></div>
             <button type="button" onClick={() => setModo(m => m === 'frente' ? 'ninguno' : 'frente')}
               style={{ width: '100%', background: modo === 'frente' ? 'var(--accent)' : 'var(--bg-secondary)', color: modo === 'frente' ? '#fff' : 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.55rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 }}>
               <i className="bi bi-arrows-move me-1" />{modo === 'frente' ? 'Listo — salir del anverso' : 'Editar posiciones del anverso'}
@@ -273,6 +282,7 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
           </div>
 
           <div>
+            <div className="carnet-editor-section-title"><i className="bi bi-card-checklist" /><span>Indicaciones<small>Mensajes impresos en el reverso</small></span></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <label className="sige-label" style={{ margin: 0 }}>Información importante (reverso)</label>
               <button type="button" onClick={agregarLinea} style={{ background: 'none', border: 'none', color: 'var(--accent)', cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600 }}><i className="bi bi-plus-lg me-1" />Agregar línea</button>
@@ -296,8 +306,8 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
         </div>
 
         {/* ── Vista previa en vivo ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'center', position: 'sticky', top: '1rem' }}>
-          <div>
+        <div className="carnet-editor-preview-panel">
+          <div className="carnet-editor-preview-block">
             <div style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
               Anverso (vista previa){modo === 'frente' && <span style={{ color: 'var(--accent)' }}> — arrastra los recuadros</span>}
             </div>
@@ -313,7 +323,7 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
                 gradoSeccion={{ grado: '2° Secundaria', seccion: 'A' }} anoActual={anoActual} qrUrl={null} />
             )}
           </div>
-          <div>
+          <div className="carnet-editor-preview-block">
             <div style={{ textAlign: 'center', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>
               Reverso (vista previa){modo === 'atras' && <span style={{ color: 'var(--accent)' }}> — arrastra los recuadros</span>}
             </div>
@@ -339,6 +349,8 @@ function EditorPlantilla({ colegioId, user, volverASeleccionar }: { colegioId: s
 // carnet REAL (con el contenido "escondido" via keys fuera de rango, para no
 // tener contenido y recuadro superpuestos y confusos) ────────────────────────
 function EditorVisual({ Componente, elementos, layout, defaults, layoutKey, setBoxPx, elementoActivo, setElementoActivo, estudiante, colegio, config, extra }: any) {
+  const headerHeight = layoutKey === 'layout' ? HEADER_H : REVERSO_HEADER_H;
+  const editableHeight = CARD_H - headerHeight - 22;
   const configOculto = {
     ...config,
     [layoutKey]: {
@@ -347,14 +359,15 @@ function EditorVisual({ Componente, elementos, layout, defaults, layoutKey, setB
     },
   };
   return (
-    <div style={{ position: 'relative', width: CARD_W, height: CARD_H, margin: '0 auto' }}>
+    <div className="carnet-editor-canvas" style={{ position: 'relative', width: CARD_W, height: CARD_H, margin: '0 auto' }}>
       <Componente estudiante={estudiante} colegio={colegio} config={configOculto} {...extra} />
+      <div style={{ position: 'absolute', left: 0, right: 0, top: headerHeight, height: editableHeight }}>
       {elementos.map((el: any) => {
         const box = layout[el.clave] ?? defaults[el.clave];
         const xPx = (box.xPct / 100) * CARD_W;
-        const yPx = (box.yPct / 100) * CARD_H;
+        const yPx = (box.yPct / 100) * editableHeight;
         const wPx = (box.wPct / 100) * CARD_W;
-        const hPx = (box.hPct / 100) * CARD_H;
+        const hPx = (box.hPct / 100) * editableHeight;
         return (
           <Rnd
             key={el.clave}
@@ -363,8 +376,8 @@ function EditorVisual({ Componente, elementos, layout, defaults, layoutKey, setB
             position={{ x: xPx, y: yPx }}
             onDragStart={() => setElementoActivo(el.clave)}
             onResizeStart={() => setElementoActivo(el.clave)}
-            onDragStop={(_e: any, d: any) => setBoxPx(layoutKey, el.clave, defaults, d.x, d.y, wPx, hPx)}
-            onResizeStop={(_e: any, _dir: any, ref: any, _delta: any, pos: any) => setBoxPx(layoutKey, el.clave, defaults, pos.x, pos.y, ref.offsetWidth, ref.offsetHeight)}
+            onDragStop={(_e: any, d: any) => setBoxPx(layoutKey, el.clave, defaults, d.x, d.y, wPx, hPx, editableHeight)}
+            onResizeStop={(_e: any, _dir: any, ref: any, _delta: any, pos: any) => setBoxPx(layoutKey, el.clave, defaults, pos.x, pos.y, ref.offsetWidth, ref.offsetHeight, editableHeight)}
             style={{
               border: `2px dashed ${elementoActivo === el.clave ? 'var(--accent)' : 'rgba(79,70,229,0.5)'}`,
               borderRadius: 6,
@@ -378,6 +391,7 @@ function EditorVisual({ Componente, elementos, layout, defaults, layoutKey, setB
           </Rnd>
         );
       })}
+      </div>
     </div>
   );
 }

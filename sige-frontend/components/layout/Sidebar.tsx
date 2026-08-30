@@ -68,6 +68,7 @@ const NAV: Record<string, NavSection[]> = {
       { href: '/director/permisos',        icon: 'bi-door-open',      label: 'Permisos Salida'  },
       { href: '/director/reportes',        icon: 'bi-graph-up',       label: 'Reportes'         },
       { href: '/director/auditoria',       icon: 'bi-shield-check',   label: 'Auditoría'        },
+      { href: '/carnet/plantilla',         icon: 'bi-palette',        label: 'Plantilla Carnet' },
     ]},
     { label: 'Cuenta', items: [
       { href: '/admin/configuracion',      icon: 'bi-gear',           label: 'Configuración'    },

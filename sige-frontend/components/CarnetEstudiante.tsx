@@ -80,7 +80,10 @@ function useQR(valor: string) {
 
 export function useCarnetConfig(colegioId?: string) {
   const { data } = useData<any>(colegioId ? `/colegios/${colegioId}/carnet-config` : null);
-  return { ...DEFAULT_CONFIG, ...(data as any ?? {}) };
+  // useData conserva el sobre estándar de la API ({ ok, data }). Antes se
+  // mezclaba ese sobre con DEFAULT_CONFIG y la plantilla guardada nunca se
+  // aplicaba al carnet real.
+  return { ...DEFAULT_CONFIG, ...((data as any)?.data ?? {}) };
 }
 
 export default function CarnetEstudiante({ estudiante, onCerrar }: Props) {
@@ -98,7 +101,7 @@ export default function CarnetEstudiante({ estudiante, onCerrar }: Props) {
   const colegio = (colegioFetchado && !Array.isArray(colegioFetchado)) ? colegioFetchado : (user?.colegio ?? {});
   const config = useCarnetConfig(colegio?.id);
   const [cara, setCara] = useState<'frente' | 'atras'>('frente');
-  const puedeEditarPlantilla = ['SUPERADMIN','ADMINISTRADOR','SECRETARIA'].includes(user?.rol ?? '');
+  const puedeEditarPlantilla = ['SUPERADMIN','ADMINISTRADOR','DIRECTOR','SECRETARIA'].includes(user?.rol ?? '');
 
   const matricula = estudiante.matriculas?.[0];
   const gradoSeccion = matricula

@@ -230,8 +230,8 @@ router.patch('/:id/carnet-config',
   async (req, res) => {
     const user = req.user!;
     if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-    if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA] as RolNombre[]).includes(user.rol)) {
-      throw new AppError('Solo el administrador o la secretaría del colegio pueden editar la plantilla del carnet', 403);
+    if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR, RolNombre.SECRETARIA] as RolNombre[]).includes(user.rol)) {
+      throw new AppError('Solo administración, dirección o secretaría pueden editar la plantilla del carnet', 403);
     }
     const data = carnetConfigSchema.parse(req.body);
     const colegio = await prisma.colegio.update({
@@ -251,8 +251,8 @@ router.patch('/:id/carnet-config',
 router.post('/:id/carnet-config/imagen', upload.single('imagen'), async (req, res) => {
   const user = req.user!;
   if (user.rol !== RolNombre.SUPERADMIN && user.colegioId !== req.params.id) throw new AppError('Sin acceso', 403);
-  if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA] as RolNombre[]).includes(user.rol)) {
-    throw new AppError('Solo el administrador o la secretaría del colegio pueden editar la plantilla del carnet', 403);
+  if (!([RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR, RolNombre.SECRETARIA] as RolNombre[]).includes(user.rol)) {
+    throw new AppError('Solo administración, dirección o secretaría pueden editar la plantilla del carnet', 403);
   }
   const { campo } = z.object({ campo: z.enum(['firmaImagenUrl', 'marcaAguaImagenUrl']) }).parse(req.body);
   if (!req.file) throw new AppError('Imagen requerida', 400);
