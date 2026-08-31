@@ -17,7 +17,7 @@ export default function ComunicadosPage() {
   const [viendo, setViendo]     = useState<any>(null);
 
   const params = new URLSearchParams({ page: String(page), limit: '20', q: busqueda, nivelEducativo: nivelFiltro, estado: estadoFiltro }).toString();
-  const { data, isLoading, mutate } = useComunicados(params);
+  const { data, error, isLoading, mutate } = useComunicados(params);
   const { data: nivelesData }       = useNivelesGrados();
   const { loading: saving, mutate: save } = useMutation();
 
@@ -72,9 +72,18 @@ export default function ComunicadosPage() {
       </div>
 
       {/* Lista */}
-      {isLoading ? (
+      {isLoading && !data ? (
         <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
           <div className="spinner-border spinner-border-sm me-2" />Cargando...
+        </div>
+      ) : error && !data ? (
+        <div className="sige-card" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-secondary)' }}>
+          <i className="bi bi-cloud-slash" style={{ display: 'block', fontSize: '2rem', color: '#b91c1c', marginBottom: 10 }} />
+          <strong style={{ display: 'block', color: 'var(--text-primary)', marginBottom: 5 }}>No se pudieron cargar los comunicados</strong>
+          <span style={{ display: 'block', fontSize: '0.8rem', marginBottom: 14 }}>Tus comunicados no fueron eliminados. La conexión con el servidor falló temporalmente.</span>
+          <button type="button" className="btn-accent" onClick={() => mutate()} style={{ margin: '0 auto' }}>
+            <i className="bi bi-arrow-clockwise me-1" />Reintentar
+          </button>
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

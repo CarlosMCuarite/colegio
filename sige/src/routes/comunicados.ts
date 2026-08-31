@@ -11,6 +11,7 @@ import { AuditoriaAccion, NivelEducativo, RolNombre, Prisma } from '@prisma/clie
 import { uploadFile, getSignedUrlFromStoredValue, storagePathFromStoredUrl, deleteFile } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 import { enviarNotificacion } from '../services/notificacionService';
+import { logger } from '../utils/logger';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024, files: 5 } });
@@ -95,16 +96,31 @@ router.get('/', async (req, res) => {
     where.AND.push({ OR: await alcanceComunicadosPadre(req.user!.id, req.colegioId!) });
   }
 
-  const [total, comunicados] = await Promise.all([
-    prisma.comunicado.count({ where }),
-    prisma.comunicado.findMany({
+  const total = await prisma.comunicado.count({ where });
+  let comunicados: any[];
+  try {
+    comunicados = await prisma.comunicado.findMany({
       where,
       skip: (parseInt(page)-1)*parseInt(limit),
       take: parseInt(limit),
       orderBy: { createdAt: 'desc' },
       include: { creadoPor: { select: { nombres: true, apellidos: true, rol: true } }, adjuntos: true, _count: { select: { lecturas: true } } },
-    }),
-  ]);
+    });
+  } catch (error: any) {
+    // Durante un despliegue el backend puede arrancar antes de que las tablas
+    // complementarias de adjuntos/lecturas estén disponibles. El comunicado
+    // base debe seguir visible para todos los roles en vez de responder 500.
+    if (!['P2021', 'P2022'].includes(error?.code)) throw error;
+    logger.warn('Esquema complementario de comunicados aún no disponible; usando modo compatible', error);
+    comunicados = await prisma.comunicado.findMany({
+      where,
+      skip: (parseInt(page)-1)*parseInt(limit),
+      take: parseInt(limit),
+      orderBy: { createdAt: 'desc' },
+      include: { creadoPor: { select: { nombres: true, apellidos: true, rol: true } } },
+    });
+    comunicados = comunicados.map(c => ({ ...c, adjuntos: [], _count: { lecturas: 0 } }));
+  }
   const items = await Promise.all(comunicados.map(comunicadoConUrlFirmada));
   res.json({ ok: true, data: items.map((c: any) => ({ ...c, estado: c.publicadoEn && new Date(c.publicadoEn) > ahora ? 'PROGRAMADO' : (c.venceEn && new Date(c.venceEn) <= ahora ? 'VENCIDO' : 'PUBLICADO') })), meta: { total } });
 });
@@ -181,9 +197,19 @@ router.post(
         publicadoEn:  data.publicadoEn ?? new Date(),
         venceEn:      data.venceEn ?? null,
         notificadoEn: data.publicadoEn && data.publicadoEn <= new Date() ? new Date() : null,
-        adjuntos: subidos.length ? { create: subidos.map((r, i) => ({ url: r.path, nombre: r.nombre, mimeType: archivos[i]?.mimetype, tamano: archivos[i]?.size })) } : undefined,
       } as Prisma.ComunicadoUncheckedCreateInput,
     });
+
+    if (subidos.length) {
+      try {
+        await prisma.comunicadoAdjunto.createMany({
+          data: subidos.map((r, i) => ({ comunicadoId: comunicado.id, url: r.path, nombre: r.nombre, mimeType: archivos[i]?.mimetype, tamano: archivos[i]?.size })),
+        });
+      } catch (error: any) {
+        if (!['P2021', 'P2022'].includes(error?.code)) throw error;
+        logger.warn('No se pudieron registrar adjuntos múltiples; se conserva el adjunto principal', error);
+      }
+    }
 
     // Notificar a padres afectados (async, no bloquea)
     if (!data.publicadoEn || data.publicadoEn <= new Date()) notificarPadresComunicado(comunicado, req.colegioId!).catch(() => {});
@@ -250,7 +276,14 @@ router.patch(
         venceEn: data.venceEn ?? undefined,
       },
     });
-    if (adjuntosNuevos.length) await prisma.comunicadoAdjunto.createMany({ data: adjuntosNuevos.map((r, i) => ({ comunicadoId: existente.id, url: r.path, nombre: r.nombre, mimeType: archivos[i].mimetype, tamano: archivos[i].size })) });
+    if (adjuntosNuevos.length) {
+      try {
+        await prisma.comunicadoAdjunto.createMany({ data: adjuntosNuevos.map((r, i) => ({ comunicadoId: existente.id, url: r.path, nombre: r.nombre, mimeType: archivos[i].mimetype, tamano: archivos[i].size })) });
+      } catch (error: any) {
+        if (!['P2021', 'P2022'].includes(error?.code)) throw error;
+        logger.warn('No se pudieron registrar adjuntos múltiples; se conserva el adjunto principal', error);
+      }
+    }
     if (adjuntoAnteriorAEliminar) await deleteFile(BUCKETS.DOCUMENTOS, adjuntoAnteriorAEliminar);
     res.json({ ok: true });
   },

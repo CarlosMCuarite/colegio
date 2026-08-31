@@ -49,7 +49,7 @@ export const usePagos              = (params = '') => useData<any>(`/pagos?${par
 export const useConceptosPago      = (params = '') => useData<any>(`/conceptos-pago?${params}`);
 export const usePagosLicencia      = (params = '') => useData<any>(`/pagos-licencia?${params}`);
 export const useConfigPlataforma   = () => useData<any>('/plataforma/config');
-export const useComunicados        = (params = '') => useData<any>(`/comunicados?${params}`);
+export const useComunicados        = (params = '') => useData<any>(`/comunicados?${params}`, { keepPreviousData: true });
 export const useEventos            = (params = '') => useData<any>(`/eventos?${params}`);
 export const useEncuestas          = (params = '') => useData<any>(`/encuestas?${params}`);
 export const useDashboardEjecutivo = () => useData<any>('/dashboard/ejecutivo');
