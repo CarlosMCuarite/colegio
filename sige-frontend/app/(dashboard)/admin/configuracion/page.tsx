@@ -125,6 +125,16 @@ export default function ConfiguracionAdminPage() {
         {/* Tab Institución */}
         {tabActiva === 'colegio' && formColegio && (
           <motion.form className="sige-card" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} onSubmit={guardarColegio}>
+            <section style={{ marginBottom: '1.15rem', padding: '1rem', borderRadius: 12, background: 'linear-gradient(135deg, var(--accent-soft), var(--bg-card))', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+              <div>
+                <small style={{ display: 'block', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.06em' }}>Plan institucional</small>
+                <strong style={{ fontSize: '1.05rem' }}>{colegio?.plan?.nombre ?? 'Sin plan asignado'}</strong>
+                <span style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '.78rem', marginTop: 3 }}>
+                  {colegio?.licenciaFin ? `Vigente hasta ${new Date(colegio.licenciaFin).toLocaleDateString('es-PE')}` : 'Consulta la vigencia con Super Admin'}
+                </span>
+              </div>
+              <i className="bi bi-patch-check-fill" style={{ color: 'var(--accent)', fontSize: '1.8rem' }} />
+            </section>
             <h3 style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '1.25rem' }}>
               <i className="bi bi-building me-2" />Datos Institucionales
             </h3>

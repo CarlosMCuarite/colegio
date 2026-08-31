@@ -217,5 +217,48 @@ export async function deleteFile(bucket: Bucket, filePath: string): Promise<void
   if (error) logger.warn(`No se pudo eliminar archivo: ${filePath}`, error);
 }
 
+let storageUsageCache: { at: number; value: { bytes: number; archivos: number; buckets: Array<{ nombre: string; bytes: number; archivos: number }> } } | null = null;
+
+/** Inventario real de objetos de los buckets administrados por SIGE. Cacheado
+ * un minuto para que el monitoreo de 5 s no sobrecargue la API de Storage. */
+export async function obtenerUsoStorage() {
+  if (storageUsageCache && Date.now() - storageUsageCache.at < 60_000) return storageUsageCache.value;
+
+  async function scan(bucket: string, prefix = ''): Promise<{ bytes: number; archivos: number }> {
+    let bytes = 0, archivos = 0, offset = 0;
+    while (true) {
+      const { data, error } = await supabaseAdmin.storage.from(bucket).list(prefix, {
+        limit: 1000, offset, sortBy: { column: 'name', order: 'asc' },
+      });
+      if (error) throw new AppError(`No se pudo medir el bucket ${bucket}: ${error.message}`, 500);
+      const items = data ?? [];
+      for (const item of items) {
+        if (item.id == null) {
+          const nested = await scan(bucket, prefix ? `${prefix}/${item.name}` : item.name);
+          bytes += nested.bytes; archivos += nested.archivos;
+        } else {
+          bytes += Number(item.metadata?.size ?? 0); archivos += 1;
+        }
+      }
+      if (items.length < 1000) break;
+      offset += items.length;
+    }
+    return { bytes, archivos };
+  }
+
+  const buckets = [] as Array<{ nombre: string; bytes: number; archivos: number }>;
+  for (const nombre of [...new Set(Object.values(BUCKETS))]) {
+    const value = await scan(nombre);
+    buckets.push({ nombre, ...value });
+  }
+  const value = {
+    bytes: buckets.reduce((sum, item) => sum + item.bytes, 0),
+    archivos: buckets.reduce((sum, item) => sum + item.archivos, 0),
+    buckets,
+  };
+  storageUsageCache = { at: Date.now(), value };
+  return value;
+}
+
 // Re-export para uso en rutas
 export { BUCKETS } from '../config/supabase';

@@ -95,10 +95,10 @@ export default function PadresPage() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="sige-table">
-              <thead><tr><th>Padre/Apoderado</th><th>DNI</th><th>Contacto</th><th>Hijos</th><th>Acceso</th><th style={{ textAlign: 'right' }}>Acciones</th></tr></thead>
+              <thead><tr><th>Padre/Apoderado</th><th>DNI</th><th>Contacto</th><th>Dirección</th><th>Hijos</th><th>Acceso</th><th style={{ textAlign: 'right' }}>Acciones</th></tr></thead>
               <tbody>
                 {padres.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                     <i className="bi bi-people" style={{ fontSize: '2rem', display: 'block', marginBottom: 8 }} />Sin padres registrados
                   </td></tr>
                 ) : padres.map((p: any, i: number) => (
@@ -109,6 +109,7 @@ export default function PadresPage() {
                     </td>
                     <td style={{ fontFamily: 'monospace', fontSize: '0.82rem' }}>{p.dni}</td>
                     <td style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{p.telefono || '—'}</td>
+                    <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: 190 }}>{p.direccion || '—'}</td>
                     <td>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {(p.padreEstudiantes ?? []).map((pe: any) => (

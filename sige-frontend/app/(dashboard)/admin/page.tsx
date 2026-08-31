@@ -4,11 +4,9 @@ import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { useDashboardEjecutivo } from '../../../hooks/useApi';
 import { motion } from 'framer-motion';
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
+  AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts';
-
-const COLORS = ['#4f46e5','#10b981','#f59e0b','#ef4444','#3b82f6'];
 
 const ESTADO_LABELS: Record<string, string> = {
   PRESENTE: 'Presentes', AUSENTE: 'Ausentes', TARDANZA: 'Tardanzas',
@@ -44,14 +42,12 @@ export default function AdminDashboard() {
     { label: 'Permisos Pendientes', value: d?.kpis?.permisosPendientes ?? 0, icon: 'bi-door-open', color: '#8b5cf6', bg: '#ede9fe' },
   ];
 
-  // Datos para pie de estudiantes por estado
-  const pieData = (d?.estudiantes?.porEstado ?? []).map((e: any) => ({
-    name: e.estado, value: e._count,
-  }));
+  const ocupacionPorGrado = d?.ocupacionPorGrado ?? [];
 
   return (
     <DashboardLayout title="Dashboard Ejecutivo" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR']}>
-      <PlanActivoCard colegio={d?.colegio} licencia={d?.licencia} />
+      {d?.licencia?.diasRestantes !== null && d?.licencia?.diasRestantes !== undefined && d.licencia.diasRestantes <= 30 &&
+        <PlanActivoCard colegio={d?.colegio} licencia={d?.licencia} />}
       {/* Alerta licencia */}
       {d?.licencia?.alerta && (
         <motion.div
@@ -118,21 +114,19 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Distribución estudiantes */}
+        {/* Matrícula por grado: muestra carga académica real */}
         <div className="sige-card">
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            <i className="bi bi-pie-chart me-2" />Estudiantes por estado
+            <i className="bi bi-bar-chart me-2" />Matrícula activa por grado
           </h3>
           <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={3} dataKey="value">
-                {pieData.map((_: any, index: number) => (
-                  <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
+            <BarChart data={ocupacionPorGrado} margin={{ left: 0, right: 8, top: 6, bottom: 12 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
+              <XAxis dataKey="nombre" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} interval={0} angle={-18} textAnchor="end" height={54} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
               <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-            </PieChart>
+              <Bar dataKey="matriculados" name="Matriculados" fill="var(--accent)" radius={[7,7,0,0]} maxBarSize={34} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>

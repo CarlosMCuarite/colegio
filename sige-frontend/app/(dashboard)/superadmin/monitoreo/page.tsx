@@ -32,6 +32,7 @@ export default function MonitoreoPage() {
 
   const dbColor = d.baseDatos.ok ? (d.baseDatos.latenciaMs < 300 ? '#10b981' : '#f59e0b') : '#ef4444';
   const dbLabel = d.baseDatos.ok ? (d.baseDatos.latenciaMs < 300 ? 'Óptima' : 'Lenta') : 'Sin conexión';
+  const capacityColor = (pct: number) => pct >= 85 ? '#ef4444' : pct >= 65 ? '#f59e0b' : '#2563eb';
 
   return (
     <DashboardLayout title="Monitoreo del sistema" allowedRoles={['SUPERADMIN']}>
@@ -60,6 +61,30 @@ export default function MonitoreoPage() {
           <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}><i className="bi bi-building-slash me-1" />Colegios suspendidos</div>
           <div style={{ fontSize: '1.2rem', fontWeight: 800, color: d.colegiosSuspendidos > 0 ? '#ef4444' : 'var(--text-primary)' }}>{d.colegiosSuspendidos}</div>
         </div>
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem', marginBottom: '1.25rem' }}>
+        {[
+          { label: 'Base de datos PostgreSQL', icon: 'bi-database-fill', value: d.baseDatos },
+          { label: 'Supabase Storage', icon: 'bi-cloud-fill', value: d.almacenamiento },
+        ].map(({ label, icon, value }) => {
+          const pct = Number(value?.porcentaje ?? 0);
+          const color = capacityColor(pct);
+          return <div key={label} className="sige-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center' }}>
+              <div><div className="enterprise-eyebrow"><i className={`bi ${icon} me-1`} />Capacidad</div><strong>{label}</strong></div>
+              <span style={{ color, fontSize: '1.15rem', fontWeight: 900 }}>{pct}%</span>
+            </div>
+            <div style={{ height: 9, borderRadius: 99, background: `${color}20`, overflow: 'hidden', margin: '.85rem 0 .5rem' }}>
+              <div style={{ width: `${Math.min(100, pct)}%`, height: '100%', borderRadius: 99, background: color, transition: 'width .45s ease' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: '.76rem' }}>
+              <span>{Number(value?.usadoMB ?? 0).toFixed(2)} MB usados</span><span>{value?.limiteMB ?? 0} MB disponibles</span>
+            </div>
+            {value?.archivos !== undefined && <div style={{ marginTop: '.65rem', fontSize: '.76rem', color: 'var(--text-secondary)' }}><i className="bi bi-files me-1" />{value.archivos} archivos en {value.buckets?.length ?? 0} buckets</div>}
+            {pct >= 85 && <div style={{ marginTop: '.65rem', color: '#b91c1c', fontSize: '.76rem', fontWeight: 700 }}><i className="bi bi-exclamation-triangle me-1" />Capacidad crítica: libera espacio o amplía el plan.</div>}
+          </div>;
+        })}
       </div>
 
       {/* Accesos recientes */}

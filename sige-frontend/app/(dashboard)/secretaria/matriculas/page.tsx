@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../../../components/layout/DashboardLayout';
-import { useMatriculas, useNivelesGrados, useMutation } from '../../../../hooks/useApi';
+import { useMatriculas, useNivelesGrados, useMutation, useData } from '../../../../hooks/useApi';
 import api from '../../../../lib/api';
 import toast from 'react-hot-toast';
 
@@ -115,7 +115,9 @@ export default function MatriculasPage() {
 }
 
 function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
-  const [form, setForm] = useState({ estudianteDni: '', nivelGradoId: '', seccionId: '', observaciones: '' });
+  const [form, setForm] = useState({ estudianteDni: '', nivelGradoId: '', seccionId: '', conceptoMatriculaId: '', observaciones: '' });
+  const { data: conceptosData } = useData<any>('/conceptos-pago?soloActivos=true');
+  const conceptosMatricula = (conceptosData?.data ?? []).filter((c: any) => c.tipo === 'MATRICULA');
   const [buscando, setBuscando] = useState(false);
   const [estudiante, setEstudiante] = useState<any>(null);
   const set = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
@@ -135,7 +137,7 @@ function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!estudiante) { toast.error('Busca primero al estudiante'); return; }
-    onGuardar({ estudianteId: estudiante.id, nivelGradoId: form.nivelGradoId, seccionId: form.seccionId || null, observaciones: form.observaciones });
+    onGuardar({ estudianteId: estudiante.id, nivelGradoId: form.nivelGradoId, seccionId: form.seccionId || null, conceptoMatriculaId: form.conceptoMatriculaId || null, observaciones: form.observaciones });
   };
 
   return (
@@ -172,6 +174,14 @@ function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
             <option value="">Sin sección</option>
             {selectedNivel?.secciones?.map((s: any) => <option key={s.id} value={s.id}>Sección {s.nombre}</option>)}
           </select>
+        </div>
+        <div>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Precio / cobro de matrícula</label>
+          <select value={form.conceptoMatriculaId} onChange={set('conceptoMatriculaId')} className="sige-input">
+            <option value="">No generar cobro ahora</option>
+            {conceptosMatricula.map((c: any) => <option key={c.id} value={c.id}>{c.nombre} — S/ {Number(c.monto).toFixed(2)}</option>)}
+          </select>
+          <small style={{ color: 'var(--text-muted)' }}>El precio se administra como concepto de pago para mantener caja, deuda y voucher vinculados.</small>
         </div>
         <div>
           <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Observaciones</label>

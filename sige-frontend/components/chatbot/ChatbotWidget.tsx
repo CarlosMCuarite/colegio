@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../lib/api';
+import SigeOwl, { OwlMood } from '../brand/SigeOwl';
+import { useAuth } from '../../lib/auth';
 
 interface Mensaje {
   id: string;
@@ -23,6 +25,7 @@ const SUGERENCIAS = [
 ];
 
 export default function ChatbotWidget() {
+  const { user } = useAuth();
   const [open, setOpen]         = useState(false);
   const [input, setInput]       = useState('');
   const [msgs, setMsgs]         = useState<Mensaje[]>([]);
@@ -33,7 +36,7 @@ export default function ChatbotWidget() {
     if (open && msgs.length === 0) {
       setMsgs([{
         id: '0', rol: 'bot', ts: new Date(),
-        texto: '👋 ¡Hola! Soy tu asistente virtual del colegio. ¿En qué puedo ayudarte?',
+        texto: `¡Hola${user?.nombres ? `, ${user.nombres}` : ''}! Soy Búho SIGE. Puedo ayudarte a consultar datos y encontrar el módulo correcto. ¿Qué necesitas?`,
       }]);
     }
   }, [open]);
@@ -86,7 +89,7 @@ export default function ChatbotWidget() {
             }}>
               <BotAvatar estado={estado} />
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 700, color: '#fff', fontSize: '0.875rem' }}>Asistente SIGE</div>
+                <div style={{ fontWeight: 700, color: 'var(--accent-contrast)', fontSize: '0.875rem' }}>Búho SIGE</div>
                 <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.75)' }}>
                   {estado === 'esperando' ? '● En línea' : estado === 'pensando' ? '⋯ Pensando...' : '✍ Respondiendo...'}
                 </div>
@@ -205,14 +208,14 @@ export default function ChatbotWidget() {
 }
 
 function BotAvatar({ estado }: { estado: EstadoBot }) {
-  const icons = { esperando: 'bi-robot', pensando: 'bi-cpu', respondiendo: 'bi-chat-left-dots' };
+  const mood: OwlMood = estado === 'pensando' ? 'thinking' : estado === 'respondiendo' ? 'studying' : 'welcome';
   return (
     <motion.div
-      style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      animate={estado === 'pensando' ? { scale: [1, 1.1, 1] } : {}}
-      transition={{ repeat: Infinity, duration: 0.8 }}
+      style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}
+      animate={estado === 'pensando' ? { scale: [1, 1.08, 1] } : { y: [0, -2, 0] }}
+      transition={{ repeat: Infinity, duration: estado === 'pensando' ? 0.9 : 2.8 }}
     >
-      <i className={`bi ${icons[estado]}`} style={{ color: '#fff', fontSize: '1.1rem' }} />
+      <SigeOwl mood={mood} size="sm" label={`Búho SIGE ${mood}`} />
     </motion.div>
   );
 }

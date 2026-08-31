@@ -205,11 +205,14 @@ export default function PermisosPage() {
 
 function ModalCrear({ onConfirm, onCancelar, saving }: any) {
   const [busqueda, setBusqueda] = useState('');
+  const [nivelGradoId, setNivelGradoId] = useState('');
   const [estudiante, setEstudiante] = useState<any>(null);
   const [motivo, setMotivo] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  const params = new URLSearchParams({ q: busqueda, limit: '6' }).toString();
-  const { data } = useData<any>(busqueda.trim().length >= 2 ? `/estudiantes?${params}` : '');
+  const { data: nivelesData } = useData<any>('/niveles-grados');
+  const niveles = nivelesData?.data ?? [];
+  const params = new URLSearchParams({ q: busqueda, nivelGradoId, limit: '8' }).toString();
+  const { data } = useData<any>(busqueda.trim().length >= 2 || nivelGradoId ? `/estudiantes?${params}` : '');
   const resultados = data?.data ?? [];
 
   return (
@@ -222,8 +225,14 @@ function ModalCrear({ onConfirm, onCancelar, saving }: any) {
         {!estudiante ? (
           <div style={{ marginBottom: '1rem' }}>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, display: 'block', marginBottom: 4, color: 'var(--text-secondary)' }}>Buscar estudiante</label>
-            <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)} className="sige-input" placeholder="Nombre, apellido o DNI..." autoFocus />
-            {busqueda.trim().length >= 2 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px', gap: 8 }}>
+              <input type="text" value={busqueda} onChange={e => setBusqueda(e.target.value)} className="sige-input" placeholder="Nombre, apellido o DNI..." autoFocus />
+              <select className="sige-input" value={nivelGradoId} onChange={e => setNivelGradoId(e.target.value)} aria-label="Filtrar por grado">
+                <option value="">Todos los grados</option>
+                {niveles.map((n: any) => <option key={n.id} value={n.id}>{n.nombre}</option>)}
+              </select>
+            </div>
+            {(busqueda.trim().length >= 2 || nivelGradoId) && (
               <div style={{ marginTop: '0.5rem', maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border-color)', borderRadius: 8 }}>
                 {resultados.length === 0 ? (
                   <div style={{ padding: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center' }}>Sin resultados</div>
@@ -231,7 +240,7 @@ function ModalCrear({ onConfirm, onCancelar, saving }: any) {
                   <button key={e.id} type="button" onClick={() => setEstudiante(e)}
                     style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '100%', textAlign: 'left', padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
                     <i className="bi bi-person-badge" style={{ color: 'var(--text-muted)' }} />
-                    {e.nombres} {e.apellidos} <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>· {e.dni}</span>
+                    <span style={{ flex: 1 }}>{e.nombres} {e.apellidos}<small style={{ display: 'block', color: 'var(--text-muted)' }}>{e.matriculas?.[0]?.nivelGrado?.nombre ?? 'Sin matrícula'} · DNI {e.dni}</small></span>
                   </button>
                 ))}
               </div>
@@ -240,7 +249,7 @@ function ModalCrear({ onConfirm, onCancelar, saving }: any) {
         ) : (
           <>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-secondary)', borderRadius: 8, padding: '0.6rem 0.75rem', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}><i className="bi bi-person-badge me-2" />{estudiante.nombres} {estudiante.apellidos}</span>
+              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}><i className="bi bi-person-badge me-2" />{estudiante.nombres} {estudiante.apellidos}<small style={{ display: 'block', marginLeft: 24, color: 'var(--text-muted)' }}>{estudiante.matriculas?.[0]?.nivelGrado?.nombre ?? 'Sin matrícula vigente'}</small></span>
               <button type="button" onClick={() => setEstudiante(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '0.78rem' }}>Cambiar</button>
             </div>
             <div style={{ marginBottom: '0.875rem' }}>

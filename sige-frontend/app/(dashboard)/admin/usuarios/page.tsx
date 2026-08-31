@@ -105,8 +105,8 @@ export default function UsuariosPage() {
                     <motion.tr key={u.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0 }}>
-                            {u.nombres?.[0]}{u.apellidos?.[0]}
+                          <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--accent-soft)', color: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem', flexShrink: 0, overflow: 'hidden' }}>
+                            {u.avatarUrl ? <img src={u.avatarUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <>{u.nombres?.[0]}{u.apellidos?.[0]}</>}
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{u.apellidos}, {u.nombres}</div>

@@ -33,14 +33,21 @@ export default function EstudiantesPage() {
   const estudiantes = (data as any)?.data ?? [];
   const meta        = (data as any)?.meta ?? {};
 
-  const handleGuardar = async (form: any) => {
+  const handleGuardar = async (form: any, foto?: File | null) => {
     await save(async () => {
+      let estudianteId = editando?.id;
       if (editando) {
         await api.patch(`/estudiantes/${editando.id}`, form);
         toast.success('Estudiante actualizado');
       } else {
-        await api.post('/estudiantes', form);
+        const response = await api.post('/estudiantes', form);
+        estudianteId = response.data?.data?.id;
         toast.success('Estudiante registrado');
+      }
+      if (foto && estudianteId) {
+        const fd = new FormData();
+        fd.append('foto', foto);
+        await api.post(`/estudiantes/${estudianteId}/foto`, fd);
       }
       mutate();
       setShowModal(false);
@@ -119,9 +126,9 @@ export default function EstudiantesPage() {
                             width: 36, height: 36, borderRadius: '50%',
                             background: 'var(--accent-soft)', color: 'var(--accent)',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            fontWeight: 700, fontSize: '0.8rem', flexShrink: 0,
+                            fontWeight: 700, fontSize: '0.8rem', flexShrink: 0, overflow: 'hidden',
                           }}>
-                            {est.nombres?.[0]}{est.apellidos?.[0]}
+                            {est.fotoUrl ? <img src={est.fotoUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <>{est.nombres?.[0]}{est.apellidos?.[0]}</>}
                           </div>
                           <div>
                             <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{est.apellidos}, {est.nombres}</div>
@@ -214,6 +221,8 @@ export default function EstudiantesPage() {
 }
 
 function EstudianteForm({ inicial, onGuardar, onCancelar, saving }: any) {
+  const [foto, setFoto] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string>(inicial?.fotoUrl ?? '');
   const [form, setForm] = useState({
     dni:      inicial?.dni      ?? '',
     nombres:  inicial?.nombres  ?? '',
@@ -227,7 +236,7 @@ function EstudianteForm({ inicial, onGuardar, onCancelar, saving }: any) {
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(p => ({ ...p, [k]: e.target.value }));
 
-  const submit = (e: React.FormEvent) => { e.preventDefault(); onGuardar(form); };
+  const submit = (e: React.FormEvent) => { e.preventDefault(); onGuardar(form, foto); };
 
   return (
     <form onSubmit={submit}>
@@ -238,6 +247,21 @@ function EstudianteForm({ inicial, onGuardar, onCancelar, saving }: any) {
         <button type="button" onClick={onCancelar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1.1rem' }}>
           <i className="bi bi-x-lg" />
         </button>
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', padding: '0.85rem', border: '1px solid var(--border-color)', borderRadius: 12 }}>
+        <div style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', background: 'var(--accent-soft)', display: 'grid', placeItems: 'center', color: 'var(--accent)', flexShrink: 0 }}>
+          {fotoPreview ? <img src={fotoPreview} alt="Foto del estudiante" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="bi bi-person" style={{ fontSize: '1.6rem' }} />}
+        </div>
+        <div style={{ flex: 1 }}>
+          <strong style={{ display: 'block', fontSize: '0.82rem' }}>Foto del estudiante</strong>
+          <small style={{ color: 'var(--text-muted)', display: 'block', marginBottom: 7 }}>JPG, PNG o WebP. Se optimiza automáticamente.</small>
+          <label className="btn-accent" style={{ display: 'inline-flex', cursor: 'pointer', fontSize: '0.76rem', padding: '0.35rem 0.7rem' }}>
+            <i className="bi bi-camera" /> {fotoPreview ? 'Cambiar foto' : 'Agregar foto'}
+            <input type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={e => { const f = e.target.files?.[0] ?? null; setFoto(f); if (f) setFotoPreview(URL.createObjectURL(f)); }} />
+          </label>
+          {fotoPreview && <button type="button" onClick={() => window.open(fotoPreview, '_blank')} style={{ marginLeft: 8, border: 0, background: 'transparent', color: 'var(--accent)', fontSize: '0.76rem' }}>Ver foto</button>}
+        </div>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

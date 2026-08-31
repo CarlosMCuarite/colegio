@@ -6,6 +6,7 @@ import { resolveTenant } from '../middleware/tenant';
 import { AppError } from '../utils/AppError';
 import { RolNombre } from '@prisma/client';
 import dayjs from 'dayjs';
+import { obtenerUsoStorage } from '../services/storageService';
 
 const router = Router();
 router.use(authenticate, resolveTenant);
@@ -26,7 +27,7 @@ router.get('/ejecutivo', async (req, res) => {
     totalEstudiantes, estudiantesPorEstado, asistenciaHoy, matriculasAno,
     pagosMes, pagosMorosidad, colegio, usuariosActivos, asistencia7dias,
     eventosProximos, comunicadosRecientes, documentosPendientes, permisosPendientes,
-    totalDocentes, totalPadres,
+    totalDocentes, totalPadres, ocupacionPorGrado,
   ] = await Promise.all([
     prisma.estudiante.count({ where: { colegioId, estado: 'ACTIVO', deletedAt: null } }),
     prisma.estudiante.groupBy({ by: ['estado'], where: { colegioId, deletedAt: null }, _count: true }),
@@ -43,6 +44,11 @@ router.get('/ejecutivo', async (req, res) => {
     prisma.permisoSalida.count({ where: { colegioId, estado: 'SOLICITADO' } }),
     prisma.usuario.count({ where: { colegioId, activo: true, rol: { in: ['DOCENTE','AUXILIAR','TUTOR','COORDINADOR'] } } }),
     prisma.padre.count({ where: { colegioId, activo: true } }),
+    prisma.nivelGrado.findMany({
+      where: { colegioId, activo: true },
+      orderBy: [{ nivel: 'asc' }, { grado: 'asc' }],
+      select: { id: true, nombre: true, nivel: true, _count: { select: { matriculas: { where: { anoEscolar: ano, activa: true } } } } },
+    }),
   ]);
 
   const diasLicencia = colegio?.licenciaFin ? Math.ceil((colegio.licenciaFin.getTime() - Date.now()) / 86400000) : null;
@@ -53,6 +59,7 @@ router.get('/ejecutivo', async (req, res) => {
       colegio: { nombre: colegio?.nombre, logoUrl: colegio?.logoUrl, estado: colegio?.estado, planNombre: colegio?.plan?.nombre },
       kpis: { totalEstudiantes, totalDocentes, totalPadres, matriculasAno, usuariosActivos, documentosPendientes, permisosPendientes },
       estudiantes: { porEstado: estudiantesPorEstado },
+      ocupacionPorGrado: ocupacionPorGrado.map(grado => ({ nombre: grado.nombre, nivel: grado.nivel, matriculados: grado._count.matriculas })),
       asistencia: {
         hoy: asistenciaHoy,
         semana: asistencia7dias.map(r => ({ fecha: dayjs(r.fecha).format('DD/MM'), presente: Number(r.presente), ausente: Number(r.ausente), tardanza: Number(r.tardanza) })),
@@ -243,7 +250,7 @@ router.get('/monitoreo', async (req, res) => {
     backups24h, backups7d, backupsFallidosRecientes,
     usuariosActivos15min, usuariosActivos1h,
     ultimosAccesos, coleigiosSuspendidos, erroresAuditoriaRecientes,
-    databaseSizeRows, almacenamientoRegistrado,
+    databaseSizeRows, usoStorage,
   ] = await Promise.all([
     prisma.backup.groupBy({ by: ['estado'], where: { createdAt: { gte: hace24h } }, _count: true }),
     prisma.backup.groupBy({ by: ['estado'], where: { createdAt: { gte: hace7d } }, _count: true }),
@@ -263,7 +270,7 @@ router.get('/monitoreo', async (req, res) => {
     prisma.colegio.count({ where: { estado: 'SUSPENDIDO' } }),
     prisma.auditoria.findMany({ orderBy: { createdAt: 'desc' }, take: 25, include: { colegio: { select: { nombre: true } }, usuario: { select: { nombres: true, apellidos: true, rol: true } } } }),
     prisma.$queryRawUnsafe<Array<{ bytes: bigint }>>('SELECT pg_database_size(current_database()) AS bytes'),
-    prisma.colegio.aggregate({ _sum: { almacenamientoUsadoMB: true } }),
+    obtenerUsoStorage(),
   ]);
 
   const contarEstado = (arr: any[], estado: string) => arr.find(x => x.estado === estado)?._count ?? 0;
@@ -275,7 +282,7 @@ router.get('/monitoreo', async (req, res) => {
   const mem = process.memoryUsage();
   const databaseBytes = Number(databaseSizeRows[0]?.bytes ?? 0);
   const databaseLimitBytes = 500 * 1024 * 1024;
-  const storageUsedMB = Number(almacenamientoRegistrado._sum.almacenamientoUsadoMB ?? 0);
+  const storageUsedMB = usoStorage.bytes / 1024 / 1024;
   const storageLimitMB = 1024;
 
   res.json({
@@ -291,7 +298,9 @@ router.get('/monitoreo', async (req, res) => {
         usadoMB: Math.round(storageUsedMB * 100) / 100,
         limiteMB: storageLimitMB,
         porcentaje: Math.min(100, Math.round((storageUsedMB / storageLimitMB) * 100)),
-        alcance: 'Archivos registrados por SIGE',
+        archivos: usoStorage.archivos,
+        buckets: usoStorage.buckets.map(item => ({ nombre: item.nombre, archivos: item.archivos, usadoMB: Math.round((item.bytes / 1024 / 1024) * 100) / 100 })),
+        alcance: 'Inventario real de Supabase Storage',
       },
       servidor: {
         uptimeSegundos: Math.round(process.uptime()),

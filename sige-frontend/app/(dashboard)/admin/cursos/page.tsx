@@ -14,6 +14,7 @@ export default function CursosPage() {
   const [nivelGradoId, setNivelGradoId] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
+  const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const { data: nivelesData } = useNivelesGrados();
   const niveles = (nivelesData as any)?.data ?? [];
   const { data, isLoading, mutate } = useData<any>(nivelGradoId ? `/cursos?nivelGradoId=${nivelGradoId}` : '/cursos');
@@ -41,6 +42,18 @@ export default function CursosPage() {
     } catch (err: any) {
       toast.error(err?.response?.data?.error ?? 'No se pudo eliminar');
     }
+  };
+
+  const eliminarSeleccionados = async () => {
+    const ids = seleccionados.length ? seleccionados : cursos.map((c: any) => c.id);
+    const etiqueta = seleccionados.length ? `${ids.length} cursos seleccionados` : `los ${ids.length} cursos mostrados`;
+    if (!ids.length || !confirm(`¿Eliminar ${etiqueta}? Los cursos con notas se desactivarán para preservar el historial.`)) return;
+    await save(async () => {
+      await Promise.all(ids.map((id: string) => api.delete(`/cursos/${id}`)));
+      toast.success('Cursos procesados correctamente');
+      setSeleccionados([]);
+      mutate();
+    });
   };
 
   const usarPlantilla = async () => {
@@ -73,6 +86,10 @@ export default function CursosPage() {
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.5rem 0.875rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
           {cargandoPlantilla ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-magic me-1" />Crear cursos por defecto</>}
         </button>
+        {cursos.length > 0 && <button onClick={eliminarSeleccionados} disabled={saving}
+          style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: 8, padding: '0.5rem 0.875rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
+          <i className="bi bi-trash3 me-1" />{seleccionados.length ? `Eliminar selección (${seleccionados.length})` : 'Eliminar todos los mostrados'}
+        </button>}
       </div>
 
       {isLoading ? (
@@ -86,12 +103,15 @@ export default function CursosPage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
           {cursos.map((c: any) => (
             <div key={c.id} className="sige-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', opacity: c.activo ? 1 : 0.5 }}>
+              <label style={{ display: 'flex', gap: 10, flex: 1, cursor: 'pointer' }}>
+                <input type="checkbox" checked={seleccionados.includes(c.id)} onChange={e => setSeleccionados(prev => e.target.checked ? [...prev, c.id] : prev.filter(id => id !== c.id))} aria-label={`Seleccionar ${c.nombre}`} />
               <div>
                 <div style={{ fontWeight: 700, fontSize: '0.9rem' }}>{c.nombre}</div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{c.nivelGrado?.nombre}</div>
                 {c.areaCurricular && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>{c.areaCurricular}</div>}
                 {!c.activo && <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#991b1b' }}>Inactivo</span>}
               </div>
+              </label>
               <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                 <button onClick={() => { setEditando(c); setShowModal(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><i className="bi bi-pencil" /></button>
                 <button onClick={() => eliminar(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><i className="bi bi-trash" /></button>

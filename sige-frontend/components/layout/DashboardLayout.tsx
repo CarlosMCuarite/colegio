@@ -7,6 +7,7 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import ChatbotWidget from '../chatbot/ChatbotWidget';
 import SigeOwl from '../brand/SigeOwl';
+import BackgroundLocalBackup from '../BackgroundLocalBackup';
 import { BLUE_SCHOOL_THEME, getSchoolTheme, SchoolThemeProvider } from './SchoolThemeContext';
 
 interface Props {
@@ -116,6 +117,7 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
         {['PADRE','ADMINISTRADOR','DIRECTOR','SECRETARIA'].includes(user.rol) && (
           <ChatbotWidget />
         )}
+        <BackgroundLocalBackup rol={user.rol} colegioId={user.colegio?.id} />
       </div>
     </SchoolThemeProvider>
   );

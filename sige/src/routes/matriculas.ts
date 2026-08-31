@@ -17,6 +17,7 @@ const matriculaSchema = z.object({
   seccionId:     z.string().optional().nullable(),
   anoEscolar:    z.coerce.number().int(),
   observaciones: z.string().optional().nullable(),
+  conceptoMatriculaId: z.string().optional().nullable(),
 });
 
 // ── GET /matriculas ───────────────────────────────────────────────────────────
@@ -114,11 +115,24 @@ router.post(
     if (colegio!._count.estudiantes >= colegio!.plan.maxEstudiantes)
       throw new AppError(`Límite de estudiantes del plan alcanzado`, 403);
 
-    const matricula = await prisma.matricula.create({
-      data: { ...data, colegioId: req.colegioId! } as Prisma.MatriculaUncheckedCreateInput,
-      include: { nivelGrado: true, seccion: true },
+    const { conceptoMatriculaId, ...datosMatricula } = data;
+    const matricula = await prisma.$transaction(async tx => {
+      const creada = await tx.matricula.create({
+        data: { ...datosMatricula, colegioId: req.colegioId! } as Prisma.MatriculaUncheckedCreateInput,
+        include: { nivelGrado: true, seccion: true },
+      });
+      if (conceptoMatriculaId) {
+        const [concepto, vinculo] = await Promise.all([
+          tx.conceptoPago.findFirst({ where: { id: conceptoMatriculaId, colegioId: req.colegioId!, tipo: 'MATRICULA', activo: true } }),
+          tx.padreEstudiante.findFirst({ where: { estudianteId: data.estudianteId, estado: 'APROBADO' }, select: { padreId: true } }),
+        ]);
+        if (!concepto) throw new AppError('El concepto de matrícula no es válido', 400);
+        if (!vinculo) throw new AppError('Vincula un padre o apoderado antes de generar el cobro de matrícula', 400);
+        await tx.pago.create({ data: { colegioId: req.colegioId!, padreId: vinculo.padreId, estudianteId: data.estudianteId, conceptoId: concepto.id, tipo: 'MATRICULA', monto: concepto.monto, periodoPago: String(data.anoEscolar) } });
+      }
+      return creada;
     });
-    res.status(201).json({ ok: true, data: matricula });
+    res.status(201).json({ ok: true, data: matricula, cobroGenerado: Boolean(conceptoMatriculaId) });
   },
 );
 
@@ -128,7 +142,7 @@ router.patch(
   isStaff,
   auditar({ modulo: 'MATRICULAS', accion: AuditoriaAccion.ACTUALIZAR, getRecursoId: r => r.params.id }),
   async (req, res) => {
-    const data = matriculaSchema.partial().parse(req.body);
+    const { conceptoMatriculaId: _ignorado, ...data } = matriculaSchema.partial().parse(req.body);
     await prisma.matricula.updateMany({
       where: { id: req.params.id, colegioId: req.colegioId! },
       data,

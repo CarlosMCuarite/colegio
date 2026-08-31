@@ -113,7 +113,8 @@ export default function CarnetEstudiante({ estudiante, onCerrar }: Props) {
   const anoActual = new Date().getFullYear();
 
   const qrFrenteUrl = useQR(codigo);
-  const qrAtrasUrl  = useQR(`https://${colegio.slug ?? 'sige'}.sige.pe/validar/${codigo}`);
+  const origen = typeof window !== 'undefined' ? window.location.origin : '';
+  const qrAtrasUrl  = useQR(`${origen}/carnet/verificar/${encodeURIComponent(codigo)}`);
 
   const imprimir = () => window.print();
 

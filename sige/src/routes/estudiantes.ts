@@ -245,7 +245,7 @@ router.post('/:id/foto', upload.single('foto'), async (req, res) => {
   const where: any = { id: req.params.id, deletedAt: null };
   if (colegioId) where.colegioId = colegioId;
 
-  const ROLES_STAFF_FOTO: RolNombre[] = [RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.DIRECTOR, RolNombre.SECRETARIA];
+  const ROLES_STAFF_FOTO: RolNombre[] = [RolNombre.SUPERADMIN, RolNombre.ADMINISTRADOR, RolNombre.SECRETARIA];
   if (req.user!.rol === RolNombre.PADRE) {
     const padre = await prisma.padre.findFirst({ where: { usuarioId: req.user!.id, colegioId } });
     if (!padre) throw new AppError('Perfil de padre no encontrado', 404);
