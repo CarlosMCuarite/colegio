@@ -39,6 +39,9 @@ router.post(
   async (req, res) => {
     const { colegioId } = req.body as { colegioId?: string };
     const resultado = await ejecutarBackup(colegioId, req.user!.id);
+    if (!resultado.ok && resultado.fallidos.length) {
+      throw new AppError(`No se pudo generar el respaldo: ${resultado.fallidos.join(' · ')}`, 500);
+    }
     res.status(201).json({ ok: true, data: resultado });
   },
 );

@@ -27,6 +27,8 @@ export default function BackupsPage() {
       const resultado = res.data?.data;
       if (resultado?.backups?.length) {
         toast.success(`${resultado.backups.length} respaldo(s) generado(s) y verificado(s)`);
+      } else if (resultado?.fallidos?.length) {
+        toast.error(`No se pudo generar: ${resultado.fallidos.join(' · ')}`, { duration: 10000 });
       } else if (resultado?.bloqueados?.length) {
         toast.error(`Protección activada: ${resultado.bloqueados.join(' · ')}`, { duration: 10000 });
       } else if (resultado?.omitidos?.length) {

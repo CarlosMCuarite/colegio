@@ -64,8 +64,17 @@ DROP POLICY IF EXISTS "documentos_auth_delete" ON storage.objects;
 -- El backend accede siempre con supabaseAdmin (service_role), que bypasea RLS;
 -- por eso este bucket no necesita policies para authenticated/anon.
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('backups', 'backups', false, 52428800, ARRAY['application/json'])
-ON CONFLICT (id) DO UPDATE SET public = false, file_size_limit = 52428800;
+VALUES (
+  'backups', 'backups', false, 52428800,
+  ARRAY[
+    'application/json', 'application/pdf', 'application/octet-stream',
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'
+  ]
+)
+ON CONFLICT (id) DO UPDATE SET
+  public = false,
+  file_size_limit = 52428800,
+  allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- ── Verificar que quedaron creados ────────────────────────────────────────────
 SELECT id, name, public, file_size_limit FROM storage.buckets ORDER BY name;

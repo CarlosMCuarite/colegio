@@ -148,20 +148,22 @@ function validarDescensoAnormal(nombre: string, totalActual: number, conteos: Re
   }
 }
 
-export async function ejecutarBackup(colegioId?: string, disparadoPorId?: string): Promise<{ ok: boolean; backups: string[]; omitidos: string[]; bloqueados: string[] }> {
+type ResultadoBackup = { ok: boolean; backups: string[]; omitidos: string[]; bloqueados: string[]; fallidos: string[] };
+
+export async function ejecutarBackup(colegioId?: string, disparadoPorId?: string): Promise<ResultadoBackup> {
   if (ejecucionEnCurso) throw new Error('Ya hay un respaldo en ejecución. Espera a que termine.');
   ejecucionEnCurso = true;
   try { return await ejecutarBackupInterno(colegioId, disparadoPorId); }
   finally { ejecucionEnCurso = false; }
 }
 
-async function ejecutarBackupInterno(colegioId?: string, _disparadoPorId?: string): Promise<{ ok: boolean; backups: string[]; omitidos: string[]; bloqueados: string[] }> {
+async function ejecutarBackupInterno(colegioId?: string, _disparadoPorId?: string): Promise<ResultadoBackup> {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const colegios = colegioId
     ? await prisma.colegio.findMany({ where: { id: colegioId }, select: { id: true, nombre: true, slug: true } })
     : await prisma.colegio.findMany({ where: { estado: 'ACTIVO' }, select: { id: true, nombre: true, slug: true } });
   if (!colegios.length) throw new Error('No se encontró ningún colegio para respaldar.');
-  const generados: string[] = [], omitidos: string[] = [], bloqueados: string[] = [];
+  const generados: string[] = [], omitidos: string[] = [], bloqueados: string[] = [], fallidos: string[] = [];
 
   for (const colegio of colegios) {
     const nombre = `backup-${colegio.slug}-${timestamp}.json`, storagePath = `${colegio.id}/${nombre}`;
@@ -178,6 +180,10 @@ async function ejecutarBackupInterno(colegioId?: string, _disparadoPorId?: strin
       const conteosTablas = Object.fromEntries(Object.entries(snapshot.tablas).map(([tabla, filas]) => [tabla, filas.length]));
       const totalRegistros = Object.values(conteosTablas).reduce((n, cantidad) => n + cantidad, snapshot.colegio ? 1 : 0);
       validarDescensoAnormal(colegio.nombre, totalRegistros, conteosTablas, anterior);
+      // Crear el registro antes de copiar archivos. Así cualquier error durante
+      // la copia también queda visible en el historial y no se pierde en logs.
+      const entry = await prisma.backup.create({ data: { colegioId: colegio.id, nombre, rutaArchivo: storagePath, estado: BackupEstado.EN_PROCESO } });
+      entryId = entry.id;
       const activos = {
         colegio: snapshot.colegio,
         usuarios: snapshot.tablas.usuarios.filter(x => !x.deletedAt),
@@ -188,8 +194,6 @@ async function ejecutarBackupInterno(colegioId?: string, _disparadoPorId?: strin
       const { manifest, faltantes } = await sincronizarArchivos(colegio.id, extraerArchivos(activos));
       const contenido = { meta: { colegioId: colegio.id, colegioNombre: colegio.nombre, timestamp: new Date().toISOString(), version: '4.0', hashContenido, totalTablas: Object.keys(snapshot.tablas).length, totalRegistros, conteosTablas, archivos: manifest, archivosFaltantes: faltantes }, ...snapshot };
       const buffer = Buffer.from(JSON.stringify(contenido), 'utf-8');
-      const entry = await prisma.backup.create({ data: { colegioId: colegio.id, nombre, rutaArchivo: storagePath, estado: BackupEstado.EN_PROCESO } });
-      entryId = entry.id;
       const { error } = await supabaseAdmin.storage.from(BACKUP_BUCKET).upload(storagePath, buffer, { contentType: 'application/json', upsert: false });
       if (error) throw new Error(`No se pudo subir el JSON: ${error.message}`);
       const { data: prueba, error: pruebaError } = await supabaseAdmin.storage.from(BACKUP_BUCKET).download(storagePath);
@@ -201,13 +205,14 @@ async function ejecutarBackupInterno(colegioId?: string, _disparadoPorId?: strin
       logger.info(`✅ Backup verificado: ${nombre} · ${totalRegistros} registros · ${manifest.length} archivos vigentes`);
     } catch (err) {
       if ((err as Error).message.startsWith('RESPALDO BLOQUEADO:')) bloqueados.push(`${colegio.nombre}: ${(err as Error).message.replace('RESPALDO BLOQUEADO: ', '')}`);
+      else fallidos.push(`${colegio.nombre}: ${(err as Error).message}`);
       if (entryId) await prisma.backup.update({ where: { id: entryId }, data: { estado: BackupEstado.FALLIDO, error: (err as Error).message } }).catch(() => {});
       await supabaseAdmin.storage.from(BACKUP_BUCKET).remove([storagePath]).catch(() => {});
       logger.error(`❌ Backup fallido: ${nombre}`, err);
     }
   }
   await rotarBackups(colegioId);
-  return { ok: generados.length > 0 || omitidos.length > 0, backups: generados, omitidos, bloqueados };
+  return { ok: generados.length > 0 || omitidos.length > 0, backups: generados, omitidos, bloqueados, fallidos };
 }
 
 async function rotarBackups(colegioId?: string) {
