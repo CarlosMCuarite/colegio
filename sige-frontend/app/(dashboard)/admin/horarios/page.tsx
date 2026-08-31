@@ -158,8 +158,8 @@ export default function HorariosPage() {
             {vista === 'tabla' && grupos.length > 1 && (
               <select value={imprimirGrupo} onChange={e => setImprimirGrupo(e.target.value)} className="sige-input"
                 style={{ width: 'auto', fontSize: '0.8rem', padding: '0.35rem 0.6rem' }}>
-                <option value="">Imprimir: todos</option>
-                {grupos.map(g => <option key={g.titulo} value={g.titulo}>Imprimir: {g.titulo}</option>)}
+                <option value="">Ver: {grupos[0]?.titulo}</option>
+                {grupos.slice(1).map(g => <option key={g.titulo} value={g.titulo}>Ver: {g.titulo}</option>)}
               </select>
             )}
             <button onClick={() => window.print()}
@@ -179,8 +179,8 @@ export default function HorariosPage() {
         </div>
       ) : vista === 'tabla' ? (
         <div className="horario-print-root" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {grupos.map(g => (
-            <div key={g.titulo} className={`sige-card ${imprimirGrupo && imprimirGrupo !== g.titulo ? 'print-oculto' : ''}`} style={{ padding: 0, overflow: 'hidden' }}>
+          {grupos.filter(g => g.titulo === (imprimirGrupo || grupos[0]?.titulo)).map(g => (
+            <div key={g.titulo} className="sige-card" style={{ padding: 0, overflow: 'hidden' }}>
               {grupos.length > 1 && (
                 <div style={{ padding: '0.6rem 1rem', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-color)', fontWeight: 700, fontSize: '0.85rem', color: 'var(--text-primary)' }}>
                   <i className="bi bi-mortarboard me-2" />{g.titulo}

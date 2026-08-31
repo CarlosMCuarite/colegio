@@ -15,6 +15,7 @@ export default function ComunicadosPage() {
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [viendo, setViendo]     = useState<any>(null);
+  const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
   const params = new URLSearchParams({ page: String(page), limit: '20', q: busqueda, nivelEducativo: nivelFiltro, estado: estadoFiltro }).toString();
   const { data, error, isLoading, mutate } = useComunicados(params);
@@ -46,6 +47,21 @@ export default function ComunicadosPage() {
     await api.delete(`/comunicados/${id}`);
     toast.success('Comunicado desactivado');
     mutate();
+  };
+
+  const abrirComunicado = async (comunicado: any) => {
+    setViendo(comunicado);
+    setCargandoDetalle(true);
+    try {
+      // La lista es liviana y puede no contener relaciones/URLs firmadas. El
+      // detalle sí renueva los enlaces privados justo antes de mostrarlos.
+      const res = await api.get(`/comunicados/${comunicado.id}`);
+      setViendo(res.data.data);
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error ?? 'No se pudo cargar el adjunto');
+    } finally {
+      setCargandoDetalle(false);
+    }
   };
 
   return (
@@ -130,7 +146,7 @@ export default function ComunicadosPage() {
                   </div>
                   <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
                     <button
-                      onClick={() => setViendo(c)}
+                      onClick={() => abrirComunicado(c)}
                       style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 6, padding: '4px 8px', cursor: 'pointer', color: 'var(--text-secondary)' }}
                     ><i className="bi bi-eye" /></button>
                     <button
@@ -232,6 +248,8 @@ export default function ComunicadosPage() {
                 <i className="bi bi-check2-circle me-1" />Marcar como leído
               </button>
 
+              {cargandoDetalle && <div style={{ padding: '0.8rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}><span className="spinner-border spinner-border-sm me-2" />Preparando adjuntos…</div>}
+
               {/* Documento adjunto */}
               {(viendo.adjuntos?.length ? viendo.adjuntos : (viendo.adjuntoUrl ? [{ url: viendo.adjuntoUrl, nombre: viendo.adjuntoNombre }] : [])).length > 0 && (
                 <div>
@@ -240,8 +258,8 @@ export default function ComunicadosPage() {
                   </h4>
                   {(viendo.adjuntos?.length ? viendo.adjuntos : [{ url: viendo.adjuntoUrl, nombre: viendo.adjuntoNombre }]).map((a: any, i: number) => <div key={a.id ?? i} style={{ marginBottom: '0.75rem' }}>
                     {a.url ? <>
-                      {/\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(a.url) && <img src={a.url} alt={a.nombre || 'Adjunto'} style={{ width: '100%', maxHeight: 360, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--border-color)' }} />}
-                      {/\.pdf(\?.*)?$/i.test(a.url) && <iframe src={a.url} style={{ width: '100%', height: 360, borderRadius: 10, border: '1px solid var(--border-color)' }} />}
+                      {(a.mimeType?.startsWith('image/') || /\.(png|jpe?g|webp|gif)$/i.test(a.nombre ?? '')) && <img src={a.url} alt={a.nombre || 'Adjunto'} style={{ width: '100%', maxHeight: 360, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--border-color)' }} />}
+                      {(a.mimeType === 'application/pdf' || /\.pdf$/i.test(a.nombre ?? '')) && <iframe title={a.nombre || 'Documento PDF'} src={a.url} style={{ width: '100%', height: 360, borderRadius: 10, border: '1px solid var(--border-color)' }} />}
                       <a href={a.url} target="_blank" rel="noreferrer" className="btn-accent" style={{ marginTop: '0.5rem', width: '100%', justifyContent: 'center', textDecoration: 'none' }}><i className="bi bi-download me-1" />{a.nombre || `Abrir adjunto ${i + 1}`}</a>
                     </> : <div style={{ padding: '0.75rem', borderRadius: 8, background: '#fef2f2', color: '#991b1b', fontSize: '0.8rem' }}>
                       <i className="bi bi-exclamation-triangle me-2" />El archivo {a.nombre ? `“${a.nombre}”` : 'adjunto'} ya no está disponible, pero el comunicado se conserva.

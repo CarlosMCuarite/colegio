@@ -70,6 +70,23 @@ router.post('/plantilla-por-defecto', isAdmin, auditar({ modulo: 'CURSOS', accio
   res.status(201).json({ ok: true, cursosCreados: creados });
 });
 
+// Una sola operación para selección múltiple: evita decenas de solicitudes
+// simultáneas y conserva (desactivados) los cursos que ya tienen notas.
+router.post('/eliminar-lote', isAdmin, auditar({ modulo: 'CURSOS', accion: AuditoriaAccion.ELIMINAR }), async (req, res) => {
+  const { ids } = z.object({ ids: z.array(z.string()).min(1).max(500) }).parse(req.body);
+  const propios = await prisma.curso.findMany({ where: { id: { in: ids }, colegioId: req.colegioId! }, select: { id: true } });
+  const propiosIds = propios.map(c => c.id);
+  const conNotas = await prisma.nota.findMany({ where: { cursoId: { in: propiosIds } }, distinct: ['cursoId'], select: { cursoId: true } });
+  const protegidos = new Set(conNotas.map(n => n.cursoId));
+  const desactivar = propiosIds.filter(id => protegidos.has(id));
+  const eliminar = propiosIds.filter(id => !protegidos.has(id));
+  await prisma.$transaction([
+    prisma.curso.updateMany({ where: { id: { in: desactivar }, colegioId: req.colegioId! }, data: { activo: false } }),
+    prisma.curso.deleteMany({ where: { id: { in: eliminar }, colegioId: req.colegioId! } }),
+  ]);
+  res.json({ ok: true, eliminados: eliminar.length, desactivados: desactivar.length });
+});
+
 // ── PATCH /cursos/:id ──────────────────────────────────────────────────────────
 router.patch('/:id', isAdmin, auditar({ modulo: 'CURSOS', accion: AuditoriaAccion.ACTUALIZAR, getRecursoId: r => r.params.id }), async (req, res) => {
   const data = cursoSchema.partial().parse(req.body);

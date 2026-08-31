@@ -27,7 +27,7 @@ router.get('/ejecutivo', async (req, res) => {
     totalEstudiantes, estudiantesPorEstado, asistenciaHoy, matriculasAno,
     pagosMes, pagosMorosidad, colegio, usuariosActivos, asistencia7dias,
     eventosProximos, comunicadosRecientes, documentosPendientes, permisosPendientes,
-    totalDocentes, totalPadres, ocupacionPorGrado,
+    totalDocentes, totalPadres, ocupacionPorGrado, rendimientoCursos,
   ] = await Promise.all([
     prisma.estudiante.count({ where: { colegioId, estado: 'ACTIVO', deletedAt: null } }),
     prisma.estudiante.groupBy({ by: ['estado'], where: { colegioId, deletedAt: null }, _count: true }),
@@ -49,7 +49,23 @@ router.get('/ejecutivo', async (req, res) => {
       orderBy: [{ nivel: 'asc' }, { grado: 'asc' }],
       select: { id: true, nombre: true, nivel: true, _count: { select: { matriculas: { where: { anoEscolar: ano, activa: true } } } } },
     }),
+    prisma.nota.groupBy({ by: ['cursoId'], where: { colegioId, calificacionNumerica: { not: null } }, _avg: { calificacionNumerica: true }, _count: true }),
   ]);
+
+  const cursosRendimiento = rendimientoCursos.length ? await prisma.curso.findMany({
+    where: { id: { in: rendimientoCursos.map(r => r.cursoId) }, colegioId },
+    select: { id: true, nivelGrado: { select: { id: true, nombre: true } } },
+  }) : [];
+  const cursoGrado = new Map(cursosRendimiento.map(c => [c.id, c.nivelGrado]));
+  const rendimientoMap = new Map<string, { nombre: string; suma: number; evaluaciones: number }>();
+  rendimientoCursos.forEach(r => {
+    const grado = cursoGrado.get(r.cursoId);
+    if (!grado || r._avg.calificacionNumerica == null) return;
+    const actual = rendimientoMap.get(grado.id) ?? { nombre: grado.nombre, suma: 0, evaluaciones: 0 };
+    actual.suma += Number(r._avg.calificacionNumerica) * r._count;
+    actual.evaluaciones += r._count;
+    rendimientoMap.set(grado.id, actual);
+  });
 
   const diasLicencia = colegio?.licenciaFin ? Math.ceil((colegio.licenciaFin.getTime() - Date.now()) / 86400000) : null;
 
@@ -60,6 +76,7 @@ router.get('/ejecutivo', async (req, res) => {
       kpis: { totalEstudiantes, totalDocentes, totalPadres, matriculasAno, usuariosActivos, documentosPendientes, permisosPendientes },
       estudiantes: { porEstado: estudiantesPorEstado },
       ocupacionPorGrado: ocupacionPorGrado.map(grado => ({ nombre: grado.nombre, nivel: grado.nivel, matriculados: grado._count.matriculas })),
+      rendimientoPorGrado: [...rendimientoMap.values()].map(r => ({ nombre: r.nombre, promedio: Number((r.suma / r.evaluaciones).toFixed(1)), evaluaciones: r.evaluaciones })).sort((a, b) => b.promedio - a.promedio),
       asistencia: {
         hoy: asistenciaHoy,
         semana: asistencia7dias.map(r => ({ fecha: dayjs(r.fecha).format('DD/MM'), presente: Number(r.presente), ausente: Number(r.ausente), tardanza: Number(r.tardanza) })),

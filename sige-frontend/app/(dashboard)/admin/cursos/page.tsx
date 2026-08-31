@@ -49,8 +49,8 @@ export default function CursosPage() {
     const etiqueta = seleccionados.length ? `${ids.length} cursos seleccionados` : `los ${ids.length} cursos mostrados`;
     if (!ids.length || !confirm(`¿Eliminar ${etiqueta}? Los cursos con notas se desactivarán para preservar el historial.`)) return;
     await save(async () => {
-      await Promise.all(ids.map((id: string) => api.delete(`/cursos/${id}`)));
-      toast.success('Cursos procesados correctamente');
+      const res = await api.post('/cursos/eliminar-lote', { ids });
+      toast.success(`${res.data.eliminados} eliminados y ${res.data.desactivados} desactivados por tener notas`);
       setSeleccionados([]);
       mutate();
     });
@@ -100,6 +100,14 @@ export default function CursosPage() {
           Sin cursos todavía. Usa "Crear cursos por defecto" o agrega uno manualmente.
         </div>
       ) : (
+        <>
+        <div className="sige-card" style={{ padding: '0.7rem 0.9rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 9, cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
+            <input type="checkbox" checked={seleccionados.length === cursos.length} ref={el => { if (el) el.indeterminate = seleccionados.length > 0 && seleccionados.length < cursos.length; }} onChange={e => setSeleccionados(e.target.checked ? cursos.map((c: any) => c.id) : [])} />
+            Seleccionar todos los cursos mostrados
+          </label>
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.76rem' }}>{seleccionados.length} de {cursos.length} seleccionados</span>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
           {cursos.map((c: any) => (
             <div key={c.id} className="sige-card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', opacity: c.activo ? 1 : 0.5 }}>
@@ -118,7 +126,7 @@ export default function CursosPage() {
               </div>
             </div>
           ))}
-        </div>
+        </div></>
       )}
 
       <AnimatePresence>

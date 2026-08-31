@@ -40,7 +40,7 @@ export default function EventosPage() {
   const eventos = (data as any)?.data ?? [];
   const conteoTipo = (tipo: string) => eventos.filter((e: any) => e.tipo === tipo).length;
 
-  const handleGuardar = async (form: any) => {
+  const handleGuardar = async (form: FormData) => {
     await save(async () => {
       if (editando) {
         await api.patch(`/eventos/${editando.id}`, form);
@@ -231,6 +231,7 @@ export default function EventosPage() {
                       <span style={{ fontSize: '0.68rem', background: conf.bg, color: conf.color, padding: '1px 6px', borderRadius: 99, fontWeight: 600 }}>
                         {ev.tipo.replace('_', ' ')}
                       </span>
+                      {ev.adjuntos?.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 7 }}>{ev.adjuntos.map((a: any) => <a key={a.id} href={a.url || undefined} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: '0.7rem', color: a.url ? 'var(--accent)' : 'var(--text-muted)', textDecoration: 'none' }}><i className="bi bi-paperclip me-1" />{a.nombre}</a>)}</div>}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                       <button onClick={() => { setEditando(ev); setShowModal(true); }}
@@ -266,6 +267,7 @@ export default function EventosPage() {
 }
 
 function EventoForm({ inicial, fechaSugerida, onGuardar, onCancelar, saving }: any) {
+  const [adjuntos, setAdjuntos] = useState<File[]>([]);
   const [form, setForm] = useState({
     titulo:      inicial?.titulo      ?? '',
     descripcion: inicial?.descripcion ?? '',
@@ -283,7 +285,10 @@ function EventoForm({ inicial, fechaSugerida, onGuardar, onCancelar, saving }: a
     const payload: any = { ...form };
     if (payload.fechaInicio) payload.fechaInicio = new Date(payload.fechaInicio).toISOString();
     if (payload.fechaFin)    payload.fechaFin    = new Date(payload.fechaFin).toISOString();
-    onGuardar(payload);
+    const fd = new FormData();
+    Object.entries(payload).forEach(([k, v]) => fd.append(k, String(v ?? '')));
+    adjuntos.forEach(file => fd.append('adjuntos', file));
+    onGuardar(fd);
   };
 
   return (
@@ -336,6 +341,13 @@ function EventoForm({ inicial, fechaSugerida, onGuardar, onCancelar, saving }: a
         <div>
           <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Descripción</label>
           <textarea value={form.descripcion} onChange={set('descripcion')} className="sige-input" style={{ minHeight: 72, resize: 'vertical' }} />
+        </div>
+
+        <div>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Flyer o documentos</label>
+          <input type="file" multiple accept="image/png,image/jpeg,image/webp,application/pdf" className="sige-input" style={{ padding: '0.4rem' }} onChange={e => setAdjuntos(Array.from(e.target.files ?? []).slice(0, 5))} />
+          <small style={{ color: 'var(--text-muted)' }}>Hasta 5 archivos PDF, PNG, JPG o WebP. Los adjuntos existentes se conservan al editar.</small>
+          {inicial?.adjuntos?.length > 0 && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>{inicial.adjuntos.map((a: any) => <a key={a.id} href={a.url || undefined} target="_blank" rel="noreferrer" style={{ fontSize: '0.74rem', color: a.url ? 'var(--accent)' : 'var(--text-muted)' }}><i className="bi bi-paperclip me-1" />{a.nombre}</a>)}</div>}
         </div>
       </div>
 

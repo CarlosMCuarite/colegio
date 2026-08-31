@@ -42,7 +42,11 @@ export default function AdminDashboard() {
     { label: 'Permisos Pendientes', value: d?.kpis?.permisosPendientes ?? 0, icon: 'bi-door-open', color: '#8b5cf6', bg: '#ede9fe' },
   ];
 
-  const ocupacionPorGrado = d?.ocupacionPorGrado ?? [];
+  const ocupacionPorGrado = (d?.ocupacionPorGrado ?? [])
+    .filter((grado: any) => Number(grado.matriculados) > 0)
+    .sort((a: any, b: any) => Number(b.matriculados) - Number(a.matriculados));
+  const rendimientoPorGrado = d?.rendimientoPorGrado ?? [];
+  const graficoGrados = rendimientoPorGrado.length ? rendimientoPorGrado : ocupacionPorGrado;
 
   return (
     <DashboardLayout title="Dashboard Ejecutivo" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR']}>
@@ -114,20 +118,20 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Matrícula por grado: muestra carga académica real */}
+        {/* Distribución real, sin mezclar el color de marca con colores analíticos. */}
         <div className="sige-card">
           <h3 style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>
-            <i className="bi bi-bar-chart me-2" />Matrícula activa por grado
+            <i className="bi bi-bar-chart me-2" />{rendimientoPorGrado.length ? 'Rendimiento académico por grado' : 'Matrícula activa por grado'}
           </h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={ocupacionPorGrado} margin={{ left: 0, right: 8, top: 6, bottom: 12 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-color)" />
-              <XAxis dataKey="nombre" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} interval={0} angle={-18} textAnchor="end" height={54} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+          {graficoGrados.length ? <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={graficoGrados} layout="vertical" margin={{ left: 8, right: 24, top: 4, bottom: 4 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
+              <XAxis type="number" domain={rendimientoPorGrado.length ? [0, 20] : undefined} allowDecimals={rendimientoPorGrado.length} tick={{ fontSize: 11, fill: 'var(--text-muted)' }} />
+              <YAxis type="category" dataKey="nombre" width={112} tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
               <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
-              <Bar dataKey="matriculados" name="Matriculados" fill="var(--accent)" radius={[7,7,0,0]} maxBarSize={34} />
+              <Bar dataKey={rendimientoPorGrado.length ? 'promedio' : 'matriculados'} name={rendimientoPorGrado.length ? 'Promedio (0–20)' : 'Matriculados'} fill="#2563eb" radius={[0,7,7,0]} maxBarSize={24} />
             </BarChart>
-          </ResponsiveContainer>
+          </ResponsiveContainer> : <div style={{ height: 220, display: 'grid', placeItems: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Aún no hay matrículas activas para comparar.</div>}
         </div>
       </div>
 

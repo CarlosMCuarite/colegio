@@ -23,6 +23,27 @@ export default function QRPage() {
   const scannerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const leerFoto = async (file: File) => {
+    setLoading(true);
+    try {
+      const NativeDetector = (window as any).BarcodeDetector;
+      if (NativeDetector) {
+        const bitmap = await createImageBitmap(file);
+        const resultados = await new NativeDetector({ formats: ['qr_code'] }).detect(bitmap);
+        bitmap.close();
+        if (resultados[0]?.rawValue) { await handleScan(resultados[0].rawValue); return; }
+      }
+      const { Html5Qrcode } = await import('html5-qrcode');
+      const lector = new Html5Qrcode('qr-photo-reader');
+      const codigo = await lector.scanFile(file, true);
+      await lector.clear();
+      await handleScan(codigo);
+    } catch {
+      toast.error('No se encontró un QR legible en la fotografía');
+      setLoading(false);
+    }
+  };
+
   // Iniciar / detener escáner
   useEffect(() => {
     if (!scanning) return;
@@ -72,7 +93,9 @@ export default function QRPage() {
     } finally {
       // Pausa breve (evita registrar el mismo QR varias veces mientras sigue frente
       // a la cámara) SIN bloquear la detección del siguiente alumno más de lo necesario.
-      setTimeout(() => setLoading(false), 1200);
+      // 350 ms basta para evitar el doble registro y permite pasar el siguiente
+      // carnet casi de inmediato. El backend sigue siendo idempotente por día.
+      setTimeout(() => setLoading(false), 350);
     }
   };
 
@@ -146,6 +169,12 @@ export default function QRPage() {
               <i className={`bi ${scanning ? 'bi-stop-circle' : 'bi-play-circle'}`} />
               {scanning ? 'Detener escáner' : 'Iniciar escáner'}
             </button>
+
+            <label style={{ width: '100%', display: 'inline-flex', justifyContent: 'center', alignItems: 'center', gap: 8, border: '1px solid var(--border-color)', borderRadius: 9, padding: '0.6rem', cursor: loading ? 'wait' : 'pointer', color: 'var(--text-secondary)', fontSize: '0.82rem', fontWeight: 700, background: 'var(--bg-card)' }}>
+              <i className="bi bi-image" />Analizar foto del QR
+              <input type="file" accept="image/*" capture="environment" hidden disabled={loading} onChange={e => { const file = e.target.files?.[0]; if (file) leerFoto(file); e.currentTarget.value = ''; }} />
+            </label>
+            <div id="qr-photo-reader" style={{ display: 'none' }} />
 
             {/* Entrada manual de DNI */}
             <div style={{ width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '1rem' }}>

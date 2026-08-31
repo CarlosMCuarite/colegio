@@ -970,10 +970,25 @@ model Evento {
   activo      Boolean    @default(true)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+  adjuntos    EventoAdjunto[]
 
   @@index([colegioId])
   @@index([fechaInicio])
   @@map("eventos")
+}
+
+model EventoAdjunto {
+  id        String   @id @default(cuid())
+  eventoId  String
+  evento    Evento   @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  url       String
+  nombre    String
+  mimeType  String?
+  tamano    Int?
+  createdAt DateTime @default(now())
+
+  @@index([eventoId])
+  @@map("evento_adjuntos")
 }
 
 // =============================================================================

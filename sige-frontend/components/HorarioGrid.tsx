@@ -45,11 +45,9 @@ export default function HorarioGrid({ horarios }: { horarios: any[] }) {
     return Array.from(set.values()).sort((a, b) => aMinutos(a.inicio) - aMinutos(b.inicio));
   }, [horarios]);
 
-  // Solo mostrar columnas de días que realmente tengan al menos un horario
-  const diasUsados = useMemo(() => {
-    const numeros = new Set(horarios.map(h => h.diaSemana));
-    return DIAS_SEMANA.filter(d => numeros.has(d.num));
-  }, [horarios]);
+  // Mantener una grilla estable de lunes a viernes. Ocultar días vacíos hacía
+  // que cada sección cambiara de ancho y resultara difícil de comparar.
+  const diasUsados = DIAS_SEMANA.slice(0, 5);
 
   if (horarios.length === 0) return null;
 
@@ -57,13 +55,13 @@ export default function HorarioGrid({ horarios }: { horarios: any[] }) {
     horarios.find(h => h.diaSemana === dia && h.horaInicio === inicio && h.horaFin === fin);
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+    <div style={{ overflowX: 'auto', borderRadius: 12, border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+      <table style={{ width: '100%', minWidth: 760, borderCollapse: 'separate', borderSpacing: 0, fontSize: '0.78rem' }}>
         <thead>
           <tr>
-            <th style={{ padding: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', minWidth: 100 }}>Hora</th>
+            <th style={{ padding: '0.7rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-secondary)', minWidth: 104, position: 'sticky', left: 0, zIndex: 2 }}>Hora</th>
             {diasUsados.map(d => (
-              <th key={d.num} style={{ padding: '0.5rem', border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', minWidth: 130 }}>
+              <th key={d.num} style={{ padding: '0.7rem', borderBottom: '1px solid var(--border-color)', borderLeft: '1px solid var(--border-color)', background: 'var(--bg-secondary)', minWidth: 130 }}>
                 {d.label}
               </th>
             ))}
@@ -77,10 +75,10 @@ export default function HorarioGrid({ horarios }: { horarios: any[] }) {
             if (esRecreo) {
               return (
                 <tr key={`${b.inicio}-${b.fin}`}>
-                  <td style={{ padding: '0.5rem', border: '1px solid var(--border-color)', fontWeight: 700, fontFamily: 'monospace', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                  <td style={{ padding: '0.65rem', borderBottom: '1px solid var(--border-color)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', textAlign: 'center', color: 'var(--text-secondary)', position: 'sticky', left: 0, background: 'var(--bg-card)', zIndex: 1 }}>
                     {b.inicio}–{b.fin}
                   </td>
-                  <td colSpan={diasUsados.length} style={{ border: '1px solid var(--border-color)', padding: '0.4rem' }}>
+                  <td colSpan={diasUsados.length} style={{ borderBottom: '1px solid var(--border-color)', borderLeft: '1px solid var(--border-color)', padding: '0.4rem' }}>
                     <div style={{ background: '#fef3c7', color: '#92400e', borderRadius: 6, padding: '0.4rem', textAlign: 'center', fontWeight: 800, letterSpacing: '0.05em', fontSize: '0.78rem' }}>
                       <i className="bi bi-cup-hot me-2" />RECREO
                     </div>
@@ -91,16 +89,16 @@ export default function HorarioGrid({ horarios }: { horarios: any[] }) {
 
             return (
               <tr key={`${b.inicio}-${b.fin}`}>
-                <td style={{ padding: '0.5rem', border: '1px solid var(--border-color)', fontWeight: 700, fontFamily: 'monospace', textAlign: 'center', color: 'var(--text-secondary)' }}>
+                <td style={{ padding: '0.65rem', borderBottom: '1px solid var(--border-color)', fontWeight: 700, fontVariantNumeric: 'tabular-nums', textAlign: 'center', color: 'var(--text-secondary)', position: 'sticky', left: 0, background: 'var(--bg-card)', zIndex: 1 }}>
                   {b.inicio}–{b.fin}
                 </td>
                 {diasUsados.map(d => {
                   const h = buscarCelda(d.num, b.inicio, b.fin);
-                  if (!h) return <td key={d.num} style={{ border: '1px solid var(--border-color)' }} />;
+                  if (!h) return <td key={d.num} aria-label={`${d.label}: sin clase`} style={{ borderBottom: '1px solid var(--border-color)', borderLeft: '1px solid var(--border-color)', background: 'color-mix(in srgb, var(--bg-secondary) 35%, transparent)' }} />;
                   const c = colorPara(h.materia);
                   return (
-                    <td key={d.num} style={{ border: '1px solid var(--border-color)', padding: 2 }}>
-                      <div style={{ background: c.bg, color: c.text, borderRadius: 6, padding: '0.4rem 0.5rem', fontWeight: 700, textAlign: 'center' }}>
+                    <td key={d.num} style={{ borderBottom: '1px solid var(--border-color)', borderLeft: '1px solid var(--border-color)', padding: 4 }}>
+                      <div style={{ background: c.bg, color: c.text, borderRadius: 8, padding: '0.55rem 0.5rem', fontWeight: 700, textAlign: 'left', minHeight: 54, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                         <div>{h.materia}</div>
                         {(h.docente || h.docenteNombre) && (
                           <div style={{ fontWeight: 500, fontSize: '0.7rem', marginTop: 2 }}>
