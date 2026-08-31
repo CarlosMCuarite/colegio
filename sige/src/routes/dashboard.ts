@@ -243,6 +243,7 @@ router.get('/monitoreo', async (req, res) => {
     backups24h, backups7d, backupsFallidosRecientes,
     usuariosActivos15min, usuariosActivos1h,
     ultimosAccesos, coleigiosSuspendidos, erroresAuditoriaRecientes,
+    databaseSizeRows, almacenamientoRegistrado,
   ] = await Promise.all([
     prisma.backup.groupBy({ by: ['estado'], where: { createdAt: { gte: hace24h } }, _count: true }),
     prisma.backup.groupBy({ by: ['estado'], where: { createdAt: { gte: hace7d } }, _count: true }),
@@ -261,6 +262,8 @@ router.get('/monitoreo', async (req, res) => {
     }),
     prisma.colegio.count({ where: { estado: 'SUSPENDIDO' } }),
     prisma.auditoria.findMany({ orderBy: { createdAt: 'desc' }, take: 25, include: { colegio: { select: { nombre: true } }, usuario: { select: { nombres: true, apellidos: true, rol: true } } } }),
+    prisma.$queryRawUnsafe<Array<{ bytes: bigint }>>('SELECT pg_database_size(current_database()) AS bytes'),
+    prisma.colegio.aggregate({ _sum: { almacenamientoUsadoMB: true } }),
   ]);
 
   const contarEstado = (arr: any[], estado: string) => arr.find(x => x.estado === estado)?._count ?? 0;
@@ -270,11 +273,26 @@ router.get('/monitoreo', async (req, res) => {
   const okBackups7d     = contarEstado(backups7d, 'COMPLETADO');
 
   const mem = process.memoryUsage();
+  const databaseBytes = Number(databaseSizeRows[0]?.bytes ?? 0);
+  const databaseLimitBytes = 500 * 1024 * 1024;
+  const storageUsedMB = Number(almacenamientoRegistrado._sum.almacenamientoUsadoMB ?? 0);
+  const storageLimitMB = 1024;
 
   res.json({
     ok: true,
     data: {
-      baseDatos: { ok: dbOk, latenciaMs: dbLatenciaMs },
+      baseDatos: {
+        ok: dbOk, latenciaMs: dbLatenciaMs,
+        usadoMB: Math.round((databaseBytes / 1024 / 1024) * 100) / 100,
+        limiteMB: 500,
+        porcentaje: Math.min(100, Math.round((databaseBytes / databaseLimitBytes) * 100)),
+      },
+      almacenamiento: {
+        usadoMB: Math.round(storageUsedMB * 100) / 100,
+        limiteMB: storageLimitMB,
+        porcentaje: Math.min(100, Math.round((storageUsedMB / storageLimitMB) * 100)),
+        alcance: 'Archivos registrados por SIGE',
+      },
       servidor: {
         uptimeSegundos: Math.round(process.uptime()),
         memoriaUsadaMB: Math.round(mem.heapUsed / 1024 / 1024),

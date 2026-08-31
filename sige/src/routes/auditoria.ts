@@ -5,6 +5,7 @@ import prisma from '../config/prisma';
 import { authenticate, isSuperAdmin, isAdminDir } from '../middleware/auth';
 import { resolveTenant } from '../middleware/tenant';
 import { AuditoriaAccion, RolNombre } from '@prisma/client';
+import { limpiarAuditoriaAntigua } from '../services/auditoriaRetentionService';
 
 const router = Router();
 router.use(authenticate, resolveTenant);
@@ -83,6 +84,13 @@ router.get('/resumen', isAdminDir, async (req, res) => {
     prisma.auditoria.groupBy({ by: ['accion'], where, _count: true }),
   ]);
   res.json({ ok: true, data: { porModulo, porAccion } });
+});
+
+// Limpieza segura: aplica únicamente la política de retención configurada.
+// Nunca elimina registros recientes ni permite escoger un rango arbitrario.
+router.post('/limpiar-vencidos', isSuperAdmin, async (_req, res) => {
+  const eliminados = await limpiarAuditoriaAntigua();
+  res.json({ ok: true, data: { eliminados } });
 });
 
 export default router;
