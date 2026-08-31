@@ -385,6 +385,23 @@ model ConfiguracionPlataforma {
   @@map("configuracion_plataforma")
 }
 
+model MetodoCobroPlataforma {
+  id            String   @id @default(cuid())
+  nombre        String
+  tipo          String   @default("OTRO")
+  titular       String?
+  numeroCuenta  String?
+  cci           String?
+  qrUrl         String?
+  activo        Boolean  @default(true)
+  orden         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([activo, orden])
+  @@map("metodos_cobro_plataforma")
+}
+
 // =============================================================================
 // USUARIOS Y AUTENTICACION
 // =============================================================================

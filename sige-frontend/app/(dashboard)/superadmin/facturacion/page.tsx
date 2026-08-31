@@ -24,11 +24,13 @@ export default function FacturacionSuperadminPage() {
   const { loading, mutate: act } = useMutation();
   const [voucherUrl, setVoucherUrl] = useState<string | null>(null);
   const [motivoRechazo, setMotivoRechazo] = useState<{ id: string; motivo: string } | null>(null);
+  const [nuevoMetodo, setNuevoMetodo] = useState<any>({ nombre: '', tipo: 'BILLETERA', titular: '', numeroCuenta: '', cci: '', activo: true });
 
   const pagos = (data as any)?.data ?? [];
   const resumen = (data as any)?.meta?.resumen ?? [];
   const config = (configData as any)?.data ?? {};
   const metrica = (estado: string) => resumen.find((item: any) => item.estado === estado) ?? { cantidad: 0, monto: 0 };
+  const metodosCobro = Array.isArray(config.metodosCobro) ? config.metodosCobro : [];
 
   const [form, setForm] = useState<any>(null);
   // BUG REAL: antes el efecto disparaba sobre `config` (que ya venía con un
@@ -57,6 +59,40 @@ export default function FacturacionSuperadminPage() {
       fd.append('tipo', tipo);
       await api.post('/plataforma/config/qr', fd);
       toast.success('QR actualizado');
+      mutateConfig();
+    });
+  };
+
+  const crearMetodo = async () => {
+    if (!nuevoMetodo.nombre.trim()) { toast.error('Escribe el nombre del método de cobro'); return; }
+    await act(async () => {
+      await api.post('/plataforma/config/metodos', nuevoMetodo);
+      setNuevoMetodo({ nombre: '', tipo: 'BILLETERA', titular: '', numeroCuenta: '', cci: '', activo: true });
+      toast.success('Método de cobro agregado');
+      mutateConfig();
+    });
+  };
+
+  const actualizarMetodo = async (id: string, cambios: any) => {
+    await api.patch(`/plataforma/config/metodos/${id}`, cambios);
+    mutateConfig();
+  };
+
+  const eliminarMetodo = async (id: string, nombre: string) => {
+    if (!confirm(`¿Quitar el método de cobro “${nombre}”?`)) return;
+    await act(async () => {
+      await api.delete(`/plataforma/config/metodos/${id}`);
+      toast.success('Método de cobro eliminado');
+      mutateConfig();
+    });
+  };
+
+  const subirQrMetodo = async (id: string, file: File) => {
+    await act(async () => {
+      const fd = new FormData();
+      fd.append('imagen', file);
+      await api.post(`/plataforma/config/metodos/${id}/qr`, fd);
+      toast.success('Código QR actualizado');
       mutateConfig();
     });
   };
@@ -103,31 +139,42 @@ export default function FacturacionSuperadminPage() {
 
       {tab === 'config' && form && (
         <div className="sige-card billing-config-card">
-          <h3 style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem' }}><i className="bi bi-qr-code me-2" />Datos de cobro de la plataforma</h3>
+          <h3 style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '0.5rem' }}><i className="bi bi-wallet2 me-2" />Métodos de cobro de la plataforma</h3>
           <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
-            Esto es lo que ven los administradores de cada colegio para pagar su suscripción a SIGE — no confundir con los datos de pago del colegio (esos son para que los padres paguen pensiones).
+            Agrega billeteras, bancos, tarjetas u otros medios. Los métodos activos serán visibles para los colegios al pagar su suscripción a SIGE.
           </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-              <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>Número Yape</label><input className="sige-input" value={form.yapeNumero ?? ''} onChange={e => setForm((f: any) => ({ ...f, yapeNumero: e.target.value }))} /></div>
-              <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>Titular Yape</label><input className="sige-input" value={form.yapeTitular ?? ''} onChange={e => setForm((f: any) => ({ ...f, yapeTitular: e.target.value }))} /></div>
+          <div style={{ display: 'grid', gap: '0.9rem' }}>
+            {metodosCobro.map((metodo: any) => (
+              <div key={metodo.id} style={{ border: '1px solid var(--border-color)', borderRadius: 12, padding: '1rem', background: 'var(--bg-secondary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                  <strong>{metodo.nombre}</strong>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <label style={{ fontSize: '.75rem', color: 'var(--text-secondary)', display: 'flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={metodo.activo} onChange={e => actualizarMetodo(metodo.id, { activo: e.target.checked })} />Visible</label>
+                    <button onClick={() => eliminarMetodo(metodo.id, metodo.nombre)} disabled={loading} aria-label={`Eliminar ${metodo.nombre}`} style={{ border: 0, background: '#fee2e2', color: '#991b1b', borderRadius: 8, width: 36, height: 36 }}><i className="bi bi-trash" /></button>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 10 }}>
+                  <input className="sige-input" defaultValue={metodo.nombre} aria-label="Nombre" onBlur={e => actualizarMetodo(metodo.id, { nombre: e.target.value })} />
+                  <select className="sige-input" defaultValue={metodo.tipo} aria-label="Tipo" onChange={e => actualizarMetodo(metodo.id, { tipo: e.target.value })}><option value="BILLETERA">Billetera digital</option><option value="BANCO">Banco</option><option value="TARJETA">Tarjeta</option><option value="OTRO">Otro</option></select>
+                  <input className="sige-input" defaultValue={metodo.titular ?? ''} placeholder="Titular" aria-label="Titular" onBlur={e => actualizarMetodo(metodo.id, { titular: e.target.value || null })} />
+                  <input className="sige-input" defaultValue={metodo.numeroCuenta ?? ''} placeholder="Número, cuenta o enlace" aria-label="Número o cuenta" onBlur={e => actualizarMetodo(metodo.id, { numeroCuenta: e.target.value || null })} />
+                  <input className="sige-input" defaultValue={metodo.cci ?? ''} placeholder="CCI (opcional)" aria-label="CCI" onBlur={e => actualizarMetodo(metodo.id, { cci: e.target.value || null })} />
+                </div>
+                <div style={{ marginTop: 10 }}><QrUploader label="Código QR (opcional)" urlActual={metodo.qrUrl} onSubir={file => subirQrMetodo(metodo.id, file)} /></div>
+              </div>
+            ))}
+            <div style={{ border: '1px dashed var(--border-color)', borderRadius: 12, padding: '1rem' }}>
+              <strong style={{ display: 'block', marginBottom: 10 }}>Agregar método de cobro</strong>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 10 }}>
+                <input className="sige-input" value={nuevoMetodo.nombre} placeholder="Nombre: Yape, BCP, Visa…" onChange={e => setNuevoMetodo((m: any) => ({ ...m, nombre: e.target.value }))} />
+                <select className="sige-input" value={nuevoMetodo.tipo} onChange={e => setNuevoMetodo((m: any) => ({ ...m, tipo: e.target.value }))}><option value="BILLETERA">Billetera digital</option><option value="BANCO">Banco</option><option value="TARJETA">Tarjeta</option><option value="OTRO">Otro</option></select>
+                <input className="sige-input" value={nuevoMetodo.titular} placeholder="Titular" onChange={e => setNuevoMetodo((m: any) => ({ ...m, titular: e.target.value }))} />
+                <input className="sige-input" value={nuevoMetodo.numeroCuenta} placeholder="Número, cuenta o enlace" onChange={e => setNuevoMetodo((m: any) => ({ ...m, numeroCuenta: e.target.value }))} />
+                <input className="sige-input" value={nuevoMetodo.cci} placeholder="CCI (opcional)" onChange={e => setNuevoMetodo((m: any) => ({ ...m, cci: e.target.value }))} />
+              </div>
+              <button onClick={crearMetodo} disabled={loading} className="btn-accent" style={{ marginTop: 12 }}><i className="bi bi-plus-lg me-1" />Agregar método</button>
             </div>
-            <QrUploader label="QR de Yape (opcional)" urlActual={config.yapeQrUrl} onSubir={file => subirQrPlataforma('yape', file)} />
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-              <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>Número Plin</label><input className="sige-input" value={form.plinNumero ?? ''} onChange={e => setForm((f: any) => ({ ...f, plinNumero: e.target.value }))} /></div>
-              <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>Titular Plin</label><input className="sige-input" value={form.plinTitular ?? ''} onChange={e => setForm((f: any) => ({ ...f, plinTitular: e.target.value }))} /></div>
-            </div>
-            <QrUploader label="QR de Plin (opcional)" urlActual={config.plinQrUrl} onSubir={file => subirQrPlataforma('plin', file)} />
-            <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>Banco</label><input className="sige-input" value={form.bancoNombre ?? ''} onChange={e => setForm((f: any) => ({ ...f, bancoNombre: e.target.value }))} /></div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>
-              <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>N° de cuenta</label><input className="sige-input" value={form.cuentaBancaria ?? ''} onChange={e => setForm((f: any) => ({ ...f, cuentaBancaria: e.target.value }))} /></div>
-              <div><label style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: 4, display: 'block' }}>CCI</label><input className="sige-input" value={form.cuentaBancariaCCI ?? ''} onChange={e => setForm((f: any) => ({ ...f, cuentaBancariaCCI: e.target.value }))} /></div>
-            </div>
-            <QrUploader label="QR del banco (opcional)" urlActual={config.bancoQrUrl} onSubir={file => subirQrPlataforma('banco', file)} />
           </div>
-          <button onClick={guardarConfig} disabled={loading} className="btn-accent" style={{ marginTop: '1.25rem', width: '100%', justifyContent: 'center', padding: '0.6rem' }}>
-            {loading ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-check2 me-1" />Guardar</>}
-          </button>
         </div>
       )}
 

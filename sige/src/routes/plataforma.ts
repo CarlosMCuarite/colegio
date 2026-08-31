@@ -10,7 +10,7 @@ import prisma from '../config/prisma';
 import { authenticate } from '../middleware/auth';
 import { AppError } from '../utils/AppError';
 import { RolNombre, Prisma } from '@prisma/client';
-import { uploadFile } from '../services/storageService';
+import { uploadFile, deleteFile, storagePathFromStoredUrl } from '../services/storageService';
 import { BUCKETS } from '../config/supabase';
 
 const router = Router();
@@ -27,13 +27,60 @@ const configSchema = z.object({
   cuentaBancariaCCI: z.string().optional().nullable(),
 });
 
+const metodoSchema = z.object({
+  nombre: z.string().trim().min(2).max(80),
+  tipo: z.enum(['BILLETERA', 'BANCO', 'TARJETA', 'OTRO']).default('OTRO'),
+  titular: z.string().trim().max(120).optional().nullable(),
+  numeroCuenta: z.string().trim().max(120).optional().nullable(),
+  cci: z.string().trim().max(40).optional().nullable(),
+  activo: z.boolean().optional().default(true),
+  orden: z.number().int().min(0).max(999).optional().default(0),
+});
+
 // ── GET /plataforma/config — cualquier usuario autenticado puede LEER esto ────
 // (un admin de colegio necesita verlo para saber dónde pagar su suscripción).
 router.get('/config', async (req, res) => {
   const config = await prisma.configuracionPlataforma.upsert({
     where: { id: 'global' }, create: { id: 'global' }, update: {},
   });
-  res.json({ ok: true, data: config });
+  const metodosCobro = await prisma.metodoCobroPlataforma.findMany({ orderBy: [{ orden: 'asc' }, { createdAt: 'asc' }] });
+  res.json({ ok: true, data: { ...config, metodosCobro } });
+});
+
+router.post('/config/metodos', async (req, res) => {
+  if (req.user!.rol !== RolNombre.SUPERADMIN) throw new AppError('Sin acceso', 403);
+  const data = metodoSchema.parse(req.body);
+  const metodo = await prisma.metodoCobroPlataforma.create({ data: data as Prisma.MetodoCobroPlataformaCreateInput });
+  res.status(201).json({ ok: true, data: metodo });
+});
+
+router.patch('/config/metodos/:id', async (req, res) => {
+  if (req.user!.rol !== RolNombre.SUPERADMIN) throw new AppError('Sin acceso', 403);
+  const data = metodoSchema.partial().parse(req.body);
+  const metodo = await prisma.metodoCobroPlataforma.update({ where: { id: req.params.id }, data });
+  res.json({ ok: true, data: metodo });
+});
+
+router.delete('/config/metodos/:id', async (req, res) => {
+  if (req.user!.rol !== RolNombre.SUPERADMIN) throw new AppError('Sin acceso', 403);
+  const metodo = await prisma.metodoCobroPlataforma.findUnique({ where: { id: req.params.id } });
+  if (!metodo) throw new AppError('Método de cobro no encontrado', 404);
+  const pathAnterior = metodo.qrUrl ? storagePathFromStoredUrl(BUCKETS.LOGOS, metodo.qrUrl) : null;
+  if (pathAnterior) await deleteFile(BUCKETS.LOGOS, pathAnterior);
+  await prisma.metodoCobroPlataforma.delete({ where: { id: metodo.id } });
+  res.json({ ok: true });
+});
+
+router.post('/config/metodos/:id/qr', upload.single('imagen'), async (req, res) => {
+  if (req.user!.rol !== RolNombre.SUPERADMIN) throw new AppError('Sin acceso', 403);
+  if (!req.file) throw new AppError('Imagen requerida', 400);
+  const anterior = await prisma.metodoCobroPlataforma.findUnique({ where: { id: req.params.id } });
+  if (!anterior) throw new AppError('Método de cobro no encontrado', 404);
+  const result = await uploadFile(BUCKETS.LOGOS, req.file.buffer, req.file.originalname, req.file.mimetype, 'plataforma/metodos');
+  const metodo = await prisma.metodoCobroPlataforma.update({ where: { id: anterior.id }, data: { qrUrl: result.url } });
+  const pathAnterior = anterior.qrUrl ? storagePathFromStoredUrl(BUCKETS.LOGOS, anterior.qrUrl) : null;
+  if (pathAnterior && pathAnterior !== result.path) await deleteFile(BUCKETS.LOGOS, pathAnterior);
+  res.json({ ok: true, data: metodo });
 });
 
 // ── PATCH /plataforma/config — solo SuperAdmin puede EDITAR ──────────────────

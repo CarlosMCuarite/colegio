@@ -57,6 +57,28 @@ export default function PerfilYPassword() {
     }
   };
 
+  const descargarAvatar = async () => {
+    if (!avatarUrl) return;
+    setMenuAvatar(false);
+    try {
+      const respuesta = await fetch(avatarUrl);
+      if (!respuesta.ok) throw new Error('Imagen no disponible');
+      const blob = await respuesta.blob();
+      const extension = blob.type.includes('png') ? 'png' : blob.type.includes('webp') ? 'webp' : 'jpg';
+      const urlLocal = URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      enlace.href = urlLocal;
+      enlace.download = `foto-perfil-${perfil.nombres || 'sige'}.${extension}`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      URL.revokeObjectURL(urlLocal);
+      toast.success('Imagen guardada en tu dispositivo');
+    } catch {
+      toast.error('No se pudo descargar la imagen. Inténtalo nuevamente.');
+    }
+  };
+
   useEffect(() => {
     api.get('/auth/me').then(res => {
       const u = res.data?.data;
@@ -166,6 +188,10 @@ export default function PerfilYPassword() {
                 <button type="button" role="menuitem" onClick={() => avatarInputRef.current?.click()}
                   style={{ width: '100%', minHeight: 42, padding: '8px 10px', border: 'none', borderRadius: 8, background: 'transparent', color: 'var(--accent)', textAlign: 'left', cursor: 'pointer', fontSize: '.82rem', fontWeight: 650 }}>
                   <i className="bi bi-camera me-2" />{avatarUrl ? 'Cambiar imagen' : 'Subir imagen'}
+                </button>
+                <button type="button" role="menuitem" disabled={!avatarUrl} onClick={descargarAvatar}
+                  style={{ width: '100%', minHeight: 42, padding: '8px 10px', border: 'none', borderRadius: 8, background: 'transparent', color: avatarUrl ? 'var(--text-primary)' : 'var(--text-muted)', textAlign: 'left', cursor: avatarUrl ? 'pointer' : 'not-allowed', fontSize: '.82rem' }}>
+                  <i className="bi bi-download me-2" />Descargar imagen
                 </button>
               </div>
             )}

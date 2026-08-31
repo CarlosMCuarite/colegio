@@ -25,6 +25,7 @@ export default function FacturacionAdminPage() {
 
   const colegio = (colegioData as any)?.data;
   const config  = (configData as any)?.data ?? {};
+  const metodosCobro = Array.isArray(config.metodosCobro) ? config.metodosCobro.filter((m: any) => m.activo) : [];
   const pagos   = (data as any)?.data ?? [];
 
   const licenciaFin = colegio?.licenciaFin ? new Date(colegio.licenciaFin) : null;
@@ -45,7 +46,7 @@ export default function FacturacionAdminPage() {
     <DashboardLayout title="Facturación" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR']}>
       {/* Estado de la licencia */}
       <div className="sige-card" style={{
-        marginBottom: '1.25rem', borderLeft: `4px solid ${vencida ? '#ef4444' : porVencer ? '#f59e0b' : '#10b981'}`,
+        marginBottom: '1.25rem', borderColor: vencida ? '#fecaca' : porVencer ? '#fde68a' : '#a7f3d0',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem',
       }}>
         <div>
@@ -67,31 +68,16 @@ export default function FacturacionAdminPage() {
       <div className="sige-card" style={{ marginBottom: '1.25rem' }}>
         <h3 style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.75rem' }}><i className="bi bi-qr-code me-2" />¿Dónde pagar?</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.875rem' }}>
-          {config.yapeNumero && (
-            <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '1rem', textAlign: 'center' }}>
-              {config.yapeQrUrl && <img src={config.yapeQrUrl} alt="QR Yape" style={{ width: 160, height: 160, borderRadius: 10, objectFit: 'contain', background: '#fff', border: '1px solid var(--border-color)', padding: 6, marginBottom: '0.6rem' }} />}
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}><i className="bi bi-phone me-1" />YAPE</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{config.yapeNumero}</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{config.yapeTitular}</div>
+          {metodosCobro.map((metodo: any) => (
+            <div key={metodo.id} style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '1rem', textAlign: 'center', border: '1px solid var(--border-color)' }}>
+              {metodo.qrUrl && <img src={metodo.qrUrl} alt={`QR de ${metodo.nombre}`} style={{ width: 160, height: 160, borderRadius: 10, objectFit: 'contain', background: '#fff', border: '1px solid var(--border-color)', padding: 6, marginBottom: '0.6rem' }} />}
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}><i className={`bi ${metodo.tipo === 'BANCO' ? 'bi-bank' : metodo.tipo === 'TARJETA' ? 'bi-credit-card' : 'bi-phone'} me-1`} />{metodo.nombre}</div>
+              {metodo.numeroCuenta && <div style={{ fontSize: '1rem', fontWeight: 750, overflowWrap: 'anywhere' }}>{metodo.numeroCuenta}</div>}
+              {metodo.titular && <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{metodo.titular}</div>}
+              {metodo.cci && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', overflowWrap: 'anywhere' }}>CCI: {metodo.cci}</div>}
             </div>
-          )}
-          {config.plinNumero && (
-            <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '1rem', textAlign: 'center' }}>
-              {config.plinQrUrl && <img src={config.plinQrUrl} alt="QR Plin" style={{ width: 160, height: 160, borderRadius: 10, objectFit: 'contain', background: '#fff', border: '1px solid var(--border-color)', padding: 6, marginBottom: '0.6rem' }} />}
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}><i className="bi bi-phone me-1" />PLIN</div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{config.plinNumero}</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{config.plinTitular}</div>
-            </div>
-          )}
-          {config.bancoNombre && (
-            <div style={{ background: 'var(--bg-secondary)', borderRadius: 10, padding: '1rem', textAlign: 'center' }}>
-              {config.bancoQrUrl && <img src={config.bancoQrUrl} alt="QR banco" style={{ width: 160, height: 160, borderRadius: 10, objectFit: 'contain', background: '#fff', border: '1px solid var(--border-color)', padding: 6, marginBottom: '0.6rem' }} />}
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600 }}><i className="bi bi-bank me-1" />{config.bancoNombre}</div>
-              <div style={{ fontSize: '1rem', fontWeight: 700 }}>{config.cuentaBancaria}</div>
-              {config.cuentaBancariaCCI && <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>CCI: {config.cuentaBancariaCCI}</div>}
-            </div>
-          )}
-          {!config.yapeNumero && !config.plinNumero && !config.bancoNombre && (
+          ))}
+          {metodosCobro.length === 0 && (
             <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>El administrador de la plataforma aún no configuró sus datos de cobro.</div>
           )}
         </div>
