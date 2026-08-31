@@ -69,7 +69,10 @@ a, button, input, select, textarea { accent-color: var(--accent); }
 
 .sige-sidebar {
   width: var(--sidebar-width);
-  background: var(--bg-sidebar);
+  background: linear-gradient(165deg,
+    color-mix(in srgb,var(--school-primary) 64%,var(--accent-strong)) 0%,
+    var(--accent-strong) 52%,
+    var(--bg-sidebar) 100%);
   position: fixed;
   top: 0; left: 0; bottom: 0;
   z-index: 100;
@@ -117,7 +120,10 @@ a, button, input, select, textarea { accent-color: var(--accent); }
   gap: 1rem;
   box-shadow: var(--shadow-sm);
 }
-.sige-layout[data-school-theme] .sige-topbar { border-bottom-color:color-mix(in srgb,var(--school-primary) 20%,var(--border-color)); }
+.sige-layout[data-school-theme] .sige-topbar { background:linear-gradient(90deg,var(--accent-soft),color-mix(in srgb,var(--bg-card) 96%,transparent) 34%); border-bottom-color:color-mix(in srgb,var(--school-primary) 28%,var(--border-color)); box-shadow:inset 0 3px 0 var(--school-primary),var(--shadow-sm); }
+.topbar-school-context { align-items:center; min-width:0; font-size:.78rem; color:var(--text-muted); font-weight:500; }
+.topbar-school-context__mark { width:8px; height:8px; margin-right:.5rem; border-radius:50%; background:var(--school-primary); box-shadow:0 0 0 4px var(--accent-soft); }
+.topbar-school-context__name { color:var(--accent-strong); font-weight:750; }
 
 .sige-content {
   flex: 1;

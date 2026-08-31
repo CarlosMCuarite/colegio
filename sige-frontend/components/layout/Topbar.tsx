@@ -41,8 +41,9 @@ export default function Topbar({ title, colegioNombre, onToggleSidebar }: Topbar
       </button>
 
       {/* Nombre del colegio en desktop */}
-      <div className="d-none d-md-block" style={{ fontSize:'0.78rem', color:'var(--text-muted)', fontWeight:500 }}>
-        {nombreColegio}
+      <div className="topbar-school-context d-none d-md-flex">
+        <span className="topbar-school-context__mark" aria-hidden="true" />
+        <span className="topbar-school-context__name">{nombreColegio}</span>
         {title && <span style={{ color:'var(--border-color)', margin:'0 6px' }}>›</span>}
         {title && <span style={{ color:'var(--text-primary)', fontWeight:600 }}>{title}</span>}
       </div>
