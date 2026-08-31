@@ -68,7 +68,8 @@ VALUES (
   'backups', 'backups', false, 52428800,
   ARRAY[
     'application/json', 'application/pdf', 'application/octet-stream',
-    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'
+    'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
+    'image/x-icon', 'image/vnd.microsoft.icon'
   ]
 )
 ON CONFLICT (id) DO UPDATE SET
