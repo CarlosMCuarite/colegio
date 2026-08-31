@@ -442,16 +442,19 @@ a, button, input, select, textarea { accent-color: var(--accent); }
   position: sticky;
   top: 16px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(400px, 1fr));
   gap: 18px;
   align-items: start;
   padding: 22px;
   overflow-x: auto;
+  min-width: 0;
   border: 1px solid var(--border-color);
   border-radius: 16px;
   background: var(--bg-secondary);
 }
-.carnet-editor-preview-block { min-width: 400px; }
+.carnet-editor-preview-block { min-width: 400px; width: 400px; flex: 0 0 400px; }
+.carnet-editor-canvas { width: 400px !important; height: 254px !important; min-width: 400px; min-height: 254px; flex: 0 0 400px; }
+.carnet-tarjeta { box-sizing: border-box; width: 400px !important; height: 254px !important; min-width: 400px; min-height: 254px; flex: 0 0 400px; }
 .carnet-editor-canvas:focus-within { outline: 3px solid color-mix(in srgb, var(--accent) 18%, transparent); outline-offset: 5px; }
 
 @media (max-width: 1280px) {
@@ -1197,6 +1200,13 @@ a, button, input, select, textarea { accent-color: var(--accent); }
 @keyframes sige-orbit { to { transform:rotate(360deg); } } @keyframes sige-dot { 0%,70%,100%{opacity:.25;transform:translateY(0)}35%{opacity:1;transform:translateY(-4px)} }
 .sidebar-owl { --owl-size: 42px; margin: -3px; flex: 0 0 42px; }
 .sidebar-owl .sige-owl__shadow, .sidebar-owl .sige-owl__aura { display: none; }
+
+/* School branding: the mascot follows the primary color selected by Super Admin. */
+.sige-layout[data-school-theme="red"] .sige-owl__character img { filter: hue-rotate(142deg) saturate(1.2); }
+.sige-layout[data-school-theme="green"] .sige-owl__character img { filter: hue-rotate(92deg) saturate(1.1); }
+.sige-layout[data-school-theme="yellow"] .sige-owl__character img { filter: hue-rotate(204deg) saturate(1.15) brightness(1.08); }
+.sige-layout[data-school-theme="blue"] .sige-owl__character img { filter: none; }
+.sige-layout[data-school-theme] .sige-owl__chest-light { background: var(--school-primary); box-shadow: 0 0 16px color-mix(in srgb, var(--school-primary) 70%, transparent); }
 
 /* ── Pulido transversal de módulos ───────────────────────────────────── */
 .sige-content > h1, .sige-content > h2 { letter-spacing: -.03em; text-wrap: balance; }

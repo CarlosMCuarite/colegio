@@ -21,6 +21,8 @@ export interface AuthUser {
     slug?: string;
     whatsappNumero?: string;
     whatsappMensaje?: string;
+    colorPrimario?: string;
+    colorSecundario?: string;
   };
 }
 

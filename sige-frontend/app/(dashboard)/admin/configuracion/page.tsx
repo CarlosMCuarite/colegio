@@ -55,8 +55,6 @@ export default function ConfiguracionAdminPage() {
         historia:        colegio.historia        ?? '',
         mision:          colegio.mision          ?? '',
         vision:          colegio.vision          ?? '',
-        colorPrimario:   colegio.colorPrimario   ?? '#4f46e5',
-        colorSecundario: colegio.colorSecundario ?? '#7c3aed',
       });
     }
   }, [colegio]);
@@ -171,23 +169,6 @@ export default function ConfiguracionAdminPage() {
                 </div>
               ))}
 
-              {/* Colores institucionales */}
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Color primario</label>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input type="color" value={formColegio.colorPrimario ?? '#4f46e5'} onChange={setC('colorPrimario')}
-                    style={{ width: 40, height: 36, borderRadius: 6, border: '1px solid var(--border-color)', cursor: 'pointer', padding: 2 }} />
-                  <input type="text" value={formColegio.colorPrimario ?? ''} onChange={setC('colorPrimario')} className="sige-input" placeholder="#4f46e5" />
-                </div>
-              </div>
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Color secundario</label>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                  <input type="color" value={formColegio.colorSecundario ?? '#7c3aed'} onChange={setC('colorSecundario')}
-                    style={{ width: 40, height: 36, borderRadius: 6, border: '1px solid var(--border-color)', cursor: 'pointer', padding: 2 }} />
-                  <input type="text" value={formColegio.colorSecundario ?? ''} onChange={setC('colorSecundario')} className="sige-input" placeholder="#7c3aed" />
-                </div>
-              </div>
             </div>
 
             {/* WhatsApp */}
@@ -305,4 +286,3 @@ export default function ConfiguracionAdminPage() {
     </DashboardLayout>
   );
 }
-

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { AuthProvider, useAuth } from '../../lib/auth';
@@ -18,6 +18,35 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const schoolTheme = useMemo(() => {
+    if (!user?.colegio || user.rol === 'SUPERADMIN') return null;
+    const primary = user.colegio.colorPrimario || '#2563eb';
+    const secondary = user.colegio.colorSecundario || '#16a8e4';
+    const normalized = primary.toLowerCase();
+    const key = normalized === '#d34242' || normalized === '#dc2626' || normalized === '#ef4444' ? 'red'
+      : normalized === '#168a55' || normalized === '#16a34a' || normalized === '#22c55e' ? 'green'
+      : normalized === '#d99000' || normalized === '#ca8a04' || normalized === '#eab308' ? 'yellow' : 'blue';
+    return { primary, secondary, key };
+  }, [user]);
+
+  useEffect(() => {
+    if (!schoolTheme) return;
+    const root = document.documentElement;
+    root.style.setProperty('--school-primary', schoolTheme.primary);
+    root.style.setProperty('--school-secondary', schoolTheme.secondary);
+    root.style.setProperty('--accent', schoolTheme.primary);
+    root.style.setProperty('--accent-hover', schoolTheme.primary);
+    root.style.setProperty('--accent-soft', `color-mix(in srgb, ${schoolTheme.primary} 12%, transparent)`);
+    root.dataset.schoolTheme = schoolTheme.key;
+    return () => {
+      root.style.removeProperty('--school-primary');
+      root.style.removeProperty('--school-secondary');
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--accent-hover');
+      root.style.removeProperty('--accent-soft');
+      delete root.dataset.schoolTheme;
+    };
+  }, [schoolTheme]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -46,7 +75,8 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
   if (!user) return null;
 
   return (
-    <div className="sige-layout">
+    <div className="sige-layout" data-school-theme={schoolTheme?.key ?? undefined}
+      style={schoolTheme ? ({ '--school-primary': schoolTheme.primary, '--school-secondary': schoolTheme.secondary } as React.CSSProperties) : undefined}>
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <main className="sige-main">
         <Topbar
