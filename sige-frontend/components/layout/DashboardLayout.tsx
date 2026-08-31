@@ -21,7 +21,13 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const schoolTheme = useMemo(() => {
     const globalSuperAdmin = user?.rol === 'SUPERADMIN' && !user.supportMode;
-    if (!user?.colegio || globalSuperAdmin) return BLUE_SCHOOL_THEME;
+    if (!user?.colegio || globalSuperAdmin) {
+      if (!user && typeof window !== 'undefined') {
+        const cachedKey = localStorage.getItem('sige-school-theme');
+        if (cachedKey) return getSchoolTheme(cachedKey);
+      }
+      return BLUE_SCHOOL_THEME;
+    }
     return getSchoolTheme(user.colegio.colorPrimario, user.colegio.colorSecundario);
   }, [user]);
 
@@ -35,8 +41,12 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
     root.style.setProperty('--accent-strong', schoolTheme.strong);
     root.style.setProperty('--accent-cyan', schoolTheme.secondary);
     root.style.setProperty('--accent-contrast', schoolTheme.contrast);
+    root.style.setProperty('--action-primary', schoolTheme.action);
+    root.style.setProperty('--action-hover', schoolTheme.actionHover);
+    root.style.setProperty('--action-contrast', schoolTheme.actionContrast);
     root.style.setProperty('--bg-sidebar', schoolTheme.sidebar);
     root.dataset.schoolTheme = schoolTheme.key;
+    localStorage.setItem('sige-school-theme', schoolTheme.primary);
     return () => {
       root.style.removeProperty('--school-primary');
       root.style.removeProperty('--school-secondary');
@@ -46,6 +56,9 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
       root.style.removeProperty('--accent-strong');
       root.style.removeProperty('--accent-cyan');
       root.style.removeProperty('--accent-contrast');
+      root.style.removeProperty('--action-primary');
+      root.style.removeProperty('--action-hover');
+      root.style.removeProperty('--action-contrast');
       root.style.removeProperty('--bg-sidebar');
       delete root.dataset.schoolTheme;
     };
@@ -62,7 +75,9 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
   }, [user, loading, allowedRoles, router]);
 
   if (loading) return (
-    <div className="sige-loading-state">
+    <SchoolThemeProvider value={schoolTheme}>
+    <div className="sige-loading-state" data-school-theme={schoolTheme.key}
+      style={({ '--school-primary': schoolTheme.primary, '--school-secondary': schoolTheme.secondary, '--accent': schoolTheme.primary, '--accent-soft': schoolTheme.soft, '--accent-cyan': schoolTheme.secondary } as React.CSSProperties)}>
       <div className="sige-loading-state__content">
         <div className="sige-loading-state__visual">
           <span className="sige-loading-state__orbit" aria-hidden="true" />
@@ -73,6 +88,7 @@ function InnerLayout({ children, title, allowedRoles }: Props) {
         <div className="sige-loading-state__dots" aria-label="Cargando"><i /><i /><i /></div>
       </div>
     </div>
+    </SchoolThemeProvider>
   );
 
   if (!user) return null;
