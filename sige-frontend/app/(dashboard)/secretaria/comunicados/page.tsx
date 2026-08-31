@@ -80,7 +80,10 @@ export default function ComunicadosPage() {
         <div className="sige-card" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-secondary)' }}>
           <i className="bi bi-cloud-slash" style={{ display: 'block', fontSize: '2rem', color: '#b91c1c', marginBottom: 10 }} />
           <strong style={{ display: 'block', color: 'var(--text-primary)', marginBottom: 5 }}>No se pudieron cargar los comunicados</strong>
-          <span style={{ display: 'block', fontSize: '0.8rem', marginBottom: 14 }}>Tus comunicados no fueron eliminados. La conexión con el servidor falló temporalmente.</span>
+          <span style={{ display: 'block', fontSize: '0.8rem', marginBottom: 6 }}>Tus comunicados no fueron eliminados. La conexión con el servidor falló temporalmente.</span>
+          <code style={{ display: 'inline-block', fontSize: '0.72rem', color: '#991b1b', background: '#fef2f2', padding: '4px 8px', borderRadius: 6, marginBottom: 14 }}>
+            {error?.response?.data?.error ?? error?.message ?? 'Error desconocido'}
+          </code>
           <button type="button" className="btn-accent" onClick={() => mutate()} style={{ margin: '0 auto' }}>
             <i className="bi bi-arrow-clockwise me-1" />Reintentar
           </button>
