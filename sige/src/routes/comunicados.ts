@@ -32,13 +32,26 @@ const comunicadoSchema = z.object({
 });
 
 async function comunicadoConUrlFirmada<T extends { adjuntoUrl: string | null }>(comunicado: T): Promise<T> {
-  const legacy = comunicado.adjuntoUrl
-    ? await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, comunicado.adjuntoUrl)
-    : comunicado.adjuntoUrl;
+  // Un archivo eliminado o una incidencia temporal de Storage no debe impedir
+  // que se vea el comunicado (antes un solo adjunto roto hacía fallar la lista
+  // completa con HTTP 500). La descarga queda deshabilitada solo para ese
+  // archivo y el resto de la información continúa disponible.
+  const firmarSeguro = async (valor: string | null) => {
+    if (!valor) return valor;
+    try {
+      return await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, valor);
+    } catch {
+      return null;
+    }
+  };
+  const legacy = await firmarSeguro(comunicado.adjuntoUrl);
   const adjuntos = (comunicado as any).adjuntos;
   if (!Array.isArray(adjuntos)) return { ...comunicado, adjuntoUrl: legacy };
   return { ...comunicado, adjuntoUrl: legacy,
-    adjuntos: await Promise.all(adjuntos.map(async (a: any) => ({ ...a, url: await getSignedUrlFromStoredValue(BUCKETS.DOCUMENTOS, a.url) }))),
+    adjuntos: await Promise.all(adjuntos.map(async (a: any) => {
+      const url = await firmarSeguro(a.url);
+      return { ...a, url, disponible: Boolean(url) };
+    })),
   } as T;
 }
 
@@ -70,7 +83,12 @@ router.get('/', async (req, res) => {
   if (seccionId) where.seccionId = seccionId;
   if (estado === 'PROGRAMADO') where.publicadoEn = { gt: ahora };
   else if (estado === 'VENCIDO') where.venceEn = { lte: ahora };
-  else if (estado === 'PUBLICADO' || !estado) { where.publicadoEn = { lte: ahora }; where.AND.push({ OR: [{ venceEn: null }, { venceEn: { gt: ahora } }] }); }
+  else if (estado === 'PUBLICADO' || !estado) {
+    // Compatibilidad con comunicados antiguos creados antes de incorporar la
+    // programación: publicadoEn=null significa publicación inmediata.
+    where.AND.push({ OR: [{ publicadoEn: null }, { publicadoEn: { lte: ahora } }] });
+    where.AND.push({ OR: [{ venceEn: null }, { venceEn: { gt: ahora } }] });
+  }
 
   // Padres solo ven comunicados dirigidos a ellos o al colegio
   if (req.user!.rol === RolNombre.PADRE) {

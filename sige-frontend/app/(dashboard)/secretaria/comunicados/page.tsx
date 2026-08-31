@@ -227,9 +227,13 @@ export default function ComunicadosPage() {
                     <i className="bi bi-paperclip me-1" />Documento adjunto
                   </h4>
                   {(viendo.adjuntos?.length ? viendo.adjuntos : [{ url: viendo.adjuntoUrl, nombre: viendo.adjuntoNombre }]).map((a: any, i: number) => <div key={a.id ?? i} style={{ marginBottom: '0.75rem' }}>
-                    {/\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(a.url) && <img src={a.url} alt={a.nombre || 'Adjunto'} style={{ width: '100%', maxHeight: 360, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--border-color)' }} />}
-                    {/\.pdf(\?.*)?$/i.test(a.url) && <iframe src={a.url} style={{ width: '100%', height: 360, borderRadius: 10, border: '1px solid var(--border-color)' }} />}
-                    <a href={a.url} target="_blank" rel="noreferrer" className="btn-accent" style={{ marginTop: '0.5rem', width: '100%', justifyContent: 'center', textDecoration: 'none' }}><i className="bi bi-download me-1" />{a.nombre || `Abrir adjunto ${i + 1}`}</a>
+                    {a.url ? <>
+                      {/\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(a.url) && <img src={a.url} alt={a.nombre || 'Adjunto'} style={{ width: '100%', maxHeight: 360, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--border-color)' }} />}
+                      {/\.pdf(\?.*)?$/i.test(a.url) && <iframe src={a.url} style={{ width: '100%', height: 360, borderRadius: 10, border: '1px solid var(--border-color)' }} />}
+                      <a href={a.url} target="_blank" rel="noreferrer" className="btn-accent" style={{ marginTop: '0.5rem', width: '100%', justifyContent: 'center', textDecoration: 'none' }}><i className="bi bi-download me-1" />{a.nombre || `Abrir adjunto ${i + 1}`}</a>
+                    </> : <div style={{ padding: '0.75rem', borderRadius: 8, background: '#fef2f2', color: '#991b1b', fontSize: '0.8rem' }}>
+                      <i className="bi bi-exclamation-triangle me-2" />El archivo {a.nombre ? `“${a.nombre}”` : 'adjunto'} ya no está disponible, pero el comunicado se conserva.
+                    </div>}
                   </div>)}
                 </div>
               )}
@@ -242,6 +246,12 @@ export default function ComunicadosPage() {
 }
 
 function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any) {
+  const ahoraLocal = () => {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    return d.toISOString().slice(0, 16);
+  };
+  const hoyLocal = () => ahoraLocal().slice(0, 10);
   const [form, setForm] = useState({
     titulo:         inicial?.titulo        ?? '',
     contenido:      inicial?.contenido     ?? '',
@@ -249,8 +259,8 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
     nivelEducativo: inicial?.nivelEducativo ?? '',
     gradoId:        inicial?.gradoId       ?? '',
     seccionId:      inicial?.seccionId     ?? '',
-    publicadoEn:    inicial?.publicadoEn ? inicial.publicadoEn.slice(0, 16) : '',
-    venceEn:        inicial?.venceEn       ? inicial.venceEn.split('T')[0] : '',
+    publicadoEn:    inicial?.publicadoEn ? inicial.publicadoEn.slice(0, 16) : ahoraLocal(),
+    venceEn:        inicial?.venceEn       ? inicial.venceEn.split('T')[0] : hoyLocal(),
   });
   const [adjuntos, setAdjuntos] = useState<File[]>([]);
   // Nombre del adjunto ya guardado en el comunicado (sólo aplica al editar).
@@ -266,7 +276,12 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => { if (v !== '' && v !== null) fd.append(k, String(v)); });
+    Object.entries(form).forEach(([k, v]) => {
+      if (v === '' || v === null) return;
+      // Una fecha sin hora se interpreta como medianoche y vencería al
+      // comenzar el día. Se envía al final del día local seleccionado.
+      fd.append(k, k === 'venceEn' ? `${String(v)}T23:59:59.999` : String(v));
+    });
     adjuntos.forEach(file => fd.append('adjuntos', file));
     if (!adjuntos.length && eliminarAdjunto) fd.append('eliminarAdjunto', 'true');
     onGuardar(fd);
@@ -338,11 +353,11 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Publicar el (opcional)</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Publicar el</label>
             <input type="datetime-local" value={form.publicadoEn} onChange={set('publicadoEn')} className="sige-input" />
           </div>
           <div>
-            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Vence el (opcional)</label>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Vence el</label>
             <input type="date" value={form.venceEn} onChange={set('venceEn')} className="sige-input" />
           </div>
           <div style={{ gridColumn: '1 / -1' }}>
@@ -357,8 +372,8 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
                 </button>
               </div>
             )}
-            <input type="file" multiple onChange={e => { setAdjuntos(Array.from(e.target.files ?? []).slice(0, 5)); setEliminarAdjunto(false); }} className="sige-input" accept=".pdf,.jpg,.png,.doc,.docx" style={{ padding: '0.35rem' }} />
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Puedes seleccionar hasta 5 archivos.</p>
+            <input type="file" multiple onChange={e => { setAdjuntos(Array.from(e.target.files ?? []).slice(0, 5)); setEliminarAdjunto(false); }} className="sige-input" accept=".pdf,.jpg,.jpeg,.png,.webp" style={{ padding: '0.35rem' }} />
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Hasta 5 archivos: PDF, JPG, PNG o WebP.</p>
             {adjuntoActual && !adjuntos.length && (
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Selecciona un archivo para reemplazarlo.</p>
             )}
