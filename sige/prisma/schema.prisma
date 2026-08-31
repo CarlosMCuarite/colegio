@@ -432,6 +432,7 @@ model Usuario {
   auditoria               Auditoria[]
   exportaciones           Exportacion[]
   notificaciones          Notificacion[]
+  comunicadosLeidos       ComunicadoLectura[]
   horariosDictados        Horario[]       @relation("HorarioDocente")
   aulasComoTutor          Aula[]          @relation("AulaDocenteTutor")
 
@@ -897,9 +898,39 @@ model Comunicado {
   activo         Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  notificadoEn   DateTime?
+  adjuntos       ComunicadoAdjunto[]
+  lecturas       ComunicadoLectura[]
 
   @@index([colegioId])
   @@map("comunicados")
+}
+
+model ComunicadoAdjunto {
+  id            String     @id @default(cuid())
+  comunicadoId  String
+  comunicado   Comunicado @relation(fields: [comunicadoId], references: [id], onDelete: Cascade)
+  url           String
+  nombre        String
+  mimeType      String?
+  tamano        Int?
+  createdAt     DateTime   @default(now())
+
+  @@index([comunicadoId])
+  @@map("comunicado_adjuntos")
+}
+
+model ComunicadoLectura {
+  id           String     @id @default(cuid())
+  comunicadoId String
+  comunicado   Comunicado @relation(fields: [comunicadoId], references: [id], onDelete: Cascade)
+  usuarioId    String
+  usuario      Usuario    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  leidoEn      DateTime   @default(now())
+
+  @@unique([comunicadoId, usuarioId])
+  @@index([usuarioId])
+  @@map("comunicado_lecturas")
 }
 
 // =============================================================================

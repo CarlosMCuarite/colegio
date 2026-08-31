@@ -9,11 +9,14 @@ import toast from 'react-hot-toast';
 
 export default function ComunicadosPage() {
   const [page, setPage]         = useState(1);
+  const [busqueda, setBusqueda] = useState('');
+  const [nivelFiltro, setNivelFiltro] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [viendo, setViendo]     = useState<any>(null);
 
-  const params = new URLSearchParams({ page: String(page), limit: '20' }).toString();
+  const params = new URLSearchParams({ page: String(page), limit: '20', q: busqueda, nivelEducativo: nivelFiltro, estado: estadoFiltro }).toString();
   const { data, isLoading, mutate } = useComunicados(params);
   const { data: nivelesData }       = useNivelesGrados();
   const { loading: saving, mutate: save } = useMutation();
@@ -52,6 +55,20 @@ export default function ComunicadosPage() {
         <button className="btn-accent" onClick={() => { setEditando(null); setShowModal(true); }}>
           <i className="bi bi-plus-lg" /> Nuevo Comunicado
         </button>
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ position: 'relative', flex: '1 1 260px' }}>
+          <i className="bi bi-search" style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input className="sige-input" style={{ paddingLeft: '2rem' }} value={busqueda} onChange={e => { setBusqueda(e.target.value); setPage(1); }} placeholder="Buscar por título o contenido..." />
+        </div>
+        <select className="sige-input" style={{ width: 170 }} value={nivelFiltro} onChange={e => { setNivelFiltro(e.target.value); setPage(1); }}>
+          <option value="">Todos los niveles</option><option value="INICIAL">Inicial</option><option value="PRIMARIA">Primaria</option><option value="SECUNDARIA">Secundaria</option>
+        </select>
+        <select className="sige-input" style={{ width: 150 }} value={estadoFiltro} onChange={e => { setEstadoFiltro(e.target.value); setPage(1); }}>
+          <option value="">Publicados</option><option value="PROGRAMADO">Programados</option><option value="VENCIDO">Vencidos</option>
+        </select>
+        {(busqueda || nivelFiltro || estadoFiltro) && <button onClick={() => { setBusqueda(''); setNivelFiltro(''); setEstadoFiltro(''); setPage(1); }} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><i className="bi bi-x-lg me-1" />Limpiar</button>}
       </div>
 
       {/* Lista */}
@@ -93,9 +110,10 @@ export default function ComunicadosPage() {
                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                       <span><i className="bi bi-person me-1" />{c.creadoPor?.nombres} {c.creadoPor?.apellidos}</span>
                       <span><i className="bi bi-calendar me-1" />{new Date(c.createdAt).toLocaleDateString('es-PE')}</span>
+                      <span style={{ color: c.estado === 'VENCIDO' ? '#b91c1c' : c.estado === 'PROGRAMADO' ? '#92400e' : '#047857', fontWeight: 600 }}><i className={`bi ${c.estado === 'PROGRAMADO' ? 'bi-calendar-event' : c.estado === 'VENCIDO' ? 'bi-clock-history' : 'bi-check-circle'} me-1`} />{c.estado === 'PROGRAMADO' ? 'Programado' : c.estado === 'VENCIDO' ? 'Vencido' : 'Publicado'}</span>
                       {c.paraElColegio && <span style={{ color: 'var(--accent)' }}><i className="bi bi-broadcast me-1" />Todo el colegio</span>}
                       {c.nivelEducativo && <span><i className="bi bi-mortarboard me-1" />{c.nivelEducativo}</span>}
-                      {c.adjuntoUrl && <span><i className="bi bi-paperclip me-1" />Con adjunto</span>}
+                      {(c.adjuntos?.length || c.adjuntoUrl) && <span><i className="bi bi-paperclip me-1" />{c.adjuntos?.length ?? 1} adjunto(s)</span>}
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
@@ -198,26 +216,21 @@ export default function ComunicadosPage() {
                 {viendo.contenido}
               </div>
 
+              <button onClick={async () => { try { await api.post(`/comunicados/${viendo.id}/leer`); toast.success('Lectura registrada'); } catch {} }} className="btn-accent" style={{ width: '100%', justifyContent: 'center', marginBottom: '1rem' }}>
+                <i className="bi bi-check2-circle me-1" />Marcar como leído
+              </button>
+
               {/* Documento adjunto */}
-              {viendo.adjuntoUrl && (
+              {(viendo.adjuntos?.length ? viendo.adjuntos : (viendo.adjuntoUrl ? [{ url: viendo.adjuntoUrl, nombre: viendo.adjuntoNombre }] : [])).length > 0 && (
                 <div>
                   <h4 style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
                     <i className="bi bi-paperclip me-1" />Documento adjunto
                   </h4>
-                  {/\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(viendo.adjuntoUrl) ? (
-                    <img src={viendo.adjuntoUrl} alt={viendo.adjuntoNombre || 'Adjunto'} style={{ width: '100%', borderRadius: 10, border: '1px solid var(--border-color)' }} />
-                  ) : /\.pdf(\?.*)?$/i.test(viendo.adjuntoUrl) ? (
-                    <iframe src={viendo.adjuntoUrl} style={{ width: '100%', height: 420, borderRadius: 10, border: '1px solid var(--border-color)' }} />
-                  ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-secondary)', borderRadius: 10, padding: '0.875rem' }}>
-                      <i className="bi bi-file-earmark-text" style={{ fontSize: '1.5rem', color: 'var(--accent)' }} />
-                      <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)', flex: 1 }}>Vista previa no disponible para este tipo de archivo</span>
-                    </div>
-                  )}
-                  <a href={viendo.adjuntoUrl} target="_blank" rel="noreferrer" className="btn-accent"
-                    style={{ marginTop: '0.75rem', width: '100%', justifyContent: 'center', textDecoration: 'none' }}>
-                    <i className="bi bi-download me-1" />Abrir / Descargar documento
-                  </a>
+                  {(viendo.adjuntos?.length ? viendo.adjuntos : [{ url: viendo.adjuntoUrl, nombre: viendo.adjuntoNombre }]).map((a: any, i: number) => <div key={a.id ?? i} style={{ marginBottom: '0.75rem' }}>
+                    {/\.(png|jpe?g|webp|gif)(\?.*)?$/i.test(a.url) && <img src={a.url} alt={a.nombre || 'Adjunto'} style={{ width: '100%', maxHeight: 360, objectFit: 'contain', borderRadius: 10, border: '1px solid var(--border-color)' }} />}
+                    {/\.pdf(\?.*)?$/i.test(a.url) && <iframe src={a.url} style={{ width: '100%', height: 360, borderRadius: 10, border: '1px solid var(--border-color)' }} />}
+                    <a href={a.url} target="_blank" rel="noreferrer" className="btn-accent" style={{ marginTop: '0.5rem', width: '100%', justifyContent: 'center', textDecoration: 'none' }}><i className="bi bi-download me-1" />{a.nombre || `Abrir adjunto ${i + 1}`}</a>
+                  </div>)}
                 </div>
               )}
             </motion.div>
@@ -236,9 +249,10 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
     nivelEducativo: inicial?.nivelEducativo ?? '',
     gradoId:        inicial?.gradoId       ?? '',
     seccionId:      inicial?.seccionId     ?? '',
+    publicadoEn:    inicial?.publicadoEn ? inicial.publicadoEn.slice(0, 16) : '',
     venceEn:        inicial?.venceEn       ? inicial.venceEn.split('T')[0] : '',
   });
-  const [adjunto, setAdjunto] = useState<File | null>(null);
+  const [adjuntos, setAdjuntos] = useState<File[]>([]);
   // Nombre del adjunto ya guardado en el comunicado (sólo aplica al editar).
   // Si el usuario pide quitarlo, se marca eliminarAdjunto y se limpia esto.
   const [adjuntoActual, setAdjuntoActual] = useState<string | null>(inicial?.adjuntoNombre ?? null);
@@ -253,8 +267,8 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
     e.preventDefault();
     const fd = new FormData();
     Object.entries(form).forEach(([k, v]) => { if (v !== '' && v !== null) fd.append(k, String(v)); });
-    if (adjunto) fd.append('adjunto', adjunto);
-    else if (eliminarAdjunto) fd.append('eliminarAdjunto', 'true');
+    adjuntos.forEach(file => fd.append('adjuntos', file));
+    if (!adjuntos.length && eliminarAdjunto) fd.append('eliminarAdjunto', 'true');
     onGuardar(fd);
   };
 
@@ -324,12 +338,16 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
           <div>
+            <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Publicar el (opcional)</label>
+            <input type="datetime-local" value={form.publicadoEn} onChange={set('publicadoEn')} className="sige-input" />
+          </div>
+          <div>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Vence el (opcional)</label>
             <input type="date" value={form.venceEn} onChange={set('venceEn')} className="sige-input" />
           </div>
-          <div>
+          <div style={{ gridColumn: '1 / -1' }}>
             <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Adjunto (opcional)</label>
-            {adjuntoActual && !adjunto && (
+            {adjuntoActual && !adjuntos.length && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'var(--bg-secondary)', borderRadius: 8, padding: '0.4rem 0.6rem', marginBottom: '0.4rem' }}>
                 <i className="bi bi-paperclip" style={{ color: 'var(--accent)' }} />
                 <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{adjuntoActual}</span>
@@ -339,8 +357,9 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
                 </button>
               </div>
             )}
-            <input type="file" onChange={e => { setAdjunto(e.target.files?.[0] ?? null); setEliminarAdjunto(false); }} className="sige-input" accept=".pdf,.jpg,.png,.doc,.docx" style={{ padding: '0.35rem' }} />
-            {adjuntoActual && !adjunto && (
+            <input type="file" multiple onChange={e => { setAdjuntos(Array.from(e.target.files ?? []).slice(0, 5)); setEliminarAdjunto(false); }} className="sige-input" accept=".pdf,.jpg,.png,.doc,.docx" style={{ padding: '0.35rem' }} />
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Puedes seleccionar hasta 5 archivos.</p>
+            {adjuntoActual && !adjuntos.length && (
               <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>Selecciona un archivo para reemplazarlo.</p>
             )}
           </div>
@@ -352,7 +371,7 @@ function ComunicadoForm({ inicial, niveles, onGuardar, onCancelar, saving }: any
           Cancelar
         </button>
         <button type="submit" className="btn-accent" disabled={saving}>
-          {saving ? <><span className="spinner-border spinner-border-sm me-1" />Publicando...</> : <><i className="bi bi-send me-1" />{inicial ? 'Actualizar' : 'Publicar y Notificar'}</>}
+          {saving ? <><span className="spinner-border spinner-border-sm me-1" />Guardando...</> : <><i className="bi bi-send me-1" />{inicial ? 'Actualizar' : (form.publicadoEn && new Date(form.publicadoEn) > new Date() ? 'Programar comunicado' : 'Publicar y Notificar')}</>}
         </button>
       </div>
     </form>
