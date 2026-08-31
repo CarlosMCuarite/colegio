@@ -77,7 +77,7 @@ async function generarCargosAutomaticosPadre(colegioId: string, padreId: string)
 
 // ─── GET /pagos ──────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
-  const { estado, padreId, periodoPago, q, page = '1', limit = '50' } = req.query as Record<string, string>;
+  const { estado, padreId, periodoPago, q, grado, page = '1', limit = '50' } = req.query as Record<string, string>;
 
   const where: any = { colegioId: req.colegioId };
   if (estado)      where.estado      = estado as PagoEstado;
@@ -87,6 +87,12 @@ router.get('/', async (req, res) => {
       { padre:      { OR: [{ nombres: { contains: q, mode: 'insensitive' } }, { apellidos: { contains: q, mode: 'insensitive' } }, { dni: { contains: q } }] } },
       { estudiante: { OR: [{ nombres: { contains: q, mode: 'insensitive' } }, { apellidos: { contains: q, mode: 'insensitive' } }, { dni: { contains: q } }] } },
     ];
+  }
+  if (grado?.trim()) {
+    where.estudiante = {
+      ...(where.estudiante ?? {}),
+      matriculas: { some: { activa: true, nivelGrado: { nombre: { contains: grado.trim(), mode: 'insensitive' } } } },
+    };
   }
 
   // Si es padre, solo ve sus propios pagos

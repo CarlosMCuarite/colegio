@@ -25,6 +25,7 @@ const ESTADO_CONF: Record<string, { bg: string; text: string; icon: string; labe
 export default function PagosPage() {
   const [estadoFiltro, setEstadoFiltro] = useState('');
   const [busqueda, setBusqueda] = useState('');
+  const [gradoFiltro, setGradoFiltro] = useState('');
   const [periodoFiltro, setPeriodoFiltro] = useState('');
   const [page, setPage] = useState(1);
   const [selectedPago, setSelectedPago] = useState<any>(null);
@@ -35,7 +36,7 @@ export default function PagosPage() {
   const [pagoParaMonto, setPagoParaMonto] = useState<any>(null);
   const [voucherUrl, setVoucherUrl] = useState<string | null>(null);
 
-  const params = new URLSearchParams({ estado: estadoFiltro, q: busqueda, periodoPago: periodoFiltro, page: String(page), limit: '30' }).toString();
+  const params = new URLSearchParams({ estado: estadoFiltro, q: busqueda, grado: gradoFiltro, periodoPago: periodoFiltro, page: String(page), limit: '30' }).toString();
   const { data, isLoading, mutate } = usePagos(params);
   const { data: conceptosData, mutate: mutateConceptos } = useConceptosPago();
   const { loading: acting, mutate: act } = useMutation();
@@ -126,8 +127,10 @@ export default function PagosPage() {
         </div>
         <input type="month" value={periodoFiltro} onChange={e => { setPeriodoFiltro(e.target.value); setPage(1); }}
           className="sige-input" style={{ width: 'auto', fontSize: '0.82rem' }} title="Filtrar por mes" />
-        {(busqueda || periodoFiltro) && (
-          <button onClick={() => { setBusqueda(''); setPeriodoFiltro(''); setPage(1); }}
+        <input type="text" value={gradoFiltro} onChange={e => { setGradoFiltro(e.target.value); setPage(1); }}
+          placeholder="Grado (ej. 2° Secundaria)" className="sige-input" style={{ width: 190, fontSize: '0.82rem' }} />
+        {(busqueda || gradoFiltro || periodoFiltro) && (
+          <button onClick={() => { setBusqueda(''); setGradoFiltro(''); setPeriodoFiltro(''); setPage(1); }}
             style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.78rem' }}>
             <i className="bi bi-x-lg me-1" />Limpiar
           </button>
