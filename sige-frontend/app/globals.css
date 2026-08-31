@@ -442,9 +442,10 @@ a, button, input, select, textarea { accent-color: var(--accent); }
   position: sticky;
   top: 16px;
   display: grid;
-  grid-template-columns: repeat(2, minmax(400px, 1fr));
+  grid-template-columns: minmax(400px, 1fr);
   gap: 18px;
   align-items: start;
+  justify-items: center;
   padding: 22px;
   overflow-x: auto;
   min-width: 0;
