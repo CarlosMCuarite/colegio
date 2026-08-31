@@ -20,6 +20,7 @@ export default function BackupsPage() {
 
   const backups  = (backupsData as any)?.data ?? [];
   const colegios  = Array.isArray((colegiosData as any)?.data) ? (colegiosData as any).data : [];
+  const ultimoRecuperable = backups.find((backup: any) => backup.estado === 'COMPLETADO');
 
   const dispararBackup = async () => {
     await save(async () => {
@@ -39,6 +40,16 @@ export default function BackupsPage() {
   };
 
   const restaurar = async (id: string, colegio: string) => {
+    try {
+      const comprobacion = await api.get(`/backups/${id}/verificar`);
+      if (!comprobacion.data?.data?.recuperable) {
+        toast.error('La restauración fue bloqueada porque este respaldo no superó la verificación de integridad.', { duration: 9000 });
+        return;
+      }
+    } catch (err: any) {
+      toast.error(err?.response?.data?.error ?? 'No se pudo comprobar la integridad del respaldo. No se realizó ningún cambio.');
+      return;
+    }
     if (!confirm(`¿Restaurar los datos faltantes de ${colegio}?\n\nModo seguro: no borra ni reemplaza información actual; solo recupera registros/archivos ausentes y reactiva eliminados lógicamente.`)) return;
     await save(async () => {
       const res = await api.post(`/backups/${id}/restaurar`, { confirmacion: 'RESTAURAR SIN BORRAR' });
@@ -53,10 +64,17 @@ export default function BackupsPage() {
   const descargar = async (id: string, nombre: string) => {
     try {
       const res = await api.get(`/backups/${id}/descargar`);
+      const archivo = await fetch(res.data.url);
+      if (!archivo.ok) throw new Error('El archivo firmado no está disponible');
+      const blob = await archivo.blob();
+      const urlLocal = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = res.data.url;
+      a.href = urlLocal;
       a.download = nombre;
+      document.body.appendChild(a);
       a.click();
+      a.remove();
+      URL.revokeObjectURL(urlLocal);
     } catch (err: any) {
       toast.error(
         (err?.response?.data?.error ?? 'No se pudo descargar el backup') +
@@ -137,6 +155,51 @@ export default function BackupsPage() {
         </div>
       </div>
 
+      <section className="sige-card" style={{ marginBottom: '1.25rem', padding: '1.25rem' }} aria-labelledby="centro-recuperacion">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
+          <div style={{ maxWidth: 680 }}>
+            <h3 id="centro-recuperacion" style={{ fontWeight: 750, fontSize: '1rem', margin: 0, color: 'var(--text-primary)' }}>
+              <i className="bi bi-life-preserver me-2" style={{ color: 'var(--accent)' }} />Centro de recuperación
+            </h3>
+            <p style={{ margin: '0.45rem 0 0', color: 'var(--text-secondary)', fontSize: '0.82rem', lineHeight: 1.55 }}>
+              Descarga una copia para conservarla fuera del sistema. Si ocurre una falla, usa Restaurar: SIGE verificará primero la integridad y recuperará únicamente datos o archivos ausentes, sin borrar ni sobrescribir lo actual.
+            </p>
+          </div>
+          {ultimoRecuperable && (
+            <span className="estado-badge" style={{ background: '#d1fae5', color: '#065f46' }}>
+              <i className="bi bi-check-circle me-1" />Último respaldo disponible
+            </span>
+          )}
+        </div>
+
+        {ultimoRecuperable ? (
+          <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)', display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ minWidth: 0, flex: '1 1 280px' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.86rem', overflowWrap: 'anywhere' }}>{ultimoRecuperable.nombre}</div>
+              <div style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: 4 }}>
+                {ultimoRecuperable.colegio?.nombre ?? 'Colegio'} · {ultimoRecuperable.tamanoKB ?? 0} KB · {new Date(ultimoRecuperable.createdAt).toLocaleString('es-PE')}
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.55rem', flexWrap: 'wrap', justifyContent: 'flex-end', flex: '1 1 420px' }}>
+              <button onClick={() => verificar(ultimoRecuperable.id)} disabled={saving} className="btn-accent" style={{ background: 'var(--bg-secondary)', color: 'var(--accent)', border: '1px solid var(--border-color)' }}>
+                <i className="bi bi-shield-check me-1" />Verificar
+              </button>
+              <button onClick={() => descargar(ultimoRecuperable.id, ultimoRecuperable.nombre)} disabled={saving} className="btn-accent">
+                <i className="bi bi-download me-1" />Descargar copia
+              </button>
+              <button onClick={() => restaurar(ultimoRecuperable.id, ultimoRecuperable.colegio?.nombre ?? 'este colegio')} disabled={saving}
+                className="btn-accent" style={{ background: '#5b21b6' }}>
+                <i className="bi bi-arrow-counterclockwise me-1" />Restaurar respaldo
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ marginTop: '1rem', padding: '0.9rem 1rem', background: 'var(--bg-secondary)', borderRadius: 10, color: 'var(--text-secondary)', fontSize: '0.82rem' }}>
+            Genera un respaldo completado para habilitar las opciones de descarga y restauración.
+          </div>
+        )}
+      </section>
+
       <div className="sige-card" style={{ padding: 0, overflow: 'hidden' }}>
         <div style={{ padding: '0.875rem 1rem', borderBottom: '1px solid var(--border-color)', fontWeight: 700, fontSize: '0.875rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span><i className="bi bi-archive me-2" />Historial de respaldos</span>
@@ -183,7 +246,7 @@ export default function BackupsPage() {
                       </td>
                       <td style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(b.createdAt).toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}</td>
                       <td>
-                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'flex-end', flexWrap: 'wrap', minWidth: 300 }}>
                           {b.estado === 'COMPLETADO' && (
                             <>
                               <button onClick={() => verificar(b.id)} style={{ background: '#dbeafe', border: 'none', borderRadius: 6, padding: '3px 8px', cursor: 'pointer', color: '#1e40af', fontSize: '0.75rem', fontWeight: 600 }}>
