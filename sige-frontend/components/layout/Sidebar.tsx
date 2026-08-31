@@ -245,13 +245,14 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
       <aside className={clsx('sige-sidebar', open && 'open')}>
         <span className="sidebar-watermark sidebar-watermark--one" aria-hidden="true" />
         <span className="sidebar-watermark sidebar-watermark--two" aria-hidden="true" />
+        <SigeOwl mood="proud" size="lg" className="sidebar-mascot-watermark" label="Mascota institucional SIGE" />
         {/* Encabezado colegio */}
         <div className="sidebar-brand-panel">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {user.colegio?.logoUrl ? (
               <img src={user.colegio.logoUrl} alt="logo" style={{ width: 36, height: 36, borderRadius: 8, objectFit: 'cover', flexShrink: 0 }} />
             ) : (
-              <SigeOwl mood="proud" size="sm" className="sidebar-owl" label="Búho azul de SIGE" />
+              <SigeOwl mood="proud" size="sm" className="sidebar-owl" label="Búho institucional SIGE" />
             )}
             <div style={{ minWidth: 0 }}>
               <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>

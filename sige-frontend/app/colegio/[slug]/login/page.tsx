@@ -4,6 +4,8 @@ import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { AuthProvider, useAuth } from '../../../../lib/auth';
 import api from '../../../../lib/api';
+import SigeOwl from '../../../../components/brand/SigeOwl';
+import { getSchoolTheme, SchoolThemeProvider } from '../../../../components/layout/SchoolThemeContext';
 
 function LoginColegioForm({ slug }: { slug: string }) {
   const { login } = useAuth();
@@ -51,12 +53,19 @@ function LoginColegioForm({ slug }: { slug: string }) {
     </div>
   );
 
-  const primario = colegio?.colorPrimario || '#4f46e5';
+  const schoolTheme = getSchoolTheme(colegio?.colorPrimario, colegio?.colorSecundario);
+  const primario = schoolTheme.primary;
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-      <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ width: '100%', maxWidth: 420 }}>
-        <div className="sige-card" style={{ padding: '2.5rem' }}>
+    <SchoolThemeProvider value={schoolTheme}>
+    <div className="school-login-shell" data-school-theme={schoolTheme.key} style={({ '--school-primary': schoolTheme.primary, '--school-secondary': schoolTheme.secondary, '--accent': schoolTheme.primary, '--accent-hover': schoolTheme.hover, '--accent-soft': schoolTheme.soft, '--accent-contrast': schoolTheme.contrast } as React.CSSProperties)}>
+      <div className="school-login-visual" aria-hidden="true">
+        <span className="school-login-orbit school-login-orbit--one" />
+        <span className="school-login-orbit school-login-orbit--two" />
+        <SigeOwl mood="welcome" size="hero" priority className="school-login-owl" />
+      </div>
+      <motion.div className="school-login-panel" initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} style={{ width: '100%', maxWidth: 420 }}>
+        <div className="sige-card school-login-card" style={{ padding: '2.5rem' }}>
           <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
             {colegio?.logoUrl ? (
               <img src={colegio.logoUrl} alt={colegio.nombre} style={{ width: 64, height: 64, borderRadius: 16, objectFit: 'cover', margin: '0 auto 1rem', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }} />
@@ -89,7 +98,7 @@ function LoginColegioForm({ slug }: { slug: string }) {
                 </button>
               </div>
             </div>
-            <button type="submit" disabled={loading} className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '0.65rem', fontSize: '0.9rem', background: primario }}>
+            <button type="submit" disabled={loading} className="btn-accent" style={{ width: '100%', justifyContent: 'center', padding: '0.65rem', fontSize: '0.9rem', background: primario, color: schoolTheme.contrast }}>
               {loading ? <><span className="spinner-border spinner-border-sm me-2" />Ingresando...</> : <><i className="bi bi-box-arrow-in-right me-1" />Ingresar</>}
             </button>
           </form>
@@ -99,6 +108,7 @@ function LoginColegioForm({ slug }: { slug: string }) {
         </p>
       </motion.div>
     </div>
+    </SchoolThemeProvider>
   );
 }
 

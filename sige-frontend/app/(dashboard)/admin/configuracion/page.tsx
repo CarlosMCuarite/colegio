@@ -115,7 +115,7 @@ export default function ConfiguracionAdminPage() {
             <button key={tab.id} onClick={() => setTabActiva(tab.id)}
               style={{ flex: 1, padding: '0.5rem 0.25rem', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600,
                 background: tabActiva === tab.id ? 'var(--accent)' : 'transparent',
-                color:      tabActiva === tab.id ? '#fff' : 'var(--text-secondary)',
+                color:      tabActiva === tab.id ? 'var(--accent-contrast)' : 'var(--text-secondary)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}>
               <i className={`bi ${tab.icon}`} />{tab.label}
             </button>
@@ -128,6 +128,18 @@ export default function ConfiguracionAdminPage() {
             <h3 style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '1.25rem' }}>
               <i className="bi bi-building me-2" />Datos Institucionales
             </h3>
+
+            <div className="school-theme-managed-notice" role="status">
+              <span className="school-theme-managed-notice__swatches" aria-hidden="true">
+                <i style={{ background: colegio?.colorPrimario || 'var(--school-primary)' }} />
+                <i style={{ background: colegio?.colorSecundario || 'var(--school-secondary)' }} />
+              </span>
+              <span>
+                <strong>Identidad visual administrada por Super Admin</strong>
+                <small>La paleta y la mascota se aplican automáticamente en todos los módulos del colegio.</small>
+              </span>
+              <i className="bi bi-shield-lock" aria-hidden="true" />
+            </div>
 
             {/* Logo */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', paddingBottom: '1.25rem', borderBottom: '1px solid var(--border-color)' }}>
