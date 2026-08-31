@@ -6,6 +6,7 @@ import { useDashboardPadre, useMutation } from '../../../hooks/useApi';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../../../lib/api';
 import toast from 'react-hot-toast';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 export default function PadreDashboard() {
   const { data, isLoading, mutate } = useDashboardPadre();
@@ -38,6 +39,11 @@ export default function PadreDashboard() {
   const eventos = d?.eventos ?? [];
   const observaciones = d?.observaciones ?? [];
   const notifNoLeidas = d?.totalNotifNoLeidas ?? 0;
+  const asistenciaMes = d?.asistenciaMes ?? [];
+  const asistenciaPorHijo = estudiantes.map((est: any) => {
+    const valor = (estado: string) => asistenciaMes.find((a: any) => a.estudianteId === est.id && a.estado === estado)?._count ?? 0;
+    return { nombre: est.nombres?.split(' ')[0] ?? 'Estudiante', presentes: valor('PRESENTE'), tardanzas: valor('TARDANZA'), ausencias: valor('AUSENTE') };
+  });
 
   return (
     <DashboardLayout title="Mi Panel Familiar" allowedRoles={['PADRE']}>
@@ -102,6 +108,19 @@ export default function PadreDashboard() {
           );
         })}
       </div>
+
+      {asistenciaPorHijo.length > 0 && (
+        <section className="sige-card" style={{ marginBottom: '1.25rem' }}>
+          <h3 style={{ fontSize: '0.9rem', marginBottom: 4 }}>Asistencia del mes</h3>
+          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 0 }}>Resumen por hijo; los colores incluyen etiquetas y valores en el detalle.</p>
+          <ResponsiveContainer width="100%" height={230}>
+            <BarChart data={asistenciaPorHijo}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" /><XAxis dataKey="nombre" tick={{fontSize:11}}/><YAxis allowDecimals={false} tick={{fontSize:11}}/><Tooltip/><Legend wrapperStyle={{fontSize:11}}/>
+              <Bar dataKey="presentes" name="Presentes" fill="#16a34a" radius={[5,5,0,0]}/><Bar dataKey="tardanzas" name="Tardanzas" fill="#d97706" radius={[5,5,0,0]}/><Bar dataKey="ausencias" name="Ausencias" fill="#dc2626" radius={[5,5,0,0]}/>
+            </BarChart>
+          </ResponsiveContainer>
+        </section>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.25rem' }}>
 

@@ -38,6 +38,7 @@ export default function EventosPage() {
   const { loading: saving, mutate: save } = useMutation();
 
   const eventos = (data as any)?.data ?? [];
+  const conteoTipo = (tipo: string) => eventos.filter((e: any) => e.tipo === tipo).length;
 
   const handleGuardar = async (form: any) => {
     await save(async () => {
@@ -79,6 +80,14 @@ export default function EventosPage() {
 
   return (
     <DashboardLayout title="Calendario de Eventos" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR','SECRETARIA']}>
+      <section style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(145px,1fr))',gap:10,marginBottom:14 }}>
+        {[
+          ['Eventos del mes', eventos.length, 'bi-calendar-event'],
+          ['Actividades', conteoTipo('ACTIVIDAD'), 'bi-stars'],
+          ['Reuniones', conteoTipo('REUNION'), 'bi-people'],
+          ['Cambios de clase', conteoTipo('SUSPENSION_CLASES') + conteoTipo('FERIADO'), 'bi-exclamation-triangle'],
+        ].map(([label,value,icon]) => <div className="sige-card" key={String(label)} style={{padding:'12px 14px',display:'flex',alignItems:'center',gap:10}}><i className={`bi ${icon}`} style={{color:'var(--accent)'}}/><div><strong style={{display:'block',fontSize:18}}>{value}</strong><small style={{color:'var(--text-muted)'}}>{label}</small></div></div>)}
+      </section>
 
       {/* Controles mes/año */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -104,7 +113,7 @@ export default function EventosPage() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(min(100%,340px),1fr))', gap: '1.25rem' }}>
 
         {/* Calendario */}
         <div className="sige-card" style={{ padding: '1rem' }}>

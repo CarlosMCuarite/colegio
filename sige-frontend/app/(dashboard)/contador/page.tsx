@@ -7,12 +7,17 @@
 // inmediatamente después de iniciar sesión, sin ver ni un solo módulo.
 import DashboardLayout from '../../../components/layout/DashboardLayout';
 import { useData } from '../../../hooks/useApi';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 export default function InicioContadorPage() {
   const { data } = useData<any>('/pagos?limit=1');
   const agregados: any[] = data?.meta?.agregados ?? [];
   const totalPorEstado = (estado: string) => agregados.find((a: any) => a.estado === estado)?._count ?? 0;
   const montoPendiente = agregados.find((a: any) => a.estado === 'PENDIENTE')?._sum?.monto ?? 0;
+  const datosEstados = agregados.map((a: any) => ({
+    estado: ({ PENDIENTE: 'Por cobrar', EN_REVISION: 'En revisión', APROBADO: 'Cobrado', RECHAZADO: 'Rechazado' } as any)[a.estado] ?? a.estado,
+    monto: Number(a._sum?.monto ?? 0),
+  }));
 
   return (
     <DashboardLayout title="Contador" allowedRoles={['CONTADOR']}>
@@ -52,6 +57,18 @@ export default function InicioContadorPage() {
           <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: 2 }}>Revisar, aprobar y registrar pensiones</div>
         </a>
       </div>
+      <section className="sige-card" style={{ marginTop: '1rem' }}>
+        <h2 style={{ fontSize: '0.92rem', marginBottom: 4 }}>Cartera por estado</h2>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.76rem', marginTop: 0 }}>Montos acumulados para priorizar cobranza y revisión.</p>
+        {datosEstados.length ? <ResponsiveContainer width="100%" height={260}>
+          <BarChart data={datosEstados} margin={{ top: 8, right: 12, left: 8, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" />
+            <XAxis dataKey="estado" tick={{ fontSize: 11 }} /><YAxis tick={{ fontSize: 11 }} />
+            <Tooltip formatter={(value: any) => [`S/ ${Number(value).toFixed(2)}`, 'Monto']} />
+            <Bar dataKey="monto" name="Monto" fill="var(--accent)" radius={[6,6,0,0]} />
+          </BarChart>
+        </ResponsiveContainer> : <p style={{ color: 'var(--text-muted)', fontSize: 13 }}>Aún no hay movimientos para analizar.</p>}
+      </section>
     </DashboardLayout>
   );
 }

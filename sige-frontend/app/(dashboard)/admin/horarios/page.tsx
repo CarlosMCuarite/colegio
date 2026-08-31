@@ -34,6 +34,12 @@ export default function HorariosPage() {
   // El aula es la que ya está vinculada a la sección seleccionada arriba — no
   // se vuelve a pedir en el modal.
   const aulaDeSeccion = aulas.find((a: any) => a.seccionId === seccionId);
+  const minutosProgramados = horariosLista.reduce((total: number, h: any) => {
+    const [hi, mi] = String(h.horaInicio).split(':').map(Number);
+    const [hf, mf] = String(h.horaFin).split(':').map(Number);
+    return total + Math.max(0, (hf * 60 + mf) - (hi * 60 + mi));
+  }, 0);
+  const docentesAsignados = new Set(horariosLista.map((h: any) => h.docenteId).filter(Boolean)).size;
 
   // Cuando se ven varios grados/secciones a la vez (o un grado con varias
   // secciones), agrupamos por grado+sección: si no lo hacemos, dos horarios de
@@ -95,6 +101,14 @@ export default function HorariosPage() {
 
   return (
     <DashboardLayout title="Horarios" allowedRoles={['SUPERADMIN','ADMINISTRADOR']}>
+      <section style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:10,marginBottom:14 }}>
+        {[
+          ['Bloques programados', horariosLista.length, 'bi-calendar2-week'],
+          ['Horas pedagógicas', (minutosProgramados / 60).toFixed(1), 'bi-clock-history'],
+          ['Docentes asignados', docentesAsignados, 'bi-person-video3'],
+          ['Grados / secciones', grupos.length, 'bi-diagram-3'],
+        ].map(([label,value,icon]) => <div className="sige-card" key={String(label)} style={{padding:'12px 14px',display:'flex',gap:10,alignItems:'center'}}><i className={`bi ${icon}`} style={{color:'var(--accent)',fontSize:18}}/><div><strong style={{display:'block',fontSize:18}}>{value}</strong><small style={{color:'var(--text-muted)'}}>{label}</small></div></div>)}
+      </section>
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
         <div style={{ minWidth: 200 }}>
           <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: 4 }}>Grado</label>

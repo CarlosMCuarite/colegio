@@ -118,6 +118,44 @@ router.get('/padre', async (req, res) => {
   });
 });
 
+router.get('/docente', async (req, res) => {
+  const user = req.user!;
+  if (!([RolNombre.DOCENTE, RolNombre.AUXILIAR, RolNombre.TUTOR, RolNombre.COORDINADOR] as string[]).includes(user.rol))
+    throw new AppError('Acceso exclusivo para personal docente', 403);
+  const colegioId = req.colegioId ?? user.colegioId;
+  if (!colegioId) throw new AppError('Sin colegio', 400);
+
+  const asignaciones = await prisma.docenteAula.findMany({
+    where: { usuarioId: user.id, activo: true },
+    include: { aula: { include: { seccion: { include: { nivelGrado: true } } } }, curso: { select: { nombre: true } } },
+  });
+  const aulasTutor = await prisma.aula.findMany({ where: { colegioId, docenteTutorId: user.id, activo: true }, include: { seccion: { include: { nivelGrado: true } } } });
+  const aulasMap = new Map<string, any>();
+  asignaciones.forEach(a => aulasMap.set(a.aula.id, a.aula));
+  aulasTutor.forEach(a => aulasMap.set(a.id, a));
+  const aulas = Array.from(aulasMap.values());
+  const seccionIds = aulas.map(a => a.seccionId).filter(Boolean) as string[];
+  const inicio = dayjs().subtract(6, 'day').startOf('day').toDate();
+  const diaSemana = dayjs().day() || 7;
+
+  const [totalAlumnos, asistencia, horarioHoy, observaciones] = await Promise.all([
+    prisma.matricula.count({ where: { colegioId, activa: true, seccionId: { in: seccionIds } } }),
+    prisma.asistencia.groupBy({ by: ['fecha','estado'], where: { colegioId, fecha: { gte: inicio }, estudiante: { matriculas: { some: { activa: true, seccionId: { in: seccionIds } } } } }, _count: true, orderBy: { fecha: 'asc' } }),
+    prisma.horario.findMany({ where: { colegioId, activo: true, diaSemana, OR: [{ docenteId: user.id }, { seccionId: { in: seccionIds } }] }, orderBy: { horaInicio: 'asc' }, include: { nivelGrado: true, seccion: true, curso: true, aula: true } }),
+    prisma.observacion.findMany({ where: { creadoPorId: user.id }, orderBy: { fecha: 'desc' }, take: 5, include: { estudiante: { select: { nombres: true, apellidos: true } } } }),
+  ]);
+  const porFecha = new Map<string, any>();
+  for (let i = 6; i >= 0; i--) {
+    const fecha = dayjs().subtract(i, 'day').format('YYYY-MM-DD');
+    porFecha.set(fecha, { fecha: dayjs(fecha).format('DD/MM'), presente: 0, ausente: 0, tardanza: 0 });
+  }
+  asistencia.forEach(a => {
+    const item = porFecha.get(dayjs(a.fecha).format('YYYY-MM-DD'));
+    if (item) item[a.estado.toLowerCase()] = a._count;
+  });
+  res.json({ ok: true, data: { totalAlumnos, totalAulas: aulas.length, totalCursos: new Set(asignaciones.map(a => a.cursoId).filter(Boolean)).size, aulas, asistenciaSemana: Array.from(porFecha.values()), horarioHoy, observaciones } });
+});
+
 // Bandeja común para todos los roles. Conserva también las leídas recientes
 // para que abrir la campana no haga desaparecer el historial.
 router.get('/notificaciones', async (req, res) => {
