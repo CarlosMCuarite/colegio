@@ -56,6 +56,21 @@ export function errorHandler(
   // ── Error genérico (no exponer detalles en producción) ──────────────────
   logger.error('Error no manejado', { err, path: req.path, method: req.method });
 
+  // Diagnóstico seguro para este módulo: muestra únicamente la clase/código
+  // del fallo, nunca URLs, consultas, credenciales ni el mensaje interno.
+  // Permite distinguir en producción un error de Prisma, Storage o JavaScript
+  // sin convertir todos los fallos en el ambiguo "Error interno".
+  if (req.path.startsWith('/comunicados')) {
+    const code = typeof prismaErr?.code === 'string'
+      ? prismaErr.code
+      : (typeof prismaErr?.name === 'string' ? prismaErr.name : 'UNKNOWN');
+    return res.status(500).json({
+      ok: false,
+      error: `No se pudieron procesar los comunicados (${code})`,
+      code,
+    });
+  }
+
   return res.status(500).json({
     ok: false,
     error: process.env.NODE_ENV === 'production'

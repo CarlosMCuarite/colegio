@@ -26,6 +26,10 @@ interface RetryConfig extends InternalAxiosRequestConfig {
   _sessionRetry?: boolean;
 }
 
+interface ErrorConToast extends AxiosError<ErrorApi> {
+  _toastShown?: boolean;
+}
+
 let refreshPromise: Promise<void> | null = null;
 
 function limpiarSesionLocal() {
@@ -44,7 +48,7 @@ function estaEnPantallaPublicaDeAuth() {
 
 api.interceptors.response.use(
   (res) => res,
-  async (err: AxiosError<ErrorApi>) => {
+  async (err: ErrorConToast) => {
     const config = err.config as RetryConfig | undefined;
     const url = config?.url ?? '';
     const puedeRenovar = err.response?.status === 401
@@ -91,7 +95,10 @@ api.interceptors.response.use(
       }
       return Promise.reject(err);
     }
-    if (err.response?.status !== 404) toast.error(msg, detalle?.length ? { duration: 9000 } : undefined);
+    if (err.response?.status !== 404) {
+      toast.error(msg, detalle?.length ? { duration: 9000 } : undefined);
+      err._toastShown = true;
+    }
     return Promise.reject(err);
   },
 );

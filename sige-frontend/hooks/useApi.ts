@@ -32,7 +32,9 @@ export function useMutation<TData = unknown>() {
       return result;
     } catch (err: any) {
       const msg = err?.response?.data?.error ?? opts?.errorMsg ?? 'Error al procesar';
-      toast.error(msg);
+      // El interceptor global ya mostró este mismo error. Evita dos avisos
+      // idénticos por una sola acción del usuario.
+      if (!err?._toastShown) toast.error(msg);
       return null;
     } finally {
       setLoading(false);
