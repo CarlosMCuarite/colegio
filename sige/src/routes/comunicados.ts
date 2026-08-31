@@ -56,6 +56,21 @@ async function comunicadoConUrlFirmada<T extends { adjuntoUrl: string | null }>(
   } as T;
 }
 
+function esEsquemaComunicadosDesactualizado(error: any) {
+  return ['P2021', 'P2022'].includes(error?.code)
+    || error?.name === 'PrismaClientValidationError'
+    || /Unknown (argument|field)|comunicado_(adjuntos|lecturas)|notificadoEn/i.test(error?.message ?? '');
+}
+
+const comunicadoLegacySelect = {
+  id: true, colegioId: true, titulo: true, contenido: true,
+  adjuntoUrl: true, adjuntoNombre: true, paraElColegio: true,
+  nivelEducativo: true, gradoId: true, seccionId: true,
+  publicadoEn: true, venceEn: true, creadoPorId: true, activo: true,
+  createdAt: true, updatedAt: true,
+  creadoPor: { select: { nombres: true, apellidos: true, rol: true } },
+} as const;
+
 async function alcanceComunicadosPadre(usuarioId: string, colegioId: string) {
   const padre = await prisma.padre.findFirst({
     where: { usuarioId, colegioId },
@@ -110,14 +125,16 @@ router.get('/', async (req, res) => {
     // Durante un despliegue el backend puede arrancar antes de que las tablas
     // complementarias de adjuntos/lecturas estén disponibles. El comunicado
     // base debe seguir visible para todos los roles en vez de responder 500.
-    if (!['P2021', 'P2022'].includes(error?.code)) throw error;
+    if (!esEsquemaComunicadosDesactualizado(error)) throw error;
     logger.warn('Esquema complementario de comunicados aún no disponible; usando modo compatible', error);
     comunicados = await prisma.comunicado.findMany({
       where,
       skip: (parseInt(page)-1)*parseInt(limit),
       take: parseInt(limit),
       orderBy: { createdAt: 'desc' },
-      include: { creadoPor: { select: { nombres: true, apellidos: true, rol: true } } },
+      // Selección explícita: evita pedir notificadoEn y las relaciones nuevas
+      // cuando la instancia de Render todavía conserva el esquema anterior.
+      select: comunicadoLegacySelect,
     });
     comunicados = comunicados.map(c => ({ ...c, adjuntos: [], _count: { lecturas: 0 } }));
   }
@@ -206,7 +223,7 @@ router.post(
           data: subidos.map((r, i) => ({ comunicadoId: comunicado.id, url: r.path, nombre: r.nombre, mimeType: archivos[i]?.mimetype, tamano: archivos[i]?.size })),
         });
       } catch (error: any) {
-        if (!['P2021', 'P2022'].includes(error?.code)) throw error;
+        if (!esEsquemaComunicadosDesactualizado(error)) throw error;
         logger.warn('No se pudieron registrar adjuntos múltiples; se conserva el adjunto principal', error);
       }
     }
@@ -280,7 +297,7 @@ router.patch(
       try {
         await prisma.comunicadoAdjunto.createMany({ data: adjuntosNuevos.map((r, i) => ({ comunicadoId: existente.id, url: r.path, nombre: r.nombre, mimeType: archivos[i].mimetype, tamano: archivos[i].size })) });
       } catch (error: any) {
-        if (!['P2021', 'P2022'].includes(error?.code)) throw error;
+        if (!esEsquemaComunicadosDesactualizado(error)) throw error;
         logger.warn('No se pudieron registrar adjuntos múltiples; se conserva el adjunto principal', error);
       }
     }
