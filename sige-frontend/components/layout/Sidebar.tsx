@@ -258,7 +258,7 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
               <div style={{ color: '#f1f5f9', fontWeight: 700, fontSize: '0.85rem', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.colegio?.nombre ?? 'SIGE'}
               </div>
-              <div style={{ color: '#64748b', fontSize: '0.68rem', marginTop: 1 }}>
+              <div className="sidebar-brand-role" style={{ fontSize: '0.68rem', marginTop: 1 }}>
                 {user.rol.charAt(0) + user.rol.slice(1).toLowerCase()}
               </div>
             </div>
@@ -312,7 +312,7 @@ export default function Sidebar({ open = true, onClose }: SidebarProps) {
               <div style={{ color: '#f1f5f9', fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.nombres} {user.apellidos}
               </div>
-              <div style={{ color: '#64748b', fontSize: '0.68rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="sidebar-account-email" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {user.email}
               </div>
             </div>
