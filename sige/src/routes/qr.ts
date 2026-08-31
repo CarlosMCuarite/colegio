@@ -139,6 +139,7 @@ router.post('/escanear', isStaff, qrLimiter, async (req, res) => {
         tipo:    'ASISTENCIA',
         titulo:  `${emoji} ${estudiante.nombres} ingresó al colegio`,
         cuerpo:  `${estudiante.nombres} ${estudiante.apellidos} llegó ${estado} a las ${ahora.format('HH:mm')}`,
+        datos:   { estudianteId: estudiante.id, ruta: '/padre/asistencia' },
       },
     }).catch(() => {});
   }

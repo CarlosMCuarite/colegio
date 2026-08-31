@@ -13,6 +13,7 @@ import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
 import { AuditoriaAccion, RolNombre, PagoEstado, Prisma } from '@prisma/client';
 import { uploadFile, getSignedUrlFromStoredValue, BUCKETS } from '../services/storageService';
+import { enviarNotificacion } from '../services/notificacionService';
 
 const router = Router();
 router.use(authenticate, resolveTenant);
@@ -86,6 +87,18 @@ router.post('/', upload.single('voucher'), auditar({ modulo: 'PAGOS_LICENCIA', a
       estado: voucherUrl ? PagoEstado.EN_REVISION : PagoEstado.PENDIENTE,
     } as Prisma.PagoLicenciaUncheckedCreateInput,
   });
+  const [colegio, superadmins] = await Promise.all([
+    prisma.colegio.findUnique({ where: { id: req.colegioId! }, select: { nombre: true } }),
+    prisma.usuario.findMany({ where: { rol: RolNombre.SUPERADMIN, activo: true }, select: { id: true, fcmToken: true } }),
+  ]);
+  await Promise.all(superadmins.map(admin => enviarNotificacion({
+    usuarioId: admin.id,
+    tipo: 'PAGO',
+    titulo: 'Pago de suscripción por revisar',
+    cuerpo: `${colegio?.nombre ?? 'Un colegio'} registró un pago de S/ ${monto}.`,
+    datos: { pagoLicenciaId: pago.id, ruta: '/superadmin/facturacion' },
+    fcmToken: admin.fcmToken ?? undefined,
+  })));
   res.status(201).json({ ok: true, data: pago });
 });
 

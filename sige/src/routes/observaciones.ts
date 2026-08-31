@@ -91,6 +91,7 @@ router.post(
           tipo:      'OBSERVACION',
           titulo:    `⚠️ Observación: ${padreRel.estudiante.nombres}`,
           cuerpo:    (data.descripcion as string).slice(0, 120),
+          datos:     { observacionId: obs.id, ruta: '/padre' },
           fcmToken:  padreRel.padre.usuario?.fcmToken ?? undefined,
         });
       }

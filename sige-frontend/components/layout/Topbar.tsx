@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../lib/auth';
 import { useData } from '../../hooks/useApi';
 import api from '../../lib/api';
+import { useRouter } from 'next/navigation';
 
 interface TopbarProps {
   title?: string;
@@ -13,10 +14,9 @@ interface TopbarProps {
 
 export default function Topbar({ title, colegioNombre, onToggleSidebar }: TopbarProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [showNotifs, setShowNotifs] = useState(false);
-  const { data: notifsData, mutate } = useData<any>(
-    user?.rol === 'PADRE' ? '/dashboard/padre' : null
-  );
+  const { data: notifsData, mutate } = useData<any>(user ? '/dashboard/notificaciones' : null, { refreshInterval: 15000 });
 
   const notifs = (notifsData as any)?.data?.notificaciones ?? [];
   const unread = notifs.filter((n: any) => !n.leida).length;
@@ -26,6 +26,31 @@ export default function Topbar({ title, colegioNombre, onToggleSidebar }: Topbar
       await api.post('/dashboard/notificaciones/leer');
       mutate();
     } catch {}
+  };
+
+  const destinoNotificacion = (notif: any) => {
+    const rutaExplicita = notif?.datos?.ruta;
+    if (typeof rutaExplicita === 'string' && rutaExplicita.startsWith('/') && !rutaExplicita.startsWith('//')) return rutaExplicita;
+    const rol = user?.rol ?? '';
+    const destinos: Record<string, Record<string, string>> = {
+      SUPERADMIN: { PAGO: '/superadmin/facturacion', SISTEMA: '/superadmin/monitoreo', DOCUMENTO: '/superadmin/auditoria', COMUNICADO: '/superadmin/auditoria' },
+      ADMINISTRADOR: { PAGO: '/admin/pagos', COMUNICADO: '/admin/comunicados', DOCUMENTO: '/admin', PERMISO: '/admin/permisos', ASISTENCIA: '/admin/asistencia', EVENTO: '/admin/eventos' },
+      DIRECTOR: { PAGO: '/director/pagos', DOCUMENTO: '/director', PERMISO: '/director/permisos', ASISTENCIA: '/director/asistencia' },
+      SECRETARIA: { PAGO: '/secretaria/pagos', COMUNICADO: '/secretaria/comunicados', DOCUMENTO: '/secretaria/documentos', PERMISO: '/secretaria/permisos', ASISTENCIA: '/secretaria/asistencia', EVENTO: '/secretaria/eventos' },
+      DOCENTE: { MENSAJE: '/docente/chat', COMUNICADO: '/docente/comunicados', OBSERVACION: '/docente/observaciones', ASISTENCIA: '/docente/asistencia', EVENTO: '/docente/eventos' },
+      PADRE: { PAGO: '/padre/pagos', COMUNICADO: '/padre/comunicados', DOCUMENTO: '/padre/documentos', PERMISO: '/padre', ASISTENCIA: '/padre/asistencia', OBSERVACION: '/padre', EVENTO: '/padre/eventos', MENSAJE: '/padre/chat' },
+    };
+    const base = rol === 'ADMINISTRADOR' ? '/admin' : rol === 'SUPERADMIN' ? '/superadmin' : `/${rol.toLowerCase()}`;
+    return destinos[rol]?.[notif.tipo] ?? base;
+  };
+
+  const abrirNotificacion = async (notif: any) => {
+    try {
+      if (!notif.leida) await api.patch(`/dashboard/notificaciones/${notif.id}/leer`);
+    } catch { /* La navegación sigue disponible aunque falle el marcado. */ }
+    setShowNotifs(false);
+    mutate();
+    router.push(destinoNotificacion(notif));
   };
 
   const whatsappNum  = user?.colegio?.logoUrl; // placeholder — en prod viene del colegio
@@ -54,7 +79,7 @@ export default function Topbar({ title, colegioNombre, onToggleSidebar }: Topbar
 
       {/* Notificaciones */}
       <div style={{ position:'relative' }}>
-        <button onClick={() => { setShowNotifs(p => !p); if (!showNotifs && unread > 0) marcarLeidas(); }}
+        <button onClick={() => setShowNotifs(p => !p)} aria-label={unread ? `Notificaciones, ${unread} sin leer` : 'Notificaciones'} aria-expanded={showNotifs}
           style={{ background:'none', border:'none', padding:'0.4rem 0.5rem', cursor:'pointer', color:'var(--text-secondary)', position:'relative', borderRadius:8, display:'flex', alignItems:'center' }}>
           <i className="bi bi-bell" style={{ fontSize:'1.1rem' }} />
           {unread > 0 && (
@@ -72,17 +97,21 @@ export default function Topbar({ title, colegioNombre, onToggleSidebar }: Topbar
               style={{ position:'absolute', right:0, top:'100%', marginTop:8, background:'var(--bg-card)', border:'1px solid var(--border-color)', borderRadius:12, width:300, maxHeight:380, overflowY:'auto', boxShadow:'var(--shadow-lg)', zIndex:200 }}>
               <div style={{ padding:'0.75rem 1rem', borderBottom:'1px solid var(--border-color)', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
                 <span style={{ fontWeight:600, fontSize:'0.875rem' }}>Notificaciones</span>
-                {unread > 0 && <span style={{ fontSize:'0.72rem', color:'var(--text-muted)' }}>{unread} nuevas</span>}
+                {unread > 0 && <button onClick={marcarLeidas} style={{ minHeight:36, border:0, background:'transparent', color:'var(--accent)', fontSize:'.72rem', fontWeight:650, cursor:'pointer' }}>Marcar todas</button>}
               </div>
               {notifs.length === 0 ? (
                 <div style={{ padding:'2rem', textAlign:'center', color:'var(--text-muted)', fontSize:'0.875rem' }}>
                   <i className="bi bi-bell-slash" style={{ fontSize:'1.5rem', display:'block', marginBottom:8 }} />Sin notificaciones
                 </div>
               ) : notifs.slice(0,15).map((n: any) => (
-                <div key={n.id} style={{ padding:'0.75rem 1rem', borderBottom:'1px solid var(--border-color)', background: n.leida ? 'transparent' : 'var(--accent-soft)' }}>
-                  <div style={{ fontWeight:600, fontSize:'0.8rem', color:'var(--text-primary)' }}>{n.titulo}</div>
-                  <div style={{ fontSize:'0.72rem', color:'var(--text-muted)', marginTop:2 }}>{n.cuerpo}</div>
-                </div>
+                <button key={n.id} onClick={() => abrirNotificacion(n)}
+                  style={{ width:'100%', minHeight:68, padding:'0.75rem 1rem', border:0, borderBottom:'1px solid var(--border-color)', background:n.leida ? 'transparent' : 'var(--accent-soft)', textAlign:'left', cursor:'pointer', display:'grid', gridTemplateColumns:'1fr auto', gap:10, alignItems:'center' }}>
+                  <span style={{ minWidth:0 }}>
+                    <span style={{ display:'block', fontWeight:650, fontSize:'0.8rem', color:'var(--text-primary)', overflowWrap:'anywhere' }}>{n.titulo}</span>
+                    <span style={{ display:'block', fontSize:'0.72rem', color:'var(--text-muted)', marginTop:3, lineHeight:1.45, overflowWrap:'anywhere' }}>{n.cuerpo}</span>
+                  </span>
+                  <i className="bi bi-chevron-right" aria-hidden="true" style={{ color:'var(--accent)', fontSize:'.8rem' }} />
+                </button>
               ))}
             </motion.div>
           )}

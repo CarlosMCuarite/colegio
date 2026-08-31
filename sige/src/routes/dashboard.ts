@@ -111,6 +111,31 @@ router.get('/padre', async (req, res) => {
   });
 });
 
+// Bandeja común para todos los roles. Conserva también las leídas recientes
+// para que abrir la campana no haga desaparecer el historial.
+router.get('/notificaciones', async (req, res) => {
+  const user = req.user!;
+  let where: any = { usuarioId: user.id };
+  if (user.rol === RolNombre.PADRE) {
+    const padre = await prisma.padre.findFirst({ where: { usuarioId: user.id }, select: { id: true } });
+    where = padre ? { padreId: padre.id } : { id: '__sin_perfil_padre__' };
+  }
+  const notificaciones = await prisma.notificacion.findMany({ where, orderBy: { createdAt: 'desc' }, take: 30 });
+  res.json({ ok: true, data: { notificaciones, totalNoLeidas: notificaciones.filter(n => !n.leida).length } });
+});
+
+router.patch('/notificaciones/:id/leer', async (req, res) => {
+  const user = req.user!;
+  let where: any = { id: req.params.id, usuarioId: user.id };
+  if (user.rol === RolNombre.PADRE) {
+    const padre = await prisma.padre.findFirst({ where: { usuarioId: user.id }, select: { id: true } });
+    where = { id: req.params.id, padreId: padre?.id ?? '__sin_perfil_padre__' };
+  }
+  const actualizada = await prisma.notificacion.updateMany({ where, data: { leida: true } });
+  if (!actualizada.count) throw new AppError('Notificación no encontrada', 404);
+  res.json({ ok: true });
+});
+
 router.post('/notificaciones/leer', async (req, res) => {
   const user = req.user!;
   if (user.rol === RolNombre.PADRE) {

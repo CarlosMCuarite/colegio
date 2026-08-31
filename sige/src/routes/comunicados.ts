@@ -337,6 +337,7 @@ export async function notificarPadresComunicado(comunicado: any, colegioId: stri
       tipo:     'COMUNICADO',
       titulo:   `📢 ${comunicado.titulo}`,
       cuerpo:   comunicado.contenido.slice(0, 120),
+      datos:    { comunicadoId: comunicado.id, ruta: '/padre/comunicados' },
       fcmToken: padre.usuario?.fcmToken ?? undefined,
     });
   }

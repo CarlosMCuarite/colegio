@@ -148,6 +148,7 @@ router.patch(
         tipo:      'DOCUMENTO',
         titulo:    `📄 Documento listo: ${doc.nombre}`,
         cuerpo:    `Tu documento ${doc.nombre} ya está listo para recoger.`,
+        datos:     { documentoId: doc.id, ruta: '/padre/documentos' },
         fcmToken:  (doc.solicitadoPor as any).fcmToken ?? undefined,
       });
     }

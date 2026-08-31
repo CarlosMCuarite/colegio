@@ -178,6 +178,7 @@ router.patch(
         tipo:      'PERMISO',
         titulo:    autorizado ? `✅ Permiso de salida autorizado` : `❌ Permiso de salida denegado`,
         cuerpo:    `${alumno}: ${permiso.motivo}${observaciones ? ` — ${observaciones}` : ''}`,
+        datos:     { permisoId: permiso.id, ruta: '/padre' },
         fcmToken:  padre.usuario?.fcmToken ?? undefined,
       });
     }

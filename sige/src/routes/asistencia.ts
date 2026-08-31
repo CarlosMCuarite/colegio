@@ -79,6 +79,7 @@ router.post(
         tipo:      'ASISTENCIA',
         titulo:    '✅ Asistencia registrada',
         cuerpo:    `${estudiante.nombres} ${estudiante.apellidos} llegó a las ${dayjs(horaLlegada).format('HH:mm')}`,
+        datos:     { estudianteId: estudiante.id, ruta: '/padre/asistencia' },
         fcmToken:  padrePrincipal.usuario?.fcmToken ?? undefined,
       });
     }

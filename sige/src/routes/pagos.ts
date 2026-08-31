@@ -394,6 +394,7 @@ router.patch(
       tipo:      'PAGO',
       titulo:    '✅ Pago aprobado',
       cuerpo:    `Tu pago de S/ ${pago.monto} ha sido aprobado`,
+      datos:     { pagoId: pago.id, ruta: '/padre/pagos' },
       fcmToken:  pago.padre.usuario?.fcmToken ?? undefined,
     });
 
@@ -426,6 +427,7 @@ router.patch(
       tipo:      'PAGO',
       titulo:    '❌ Pago rechazado',
       cuerpo:    `Tu pago fue rechazado. Motivo: ${observaciones}`,
+      datos:     { pagoId: pago.id, ruta: '/padre/pagos' },
       fcmToken:  pago.padre.usuario?.fcmToken ?? undefined,
     });
 
