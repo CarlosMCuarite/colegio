@@ -3,7 +3,7 @@
 // Nueva — antes no existía ningún lugar para definir los cursos/áreas
 // curriculares. Es la base de todo el sistema de notas: una nota siempre se
 // registra contra un Curso real, nunca contra texto libre.
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../../../components/layout/DashboardLayout';
 import { useNivelesGrados, useData, useMutation } from '../../../../hooks/useApi';
@@ -22,6 +22,10 @@ export default function CursosPage() {
   const { mutate: save, loading: saving } = useMutation();
   const { mutate: crearPlantilla, loading: cargandoPlantilla } = useMutation();
 
+  // Una selección pertenece al filtro visible. Al cambiar de grado se limpia
+  // para impedir que se eliminen accidentalmente cursos que ya no se muestran.
+  useEffect(() => setSeleccionados([]), [nivelGradoId]);
+
   const guardar = async (payload: any) => {
     await save(async () => {
       if (editando) await api.patch(`/cursos/${editando.id}`, payload);
@@ -38,6 +42,7 @@ export default function CursosPage() {
     try {
       const res = await api.delete(`/cursos/${curso.id}`);
       toast.success(res.data.desactivado ? 'Curso desactivado (tenía notas registradas)' : 'Curso eliminado');
+      setSeleccionados(prev => prev.filter(id => id !== curso.id));
       mutate();
     } catch (err: any) {
       toast.error(err?.response?.data?.error ?? 'No se pudo eliminar');
@@ -65,7 +70,7 @@ export default function CursosPage() {
   };
 
   return (
-    <DashboardLayout title="Cursos" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR']}>
+    <DashboardLayout title="Cursos" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR','SECRETARIA']}>
       <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1rem', maxWidth: 640 }}>
         Los cursos son la base para registrar notas — cada nota se guarda contra un curso real de un grado específico.
         Si es la primera vez, usa "Crear cursos por defecto" para arrancar rápido con el set típico de cada nivel.
