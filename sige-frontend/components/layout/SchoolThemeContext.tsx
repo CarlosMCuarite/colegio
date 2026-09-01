@@ -50,7 +50,10 @@ export function getSchoolTheme(primary?: string, secondary?: string): SchoolThem
     : ['#d99000', '#ca8a04', '#eab308'].includes(normalized) ? 'amarillo'
     : 'azul';
   const preset = SCHOOL_THEMES[key];
-  return { ...preset, primary: primary || preset.primary, secondary: secondary || preset.secondary };
+  // La familia institucional es atómica. Mezclar un primario nuevo con un
+  // secundario antiguo (por ejemplo amarillo + azul cacheado) produce el
+  // destello y los componentes híbridos observados al actualizar.
+  return { ...preset, primary: primary || preset.primary, secondary: preset.secondary };
 }
 
 const SchoolThemeContext = createContext<SchoolThemeValue>(BLUE_SCHOOL_THEME);

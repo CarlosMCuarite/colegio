@@ -20,6 +20,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var p=(localStorage.getItem('sige-school-theme')||'').toLowerCase();var k=['#d99000','#ca8a04','#eab308'].includes(p)?'amarillo':['#d34242','#dc2626','#ef4444'].includes(p)?'rojo':['#168a55','#16a34a','#22c55e'].includes(p)?'verde':'azul';var t={amarillo:['#D99000','#F2B72B','#FFF5D9','#6B4300','#362500'],rojo:['#D34242','#F06A62','#FDEDEE','#7F1D1D','#3A0C12'],verde:['#168A55','#35B979','#E8F7EF','#0A5735','#062D20'],azul:['#2563EB','#16A8E4','#E8F0FF','#173A8F','#071A3D']}[k];var s=document.documentElement.style;s.setProperty('--school-primary',t[0]);s.setProperty('--school-secondary',t[1]);s.setProperty('--accent',t[0]);s.setProperty('--accent-cyan',t[1]);s.setProperty('--accent-soft',t[2]);s.setProperty('--accent-strong',t[3]);s.setProperty('--bg-sidebar',t[4]);document.documentElement.dataset.schoolTheme=k}catch(e){}})();` }} />
+      </head>
       <body className={manrope.variable}>
         <ThemeProvider>
           <BootstrapClient />

@@ -10,6 +10,7 @@ export default function MatriculasPage() {
   const [nivelGradoId, setNivelGradoId] = useState('');
   const [page, setPage]                 = useState(1);
   const [showModal, setShowModal]       = useState(false);
+  const [editing, setEditing]           = useState<any>(null);
 
   const params = new URLSearchParams({ nivelGradoId, page: String(page), limit: '30', activa: 'true' }).toString();
   const { data, isLoading, mutate }   = useMatriculas(params);
@@ -28,6 +29,20 @@ export default function MatriculasPage() {
     });
   };
 
+  const actualizar = async (form: any) => {
+    if (!editing) return;
+    await save(async () => {
+      await api.patch(`/matriculas/${editing.id}`, {
+        nivelGradoId: form.nivelGradoId,
+        seccionId: form.seccionId || null,
+        anoEscolar: Number(form.anoEscolar),
+        observaciones: form.observaciones || null,
+      });
+      toast.success('Matrícula actualizada y registrada en auditoría');
+      mutate(); setEditing(null); setShowModal(false);
+    });
+  };
+
   return (
     <DashboardLayout title="Matrículas" allowedRoles={['SUPERADMIN','ADMINISTRADOR','DIRECTOR','SECRETARIA']}>
       <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
@@ -38,7 +53,7 @@ export default function MatriculasPage() {
             {niveles.map((n: any) => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
         </div>
-        <button className="btn-accent" onClick={() => setShowModal(true)}>
+        <button className="btn-accent" onClick={() => { setEditing(null); setShowModal(true); }}>
           <i className="bi bi-plus-lg" />Nueva Matrícula
         </button>
       </div>
@@ -64,10 +79,10 @@ export default function MatriculasPage() {
         ) : (
           <div style={{ overflowX: 'auto' }}>
             <table className="sige-table">
-              <thead><tr><th>Estudiante</th><th>DNI</th><th>Nivel / Grado</th><th>Sección</th><th>Año</th><th>Estado</th></tr></thead>
+              <thead><tr><th>Estudiante</th><th>DNI</th><th>Nivel / Grado</th><th>Sección</th><th>Año</th><th>Estado</th><th>Acciones</th></tr></thead>
               <tbody>
                 {matriculas.length === 0 ? (
-                  <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Sin matrículas encontradas</td></tr>
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>Sin matrículas encontradas</td></tr>
                 ) : matriculas.map((m: any, i: number) => (
                   <motion.tr key={m.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.02 }}>
                     <td>
@@ -82,6 +97,7 @@ export default function MatriculasPage() {
                         {m.activa ? 'Activa' : 'Inactiva'}
                       </span>
                     </td>
+                    <td><button type="button" className="btn-icon" title="Editar matrícula" onClick={() => { setEditing(m); setShowModal(true); }}><i className="bi bi-pencil-square" /></button></td>
                   </motion.tr>
                 ))}
               </tbody>
@@ -105,7 +121,7 @@ export default function MatriculasPage() {
           <motion.div className="sige-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
             <motion.div className="sige-modal" initial={{ scale: 0.94 }} animate={{ scale: 1 }} exit={{ scale: 0.94 }}>
-              <MatriculaForm niveles={niveles} onGuardar={guardar} onCancelar={() => setShowModal(false)} saving={saving} />
+              <MatriculaForm niveles={niveles} initial={editing} onGuardar={editing ? actualizar : guardar} onCancelar={() => { setShowModal(false); setEditing(null); }} saving={saving} />
             </motion.div>
           </motion.div>
         )}
@@ -114,12 +130,12 @@ export default function MatriculasPage() {
   );
 }
 
-function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
-  const [form, setForm] = useState({ estudianteDni: '', nivelGradoId: '', seccionId: '', conceptoMatriculaId: '', observaciones: '' });
+function MatriculaForm({ niveles, initial, onGuardar, onCancelar, saving }: any) {
+  const [form, setForm] = useState({ estudianteDni: initial?.estudiante?.dni ?? '', nivelGradoId: initial?.nivelGradoId ?? '', seccionId: initial?.seccionId ?? '', conceptoMatriculaId: '', observaciones: initial?.observaciones ?? '', anoEscolar: initial?.anoEscolar ?? new Date().getFullYear() });
   const { data: conceptosData } = useData<any>('/conceptos-pago?soloActivos=true');
   const conceptosMatricula = (conceptosData?.data ?? []).filter((c: any) => c.tipo === 'MATRICULA');
   const [buscando, setBuscando] = useState(false);
-  const [estudiante, setEstudiante] = useState<any>(null);
+  const [estudiante, setEstudiante] = useState<any>(initial?.estudiante ?? null);
   const set = (k: string) => (e: any) => setForm(p => ({ ...p, [k]: e.target.value }));
   const selectedNivel = niveles.find((n: any) => n.id === form.nivelGradoId);
 
@@ -137,23 +153,23 @@ function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!estudiante) { toast.error('Busca primero al estudiante'); return; }
-    onGuardar({ estudianteId: estudiante.id, nivelGradoId: form.nivelGradoId, seccionId: form.seccionId || null, conceptoMatriculaId: form.conceptoMatriculaId || null, observaciones: form.observaciones });
+    onGuardar({ estudianteId: estudiante.id, nivelGradoId: form.nivelGradoId, seccionId: form.seccionId || null, conceptoMatriculaId: form.conceptoMatriculaId || null, observaciones: form.observaciones, anoEscolar: form.anoEscolar });
   };
 
   return (
     <form onSubmit={submit}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-        <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>Nueva Matrícula — {new Date().getFullYear()}</h2>
+        <h2 style={{ fontSize: '1rem', fontWeight: 700, margin: 0 }}>{initial ? 'Editar matrícula' : 'Nueva matrícula'} — {form.anoEscolar}</h2>
         <button type="button" onClick={onCancelar} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', fontSize: '1.1rem' }}><i className="bi bi-x-lg" /></button>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
         <div>
           <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>DNI del Estudiante *</label>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <input type="text" value={form.estudianteDni} onChange={set('estudianteDni')} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), buscarEstudiante())} className="sige-input" placeholder="Ingresa el DNI" />
-            <button type="button" onClick={buscarEstudiante} className="btn-accent" disabled={buscando} style={{ flexShrink: 0 }}>
+            <input type="text" value={form.estudianteDni} onChange={set('estudianteDni')} disabled={Boolean(initial)} onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), buscarEstudiante())} className="sige-input" placeholder="Ingresa el DNI" />
+            {!initial && <button type="button" onClick={buscarEstudiante} className="btn-accent" disabled={buscando} style={{ flexShrink: 0 }}>
               {buscando ? <span className="spinner-border spinner-border-sm" /> : <i className="bi bi-search" />}
-            </button>
+            </button>}
           </div>
         </div>
         {estudiante && (
@@ -161,6 +177,10 @@ function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
             <i className="bi bi-check-circle me-2" />{estudiante.nombres} {estudiante.apellidos} — DNI: {estudiante.dni}
           </div>
         )}
+        <div>
+          <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Año escolar *</label>
+          <input type="number" value={form.anoEscolar} onChange={set('anoEscolar')} required className="sige-input" min="2020" max="2100" />
+        </div>
         <div>
           <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: 4 }}>Grado *</label>
           <select value={form.nivelGradoId} onChange={set('nivelGradoId')} required className="sige-input">
@@ -191,7 +211,7 @@ function MatriculaForm({ niveles, onGuardar, onCancelar, saving }: any) {
       <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
         <button type="button" onClick={onCancelar} style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.5rem 1.1rem', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '0.875rem' }}>Cancelar</button>
         <button type="submit" className="btn-accent" disabled={saving || !estudiante}>
-          {saving ? <><span className="spinner-border spinner-border-sm me-1" />Registrando...</> : <><i className="bi bi-check2 me-1" />Registrar Matrícula</>}
+          {saving ? <><span className="spinner-border spinner-border-sm me-1" />Guardando...</> : <><i className="bi bi-check2 me-1" />{initial ? 'Guardar cambios' : 'Registrar matrícula'}</>}
         </button>
       </div>
     </form>
