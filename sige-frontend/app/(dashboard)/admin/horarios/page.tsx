@@ -100,7 +100,7 @@ export default function HorariosPage() {
   };
 
   return (
-    <DashboardLayout title="Horarios" allowedRoles={['SUPERADMIN','ADMINISTRADOR']}>
+    <DashboardLayout title="Horarios" allowedRoles={['SUPERADMIN','ADMINISTRADOR','SECRETARIA']}>
       <section style={{ display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))',gap:10,marginBottom:14 }}>
         {[
           ['Bloques programados', horariosLista.length, 'bi-calendar2-week'],

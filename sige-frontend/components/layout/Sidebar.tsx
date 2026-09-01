@@ -85,6 +85,7 @@ const NAV: Record<string, NavSection[]> = {
       { href: '/secretaria/estudiantes',   icon: 'bi-person-badge',   label: 'Estudiantes'      },
       { href: '/secretaria/padres',        icon: 'bi-people',         label: 'Padres'           },
       { href: '/secretaria/matriculas',    icon: 'bi-file-earmark-text', label: 'Matrículas'   },
+      { href: '/secretaria/horarios',      icon: 'bi-calendar3',      label: 'Horarios'         },
       { href: '/secretaria/pagos',         icon: 'bi-cash-stack',     label: 'Pagos'            },
     ]},
     { label: 'Comunicación', items: [

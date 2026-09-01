@@ -2,7 +2,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import prisma from '../config/prisma';
-import { authenticate, isAdmin } from '../middleware/auth';
+import { authenticate, isStaff } from '../middleware/auth';
 import { resolveTenant, requireTenant } from '../middleware/tenant';
 import { auditar } from '../middleware/auditoria';
 import { AppError } from '../utils/AppError';
@@ -225,7 +225,7 @@ async function validarSolapamiento(colegioId: string, data: z.infer<typeof horar
 // ── POST /horarios ────────────────────────────────────────────────────────────
 router.post(
   '/',
-  isAdmin,
+  isStaff,
   auditar({ modulo: 'HORARIOS', accion: AuditoriaAccion.CREAR }),
   async (req, res) => {
     const data = horarioSchema.parse(req.body);
@@ -245,7 +245,7 @@ router.post(
 // varios días a la vez, en lugar de tener que repetir el formulario por día.
 router.post(
   '/multi-dia',
-  isAdmin,
+  isStaff,
   auditar({ modulo: 'HORARIOS', accion: AuditoriaAccion.CREAR }),
   async (req, res) => {
     const { diasSemana, ...resto } = horarioMultiDiaSchema.parse(req.body);
@@ -268,7 +268,7 @@ router.post(
 );
 
 // ── POST /horarios/bulk — Crear múltiples entradas de una vez ─────────────────
-router.post('/bulk', isAdmin, async (req, res) => {
+router.post('/bulk', isStaff, async (req, res) => {
   const schema = z.object({ horarios: z.array(horarioSchema).min(1).max(100) });
   const { horarios } = schema.parse(req.body);
   const created = await prisma.horario.createMany({
@@ -281,7 +281,7 @@ router.post('/bulk', isAdmin, async (req, res) => {
 // ── PATCH /horarios/:id ───────────────────────────────────────────────────────
 router.patch(
   '/:id',
-  isAdmin,
+  isStaff,
   auditar({ modulo: 'HORARIOS', accion: AuditoriaAccion.ACTUALIZAR, getRecursoId: r => r.params.id }),
   async (req, res) => {
     const data = horarioSchema.partial().parse(req.body);
@@ -303,7 +303,7 @@ router.patch(
 // ── DELETE /horarios/:id ──────────────────────────────────────────────────────
 router.delete(
   '/:id',
-  isAdmin,
+  isStaff,
   auditar({ modulo: 'HORARIOS', accion: AuditoriaAccion.ELIMINAR, getRecursoId: r => r.params.id }),
   async (req, res) => {
     await prisma.horario.updateMany({ where: { id: req.params.id, colegioId: req.colegioId! }, data: { activo: false } });
@@ -314,7 +314,7 @@ router.delete(
 // ── DELETE /horarios/grado/:nivelGradoId — Limpiar todo el horario de un grado ─
 router.delete(
   '/grado/:nivelGradoId',
-  isAdmin,
+  isStaff,
   auditar({ modulo: 'HORARIOS', accion: AuditoriaAccion.ELIMINAR, getRecursoId: r => r.params.nivelGradoId }),
   async (req, res) => {
     const { seccionId } = req.query as Record<string,string>;
