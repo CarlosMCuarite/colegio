@@ -15,6 +15,11 @@ export default function CursosPage() {
   const [showModal, setShowModal] = useState(false);
   const [editando, setEditando] = useState<any>(null);
   const [seleccionados, setSeleccionados] = useState<string[]>([]);
+  const [confirmacion, setConfirmacion] = useState<
+    | { tipo: 'individual'; curso: any }
+    | { tipo: 'lote'; ids: string[]; etiqueta: string }
+    | null
+  >(null);
   const { data: nivelesData } = useNivelesGrados();
   const niveles = (nivelesData as any)?.data ?? [];
   const { data, isLoading, mutate } = useData<any>(nivelGradoId ? `/cursos?nivelGradoId=${nivelGradoId}` : '/cursos');
@@ -38,12 +43,11 @@ export default function CursosPage() {
   };
 
   const eliminar = async (curso: any) => {
-    if (!confirm(`¿Eliminar "${curso.nombre}"?`)) return;
     try {
       const res = await api.delete(`/cursos/${curso.id}`);
       toast.success(res.data.desactivado ? 'Curso desactivado (tenía notas registradas)' : 'Curso eliminado');
       setSeleccionados(prev => prev.filter(id => id !== curso.id));
-      mutate();
+      await mutate();
     } catch (err: any) {
       toast.error(err?.response?.data?.error ?? 'No se pudo eliminar');
     }
@@ -52,12 +56,25 @@ export default function CursosPage() {
   const eliminarSeleccionados = async () => {
     const ids = seleccionados.length ? seleccionados : cursos.map((c: any) => c.id);
     const etiqueta = seleccionados.length ? `${ids.length} cursos seleccionados` : `los ${ids.length} cursos mostrados`;
-    if (!ids.length || !confirm(`¿Eliminar ${etiqueta}? Los cursos con notas se desactivarán para preservar el historial.`)) return;
+    if (!ids.length) return;
+    setConfirmacion({ tipo: 'lote', ids, etiqueta });
+  };
+
+  const confirmarEliminacion = async () => {
+    const pendiente = confirmacion;
+    if (!pendiente) return;
+    setConfirmacion(null);
+
+    if (pendiente.tipo === 'individual') {
+      await eliminar(pendiente.curso);
+      return;
+    }
+
     await save(async () => {
-      const res = await api.post('/cursos/eliminar-lote', { ids });
+      const res = await api.post('/cursos/eliminar-lote', { ids: pendiente.ids });
       toast.success(`${res.data.eliminados} eliminados y ${res.data.desactivados} desactivados por tener notas`);
       setSeleccionados([]);
-      mutate();
+      await mutate();
     });
   };
 
@@ -84,14 +101,14 @@ export default function CursosPage() {
             {niveles.map((n: any) => <option key={n.id} value={n.id}>{n.nombre}</option>)}
           </select>
         </div>
-        <button className="btn-accent" onClick={() => { setEditando(null); setShowModal(true); }}>
+        <button type="button" className="btn-accent" onClick={() => { setEditando(null); setShowModal(true); }}>
           <i className="bi bi-plus-lg me-1" />Nuevo Curso
         </button>
-        <button onClick={usarPlantilla} disabled={cargandoPlantilla}
+        <button type="button" onClick={usarPlantilla} disabled={cargandoPlantilla}
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '0.5rem 0.875rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
           {cargandoPlantilla ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-magic me-1" />Crear cursos por defecto</>}
         </button>
-        {cursos.length > 0 && <button onClick={eliminarSeleccionados} disabled={saving}
+        {cursos.length > 0 && <button type="button" onClick={eliminarSeleccionados} disabled={saving}
           style={{ background: '#fff1f2', color: '#be123c', border: '1px solid #fecdd3', borderRadius: 8, padding: '0.5rem 0.875rem', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 700 }}>
           <i className="bi bi-trash3 me-1" />{seleccionados.length ? `Eliminar selección (${seleccionados.length})` : 'Eliminar todos los mostrados'}
         </button>}
@@ -126,8 +143,8 @@ export default function CursosPage() {
               </div>
               </label>
               <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-                <button onClick={() => { setEditando(c); setShowModal(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><i className="bi bi-pencil" /></button>
-                <button onClick={() => eliminar(c)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><i className="bi bi-trash" /></button>
+                <button type="button" aria-label={`Editar ${c.nombre}`} onClick={() => { setEditando(c); setShowModal(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}><i className="bi bi-pencil" /></button>
+                <button type="button" aria-label={`Eliminar ${c.nombre}`} onClick={() => setConfirmacion({ tipo: 'individual', curso: c })} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><i className="bi bi-trash" /></button>
               </div>
             </div>
           ))}
@@ -135,6 +152,35 @@ export default function CursosPage() {
       )}
 
       <AnimatePresence>
+        {confirmacion && (
+          <motion.div className="sige-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={e => { if (e.target === e.currentTarget && !saving) setConfirmacion(null); }}>
+            <motion.div className="sige-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirmar-eliminacion-titulo"
+              style={{ maxWidth: 430 }} initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, display: 'grid', placeItems: 'center', background: '#fff1f2', color: '#be123c', marginBottom: 14 }}>
+                <i className="bi bi-trash3" style={{ fontSize: '1.1rem' }} />
+              </div>
+              <h2 id="confirmar-eliminacion-titulo" style={{ fontSize: '1.05rem', fontWeight: 800, margin: '0 0 8px' }}>
+                {confirmacion.tipo === 'individual' ? '¿Eliminar este curso?' : '¿Eliminar los cursos seleccionados?'}
+              </h2>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.86rem', lineHeight: 1.55, margin: 0 }}>
+                {confirmacion.tipo === 'individual'
+                  ? `Se eliminará “${confirmacion.curso.nombre}”. Si ya tiene notas registradas, quedará desactivado para conservar el historial.`
+                  : `Se procesarán ${confirmacion.etiqueta}. Los cursos con notas quedarán desactivados para no perder información académica.`}
+              </p>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', marginTop: 22 }}>
+                <button type="button" onClick={() => setConfirmacion(null)} disabled={saving}
+                  style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 9, padding: '0.6rem 1rem', cursor: saving ? 'not-allowed' : 'pointer', color: 'var(--text-primary)', fontWeight: 700 }}>
+                  Cancelar
+                </button>
+                <button type="button" onClick={confirmarEliminacion} disabled={saving}
+                  style={{ background: '#be123c', color: '#fff', border: 0, borderRadius: 9, padding: '0.6rem 1rem', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 800, minWidth: 112 }}>
+                  {saving ? <span className="spinner-border spinner-border-sm" /> : <><i className="bi bi-trash3 me-1" />Eliminar</>}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
         {showModal && (
           <motion.div className="sige-modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={e => { if (e.target === e.currentTarget) { setShowModal(false); setEditando(null); } }}>
