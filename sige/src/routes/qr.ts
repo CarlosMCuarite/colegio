@@ -10,6 +10,7 @@ import { qrLimiter } from '../middleware/rateLimiter';
 import { AppError } from '../utils/AppError';
 import { Prisma } from '@prisma/client';
 import dayjs from 'dayjs';
+import { enviarNotificacion } from '../services/notificacionService';
 
 const router = Router();
 router.use(authenticate, resolveTenant, requireTenant);
@@ -115,7 +116,7 @@ router.post('/escanear', isStaff, qrLimiter, async (req, res) => {
   const [limH, limM] = horaLimite.split(':').map(Number);
   const esTardanza = ahora.hour() > limH || (ahora.hour() === limH && ahora.minute() > limM);
 
-  const asistencia = await prisma.asistencia.create({
+  let asistencia = await prisma.asistencia.create({
     data: {
       colegioId:       req.colegioId!,
       estudianteId:    estudiante.id,
@@ -128,20 +129,21 @@ router.post('/escanear', isStaff, qrLimiter, async (req, res) => {
     } as Prisma.AsistenciaUncheckedCreateInput,
   });
 
-  // Notificar padre en background
+  // Persistimos el instante en que la notificación fue realmente despachada.
   const padre = estudiante.padreEstudiantes[0]?.padre;
   if (padre) {
     const emoji = esTardanza ? '⏰' : '✅';
     const estado = esTardanza ? 'con tardanza' : 'puntualmente';
-    prisma.notificacion.create({
-      data: {
-        padreId: padre.id,
-        tipo:    'ASISTENCIA',
-        titulo:  `${emoji} ${estudiante.nombres} ingresó al colegio`,
-        cuerpo:  `${estudiante.nombres} ${estudiante.apellidos} llegó ${estado} a las ${ahora.format('HH:mm')}`,
-        datos:   { estudianteId: estudiante.id, ruta: '/padre/asistencia' },
-      },
-    }).catch(() => {});
+    try {
+      await enviarNotificacion({
+        colegioId: req.colegioId!, padreId: padre.id, tipo: 'ASISTENCIA',
+        titulo: `${emoji} ${estudiante.nombres} ingresó al colegio`,
+        cuerpo: `${estudiante.nombres} ${estudiante.apellidos} llegó ${estado} a las ${ahora.format('HH:mm')}`,
+        datos: { estudianteId: estudiante.id, ruta: '/padre/asistencia' },
+        fcmToken: padre.usuario?.fcmToken ?? undefined,
+      });
+      asistencia = await prisma.asistencia.update({ where: { id: asistencia.id }, data: { notificadoPadre: true, notificadoEn: new Date() } });
+    } catch { /* la asistencia permanece válida aunque falle el canal de aviso */ }
   }
 
   res.status(201).json({

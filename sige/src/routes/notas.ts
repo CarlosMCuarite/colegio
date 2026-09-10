@@ -214,7 +214,7 @@ router.get('/boletin/:estudianteId', async (req, res) => {
     const porBimestre: Record<string, any> = {};
     for (const b of ['BIMESTRE_1', 'BIMESTRE_2', 'BIMESTRE_3', 'BIMESTRE_4']) {
       const n = notasDelCurso.find(x => x.periodo === b);
-      porBimestre[b] = n ? { literal: n.calificacionLiteral, numerica: Number(n.calificacionNumerica) } : null;
+      porBimestre[b] = n ? { id: n.id, literal: n.calificacionLiteral, numerica: Number(n.calificacionNumerica) } : null;
     }
     // Se filtra por != null ANTES de convertir a número — Number(null) da 0
     // (no NaN), así que sin este filtro una nota sin numérica guardada se
@@ -237,6 +237,23 @@ router.get('/boletin/:estudianteId', async (req, res) => {
       anoEscolar: anoActual, usaNumero, cursos: porCurso,
     },
   });
+});
+
+// Registra una interacción académica real y consultable sin contaminar Auditoria.
+router.post('/:id/marcar-visto', async (req, res) => {
+  if (req.user!.rol !== RolNombre.PADRE) throw new AppError('Solo el padre puede registrar la consulta de una nota', 403);
+  const padre = await prisma.padre.findFirst({ where: { usuarioId: req.user!.id, colegioId: req.colegioId! } });
+  if (!padre) throw new AppError('Perfil de padre no encontrado', 404);
+  const nota = await prisma.nota.findFirst({ where: { id: req.params.id, colegioId: req.colegioId! }, select: { id: true, estudianteId: true } });
+  if (!nota) throw new AppError('Nota no encontrada', 404);
+  const vinculo = await prisma.padreEstudiante.findFirst({ where: { padreId: padre.id, estudianteId: nota.estudianteId, estado: 'APROBADO' } });
+  if (!vinculo) throw new AppError('No tienes acceso a esta nota', 403);
+  const visualizacion = await prisma.notaVisualizacion.upsert({
+    where: { notaId_padreId: { notaId: nota.id, padreId: padre.id } },
+    create: { notaId: nota.id, padreId: padre.id },
+    update: { vistoEn: new Date() },
+  });
+  res.json({ ok: true, data: visualizacion });
 });
 
 // ── Recuperaciones ────────────────────────────────────────────────────────────

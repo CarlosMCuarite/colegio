@@ -50,6 +50,7 @@ import chatbotRoutes from './routes/chatbot';
 import dashboardRoutes from './routes/dashboard';
 import qrRoutes from './routes/qr';
 import backupsRoutes from './routes/backups';
+import tesisRoutes from './routes/tesis';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -123,6 +124,7 @@ app.use(`${api}/chatbot`,       chatbotRoutes);
 app.use(`${api}/dashboard`,     dashboardRoutes);
 app.use(`${api}/qr`,            qrRoutes);
 app.use(`${api}/backups`,       backupsRoutes);
+app.use(`${api}/tesis`,         tesisRoutes);
 
 // ─── Error handler (siempre al final) ───────────────────────────────────────
 app.use(errorHandler);

@@ -134,8 +134,8 @@ enum ObservacionTipo {
   ACADEMICA
   CONDUCTUAL
   POSITIVA
-  SALUD         // registros de Enfermería (visitas, incidentes de salud)
-  PSICOLOGICA   // registros de Psicología (seguimiento, derivaciones)
+  SALUD // registros de Enfermería (visitas, incidentes de salud)
+  PSICOLOGICA // registros de Psicología (seguimiento, derivaciones)
   OTRO
 }
 
@@ -201,21 +201,21 @@ enum BackupEstado {
 // =============================================================================
 
 model Plan {
-  id                   String   @id @default(cuid())
-  nombre               String   @unique
-  descripcion          String?
-  precio               Decimal  @db.Decimal(10, 2)
-  moneda               String   @default("PEN")
-  duracionDias         Int      @default(30)
-  maxEstudiantes       Int
-  maxUsuarios          Int
-  maxAlmacenamientoGB  Float    @default(5)
-  modulosActivos       String[]
-  rolesHabilitados     String[] @default([])
-  observaciones        String?
-  activo               Boolean  @default(true)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  nombre              String   @unique
+  descripcion         String?
+  precio              Decimal  @db.Decimal(10, 2)
+  moneda              String   @default("PEN")
+  duracionDias        Int      @default(30)
+  maxEstudiantes      Int
+  maxUsuarios         Int
+  maxAlmacenamientoGB Float    @default(5)
+  modulosActivos      String[]
+  rolesHabilitados    String[] @default([])
+  observaciones       String?
+  activo              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   colegios Colegio[]
 
@@ -227,66 +227,66 @@ model Plan {
 // =============================================================================
 
 model Colegio {
-  id                   String        @id @default(cuid())
-  slug                 String        @unique
-  nombre               String
-  nombreCorto          String?
-  ruc                  String?       @unique
-  direccion            String?
-  distrito             String?
-  provincia            String?
-  departamento         String?
-  pais                 String        @default("PE")
-  telefono             String?
-  email                String?
-  sitioWeb             String?
-  logoUrl              String?
-  colorPrimario        String?       @default("#4f46e5")
-  colorSecundario      String?       @default("#7c3aed")
+  id                    String         @id @default(cuid())
+  slug                  String         @unique
+  nombre                String
+  nombreCorto           String?
+  ruc                   String?        @unique
+  direccion             String?
+  distrito              String?
+  provincia             String?
+  departamento          String?
+  pais                  String         @default("PE")
+  telefono              String?
+  email                 String?
+  sitioWeb              String?
+  logoUrl               String?
+  colorPrimario         String?        @default("#4f46e5")
+  colorSecundario       String?        @default("#7c3aed")
   // Plantilla editable del carnet de estudiante (colores propios, lema,
   // qué campos mostrar en el reverso). Si es null, el carnet usa
   // colorPrimario/colorSecundario y un set de campos por defecto.
   // Se guarda como JSON libre para no tener que migrar el esquema cada vez
   // que se agregue una opción nueva al editor de plantilla.
-  carnetConfig         Json?
-  imagenPortada        String?
-  historia             String?
-  mision               String?
-  vision               String?
-  galeria              String[]      @default([])
-  estado               ColegioEstado @default(ACTIVO)
-  planId               String
-  plan                 Plan          @relation(fields: [planId], references: [id])
-  licenciaInicio       DateTime?
-  licenciaFin          DateTime?
-  almacenamientoUsadoMB Float        @default(0)
-  whatsappNumero       String?
-  whatsappHorario      String?
-  whatsappMensaje      String?
+  carnetConfig          Json?
+  imagenPortada         String?
+  historia              String?
+  mision                String?
+  vision                String?
+  galeria               String[]       @default([])
+  estado                ColegioEstado  @default(ACTIVO)
+  planId                String
+  plan                  Plan           @relation(fields: [planId], references: [id])
+  licenciaInicio        DateTime?
+  licenciaFin           DateTime?
+  almacenamientoUsadoMB Float          @default(0)
+  whatsappNumero        String?
+  whatsappHorario       String?
+  whatsappMensaje       String?
   // Horario de asistencia (formato "HH:mm") usado por el escáner QR para
   // decidir si un ingreso cuenta como PRESENTE o TARDANZA, y como referencia
   // de la hora de salida. Si no se configuran, se usan valores por defecto.
-  horaEntrada          String?       @default("07:30")
-  horaTardanza         String?       @default("08:00")
-  horaSalida           String?       @default("13:00")
+  horaEntrada           String?        @default("07:30")
+  horaTardanza          String?        @default("08:00")
+  horaSalida            String?        @default("13:00")
   // Datos de pago que ve el padre para saber dónde pagar la pensión.
-  yapeNumero           String?
-  yapeTitular          String?
-  yapeQrUrl            String?       // QR de Yape — opcional, además del número
-  plinNumero           String?
-  plinTitular          String?
-  plinQrUrl            String?
-  bancoNombre          String?
-  cuentaBancaria       String?
-  cuentaBancariaCCI    String?
-  bancoQrUrl           String?
-  anoEscolarActual     Int?
-  retencionDatos       RetencionDatos @default(TRES_ANIOS)
-  rolesOpcionales      RolNombre[]   @default([])
-  fcmServerKey         String?
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  deletedAt            DateTime?
+  yapeNumero            String?
+  yapeTitular           String?
+  yapeQrUrl             String? // QR de Yape — opcional, además del número
+  plinNumero            String?
+  plinTitular           String?
+  plinQrUrl             String?
+  bancoNombre           String?
+  cuentaBancaria        String?
+  cuentaBancariaCCI     String?
+  bancoQrUrl            String?
+  anoEscolarActual      Int?
+  retencionDatos        RetencionDatos @default(TRES_ANIOS)
+  rolesOpcionales       RolNombre[]    @default([])
+  fcmServerKey          String?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  deletedAt             DateTime?
 
   usuarios         Usuario[]
   estudiantes      Estudiante[]
@@ -314,6 +314,7 @@ model Colegio {
   chatbotPreguntas ChatbotPregunta[]
   licencias        Licencia[]
   pagosLicencia    PagoLicencia[]
+  tesisLineasBase  TesisLineaBase[]
 
   @@map("colegios")
 }
@@ -331,7 +332,7 @@ model Licencia {
   createdAt   DateTime       @default(now())
   updatedAt   DateTime       @updatedAt
 
-  pagos       PagoLicencia[]
+  pagos PagoLicencia[]
 
   @@index([colegioId])
   @@map("licencias")
@@ -341,25 +342,25 @@ model Licencia {
 // mismo concepto que Pago (pensión) pero al revés: aquí el "cliente" es el
 // colegio y el "cobrador" es SuperAdmin.
 model PagoLicencia {
-  id             String       @id @default(cuid())
-  colegioId      String
-  colegio        Colegio      @relation(fields: [colegioId], references: [id])
-  licenciaId     String?
-  licencia       Licencia?    @relation(fields: [licenciaId], references: [id])
-  monto          Decimal      @db.Decimal(10, 2)
-  moneda         String       @default("PEN")
-  periodoPago    String?      // "2026-08" — mes que cubre este pago
-  estado         PagoEstado   @default(PENDIENTE)
-  banco          String?
-  operacion      String?
-  voucherUrl     String?      // path en el bucket "vouchers" (privado, se firma al vuelo)
-  voucherNombre  String?
-  fechaPago      DateTime?
-  observaciones  String?
-  aprobadoPorId  String?
-  aprobadoPor    Usuario?     @relation("PagoLicenciaAprobadoPor", fields: [aprobadoPorId], references: [id])
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id            String     @id @default(cuid())
+  colegioId     String
+  colegio       Colegio    @relation(fields: [colegioId], references: [id])
+  licenciaId    String?
+  licencia      Licencia?  @relation(fields: [licenciaId], references: [id])
+  monto         Decimal    @db.Decimal(10, 2)
+  moneda        String     @default("PEN")
+  periodoPago   String? // "2026-08" — mes que cubre este pago
+  estado        PagoEstado @default(PENDIENTE)
+  banco         String?
+  operacion     String?
+  voucherUrl    String? // path en el bucket "vouchers" (privado, se firma al vuelo)
+  voucherNombre String?
+  fechaPago     DateTime?
+  observaciones String?
+  aprobadoPorId String?
+  aprobadoPor   Usuario?   @relation("PagoLicenciaAprobadoPor", fields: [aprobadoPorId], references: [id])
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@index([colegioId])
   @@map("pagos_licencia")
@@ -369,34 +370,34 @@ model PagoLicencia {
 // un admin de colegio para pagar su suscripción SIGE (Yape/Plin/Banco del
 // dueño de la plataforma, no del colegio).
 model ConfiguracionPlataforma {
-  id                 String   @id @default("global")
-  yapeNumero         String?
-  yapeTitular        String?
-  yapeQrUrl          String?  // imagen del QR de Yape — opcional, si el banco/app solo funciona por QR
-  plinNumero         String?
-  plinTitular        String?
-  plinQrUrl          String?
-  bancoNombre        String?
-  cuentaBancaria     String?
-  cuentaBancariaCCI  String?
-  bancoQrUrl         String?  // QR del banco/otra billetera, si aplica
-  updatedAt          DateTime @updatedAt
+  id                String   @id @default("global")
+  yapeNumero        String?
+  yapeTitular       String?
+  yapeQrUrl         String? // imagen del QR de Yape — opcional, si el banco/app solo funciona por QR
+  plinNumero        String?
+  plinTitular       String?
+  plinQrUrl         String?
+  bancoNombre       String?
+  cuentaBancaria    String?
+  cuentaBancariaCCI String?
+  bancoQrUrl        String? // QR del banco/otra billetera, si aplica
+  updatedAt         DateTime @updatedAt
 
   @@map("configuracion_plataforma")
 }
 
 model MetodoCobroPlataforma {
-  id            String   @id @default(cuid())
-  nombre        String
-  tipo          String   @default("OTRO")
-  titular       String?
-  numeroCuenta  String?
-  cci           String?
-  qrUrl         String?
-  activo        Boolean  @default(true)
-  orden         Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String   @id @default(cuid())
+  nombre       String
+  tipo         String   @default("OTRO")
+  titular      String?
+  numeroCuenta String?
+  cci          String?
+  qrUrl        String?
+  activo       Boolean  @default(true)
+  orden        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@index([activo, orden])
   @@map("metodos_cobro_plataforma")
@@ -426,32 +427,32 @@ model Usuario {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  padre                   Padre?
-  docenteAulas            DocenteAula[]
-  notasRegistradas        Nota[]          @relation("NotaRegistradoPor")
-  recuperacionesRegistradas Recuperacion[] @relation("RecuperacionRegistradoPor")
-  conversacionesComoPadre Conversacion[]  @relation("ConversacionPadre")
-  conversacionesComoDocente Conversacion[] @relation("ConversacionDocente")
-  mensajesEnviados        Mensaje[]       @relation("MensajeAutor")
-  asistenciasRegistradas  Asistencia[]    @relation("AsistenciaRegistradaPor")
-  asistenciasJustificadas Asistencia[]    @relation("AsistenciaJustificadaPor")
-  pagosAprobados          Pago[]          @relation("PagoAprobadoPor")
-  pagosLicenciaAprobados  PagoLicencia[]  @relation("PagoLicenciaAprobadoPor")
-  comunicadosCreados      Comunicado[]
-  eventosCreados          Evento[]
-  encuestasCreadas        Encuesta[]
-  observaciones           Observacion[]   @relation("ObservacionCreadaPor")
-  permisosSolicitados     PermisoSalida[] @relation("PermisoPorUsuario")
-  permisosValidados       PermisoSalida[] @relation("PermisoValidadoPor")
-  permisosAutorizados     PermisoSalida[] @relation("PermisoAutorizadoPor")
-  documentosSolicitados   Documento[]     @relation("DocumentoSolicitadoPor")
-  documentosProcesados    Documento[]     @relation("DocumentoProcesadoPor")
-  auditoria               Auditoria[]
-  exportaciones           Exportacion[]
-  notificaciones          Notificacion[]
-  comunicadosLeidos       ComunicadoLectura[]
-  horariosDictados        Horario[]       @relation("HorarioDocente")
-  aulasComoTutor          Aula[]          @relation("AulaDocenteTutor")
+  padre                     Padre?
+  docenteAulas              DocenteAula[]
+  notasRegistradas          Nota[]              @relation("NotaRegistradoPor")
+  recuperacionesRegistradas Recuperacion[]      @relation("RecuperacionRegistradoPor")
+  conversacionesComoPadre   Conversacion[]      @relation("ConversacionPadre")
+  conversacionesComoDocente Conversacion[]      @relation("ConversacionDocente")
+  mensajesEnviados          Mensaje[]           @relation("MensajeAutor")
+  asistenciasRegistradas    Asistencia[]        @relation("AsistenciaRegistradaPor")
+  asistenciasJustificadas   Asistencia[]        @relation("AsistenciaJustificadaPor")
+  pagosAprobados            Pago[]              @relation("PagoAprobadoPor")
+  pagosLicenciaAprobados    PagoLicencia[]      @relation("PagoLicenciaAprobadoPor")
+  comunicadosCreados        Comunicado[]
+  eventosCreados            Evento[]
+  encuestasCreadas          Encuesta[]
+  observaciones             Observacion[]       @relation("ObservacionCreadaPor")
+  permisosSolicitados       PermisoSalida[]     @relation("PermisoPorUsuario")
+  permisosValidados         PermisoSalida[]     @relation("PermisoValidadoPor")
+  permisosAutorizados       PermisoSalida[]     @relation("PermisoAutorizadoPor")
+  documentosSolicitados     Documento[]         @relation("DocumentoSolicitadoPor")
+  documentosProcesados      Documento[]         @relation("DocumentoProcesadoPor")
+  auditoria                 Auditoria[]
+  exportaciones             Exportacion[]
+  notificaciones            Notificacion[]
+  comunicadosLeidos         ComunicadoLectura[]
+  horariosDictados          Horario[]           @relation("HorarioDocente")
+  aulasComoTutor            Aula[]              @relation("AulaDocenteTutor")
 
   @@index([colegioId])
   @@index([supabaseId])
@@ -502,18 +503,18 @@ model Seccion {
 }
 
 model Aula {
-  id        String   @id @default(cuid())
-  colegioId String
-  colegio   Colegio  @relation(fields: [colegioId], references: [id])
-  seccionId String?
-  seccion   Seccion? @relation(fields: [seccionId], references: [id])
+  id             String   @id @default(cuid())
+  colegioId      String
+  colegio        Colegio  @relation(fields: [colegioId], references: [id])
+  seccionId      String?
+  seccion        Seccion? @relation(fields: [seccionId], references: [id])
   docenteTutorId String?
   docenteTutor   Usuario? @relation("AulaDocenteTutor", fields: [docenteTutorId], references: [id])
-  nombre    String
-  capacidad Int?
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  nombre         String
+  capacidad      Int?
+  activo         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   docentesAula DocenteAula[]
   asistencias  Asistencia[]
@@ -524,20 +525,20 @@ model Aula {
 }
 
 model DocenteAula {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   usuarioId String
-  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   aulaId    String
-  aula      Aula    @relation(fields: [aulaId], references: [id])
+  aula      Aula     @relation(fields: [aulaId], references: [id])
   materia   String?
   // Curso real dictado por este docente en esta aula — es lo que determina
   // si puede registrar notas de ese curso para esos alumnos. `materia`
   // (texto libre) se mantiene solo por compatibilidad con asignaciones
   // creadas antes de que existiera el modelo Curso.
   cursoId   String?
-  curso     Curso?  @relation(fields: [cursoId], references: [id])
-  esTutor   Boolean @default(false)
-  activo    Boolean @default(true)
+  curso     Curso?   @relation(fields: [cursoId], references: [id])
+  esTutor   Boolean  @default(false)
+  activo    Boolean  @default(true)
   createdAt DateTime @default(now())
 
   @@unique([usuarioId, aulaId, materia])
@@ -566,9 +567,9 @@ model Curso {
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  docentesAula DocenteAula[]
-  horarios     Horario[]
-  notas        Nota[]
+  docentesAula   DocenteAula[]
+  horarios       Horario[]
+  notas          Nota[]
   recuperaciones Recuperacion[]
 
   @@index([colegioId])
@@ -597,6 +598,7 @@ model Nota {
   registradoPor        Usuario              @relation("NotaRegistradoPor", fields: [registradoPorId], references: [id])
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
+  visualizaciones      NotaVisualizacion[]
 
   @@unique([estudianteId, cursoId, periodo])
   @@index([colegioId])
@@ -610,21 +612,21 @@ model Nota {
 // colegio para esto, así que se deja lo estándar: una nota de recuperación
 // por estudiante+curso, con fecha de examen y resultado.
 model Recuperacion {
-  id              String    @id @default(cuid())
+  id              String     @id @default(cuid())
   colegioId       String
-  colegio         Colegio   @relation(fields: [colegioId], references: [id])
+  colegio         Colegio    @relation(fields: [colegioId], references: [id])
   estudianteId    String
   estudiante      Estudiante @relation(fields: [estudianteId], references: [id])
   cursoId         String
-  curso           Curso     @relation(fields: [cursoId], references: [id])
-  notaFinal       Decimal?  @db.Decimal(4, 2)
+  curso           Curso      @relation(fields: [cursoId], references: [id])
+  notaFinal       Decimal?   @db.Decimal(4, 2)
   aprobado        Boolean?
   fechaExamen     DateTime?
   observacion     String?
   registradoPorId String
-  registradoPor   Usuario   @relation("RecuperacionRegistradoPor", fields: [registradoPorId], references: [id])
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  registradoPor   Usuario    @relation("RecuperacionRegistradoPor", fields: [registradoPorId], references: [id])
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   @@unique([estudianteId, cursoId])
   @@index([colegioId])
@@ -632,31 +634,31 @@ model Recuperacion {
 }
 
 model Horario {
-  id           String     @id @default(cuid())
-  colegioId    String
-  colegio      Colegio    @relation(fields: [colegioId], references: [id])
-  nivelGradoId String
-  nivelGrado   NivelGrado @relation(fields: [nivelGradoId], references: [id])
-  seccionId    String?
-  seccion      Seccion?   @relation(fields: [seccionId], references: [id])
-  aulaId       String?
-  aula         Aula?      @relation(fields: [aulaId], references: [id])
-  docenteId    String?
-  docente      Usuario?   @relation("HorarioDocente", fields: [docenteId], references: [id])
+  id            String     @id @default(cuid())
+  colegioId     String
+  colegio       Colegio    @relation(fields: [colegioId], references: [id])
+  nivelGradoId  String
+  nivelGrado    NivelGrado @relation(fields: [nivelGradoId], references: [id])
+  seccionId     String?
+  seccion       Seccion?   @relation(fields: [seccionId], references: [id])
+  aulaId        String?
+  aula          Aula?      @relation(fields: [aulaId], references: [id])
+  docenteId     String?
+  docente       Usuario?   @relation("HorarioDocente", fields: [docenteId], references: [id])
   // Curso real que se dicta en este bloque — reemplaza el uso de `materia`
   // como único dato. `materia` se mantiene como texto de respaldo para
   // bloques que no son clase (ej. "Recreo", "Formación") o data antigua.
-  cursoId      String?
-  curso        Curso?     @relation(fields: [cursoId], references: [id])
-  diaSemana    Int
-  horaInicio   String
-  horaFin      String
-  materia      String
-  tipoBloque   TipoBloque @default(CLASE)
+  cursoId       String?
+  curso         Curso?     @relation(fields: [cursoId], references: [id])
+  diaSemana     Int
+  horaInicio    String
+  horaFin       String
+  materia       String
+  tipoBloque    TipoBloque @default(CLASE)
   docenteNombre String?
-  activo       Boolean    @default(true)
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  activo        Boolean    @default(true)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
 
   @@index([colegioId])
   @@index([nivelGradoId])
@@ -669,27 +671,27 @@ model Horario {
 // =============================================================================
 
 model Estudiante {
-  id               String           @id @default(cuid())
-  colegioId        String
-  colegio          Colegio          @relation(fields: [colegioId], references: [id])
-  dni              String
-  nombres          String
-  apellidos        String
-  fechaNacimiento  DateTime?
-  genero           String?
-  direccion        String?
-  fotoUrl          String?
-  estado           EstudianteEstado @default(ACTIVO)
-  codigoQR         String           @unique
-  anoIngreso       Int?
-  tipoSangre       String?
-  alergias         String?
-  medicacion       String?
-  restricciones    String?
-  notasSalud       String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  deletedAt        DateTime?
+  id              String           @id @default(cuid())
+  colegioId       String
+  colegio         Colegio          @relation(fields: [colegioId], references: [id])
+  dni             String
+  nombres         String
+  apellidos       String
+  fechaNacimiento DateTime?
+  genero          String?
+  direccion       String?
+  fotoUrl         String?
+  estado          EstudianteEstado @default(ACTIVO)
+  codigoQR        String           @unique
+  anoIngreso      Int?
+  tipoSangre      String?
+  alergias        String?
+  medicacion      String?
+  restricciones   String?
+  notasSalud      String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
 
   padreEstudiantes PadreEstudiante[]
   matriculas       Matricula[]
@@ -713,11 +715,11 @@ model Estudiante {
 // =============================================================================
 
 model Padre {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   colegioId String
-  colegio   Colegio  @relation(fields: [colegioId], references: [id])
-  usuarioId String?  @unique
-  usuario   Usuario? @relation(fields: [usuarioId], references: [id])
+  colegio   Colegio   @relation(fields: [colegioId], references: [id])
+  usuarioId String?   @unique
+  usuario   Usuario?  @relation(fields: [usuarioId], references: [id])
   dni       String
   nombres   String
   apellidos String
@@ -726,15 +728,16 @@ model Padre {
   telefono2 String?
   direccion String?
   fotoUrl   String?
-  activo    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  activo    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
   padreEstudiantes    PadreEstudiante[]
   pagos               Pago[]
   encuestasRespuestas EncuestaRespuesta[]
   notificaciones      Notificacion[]
+  notaVisualizaciones NotaVisualizacion[]
 
   @@unique([colegioId, dni])
   @@index([colegioId])
@@ -748,16 +751,16 @@ enum VinculoEstado {
 }
 
 model PadreEstudiante {
-  id           String     @id @default(cuid())
-  padreId      String
-  padre        Padre      @relation(fields: [padreId], references: [id])
-  estudianteId String
-  estudiante   Estudiante @relation(fields: [estudianteId], references: [id])
-  parentesco   String     @default("PADRE")
-  esPrincipal  Boolean    @default(false)
-  estado       VinculoEstado @default(APROBADO)
+  id            String        @id @default(cuid())
+  padreId       String
+  padre         Padre         @relation(fields: [padreId], references: [id])
+  estudianteId  String
+  estudiante    Estudiante    @relation(fields: [estudianteId], references: [id])
+  parentesco    String        @default("PADRE")
+  esPrincipal   Boolean       @default(false)
+  estado        VinculoEstado @default(APROBADO)
   aprobadoPorId String?
-  createdAt    DateTime   @default(now())
+  createdAt     DateTime      @default(now())
 
   @@unique([padreId, estudianteId])
   @@map("padre_estudiantes")
@@ -813,13 +816,46 @@ model Asistencia {
   justificadoPor   Usuario?         @relation("AsistenciaJustificadaPor", fields: [justificadoPorId], references: [id])
   escaneadoViaQR   Boolean          @default(false)
   notificadoPadre  Boolean          @default(false)
+  notificadoEn     DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
   @@unique([colegioId, estudianteId, fecha])
   @@index([colegioId, fecha])
   @@index([estudianteId])
+  @@index([colegioId, notificadoEn])
   @@map("asistencias")
+}
+
+// Registro analítico explícito: no se usa Auditoria para medir el consumo de notas.
+model NotaVisualizacion {
+  id      String   @id @default(cuid())
+  notaId  String
+  nota    Nota     @relation(fields: [notaId], references: [id], onDelete: Cascade)
+  padreId String
+  padre   Padre    @relation(fields: [padreId], references: [id], onDelete: Cascade)
+  vistoEn DateTime @default(now())
+
+  @@unique([notaId, padreId])
+  @@index([padreId, vistoEn])
+  @@map("nota_visualizaciones")
+}
+
+// Línea base manual de la investigación. Varias filas del mismo indicador
+// representan las observaciones "antes" que se emparejan con datos reales SIGE.
+model TesisLineaBase {
+  id            String   @id @default(cuid())
+  colegioId     String
+  colegio       Colegio  @relation(fields: [colegioId], references: [id], onDelete: Cascade)
+  indicador     String
+  valorAntes    Decimal  @db.Decimal(14, 4)
+  unidad        String
+  observaciones String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([colegioId, indicador])
+  @@map("tesis_lineas_base")
 }
 
 // =============================================================================
@@ -827,22 +863,22 @@ model Asistencia {
 // =============================================================================
 
 model ConceptoPago {
-  id          String   @id @default(cuid())
-  colegioId   String
-  colegio     Colegio  @relation(fields: [colegioId], references: [id])
-  nombre      String
-  tipo        PagoTipo
-  monto       Decimal  @db.Decimal(10, 2)
-  moneda      String   @default("PEN")
-  descripcion String?
-  activo      Boolean  @default(true)
+  id              String          @id @default(cuid())
+  colegioId       String
+  colegio         Colegio         @relation(fields: [colegioId], references: [id])
+  nombre          String
+  tipo            PagoTipo
+  monto           Decimal         @db.Decimal(10, 2)
+  moneda          String          @default("PEN")
+  descripcion     String?
+  activo          Boolean         @default(true)
   // Si es null, el concepto aplica a todos los niveles (ej. "Matrícula").
   nivelAplicable  NivelEducativo?
   // Meses del año (1-12) en que corresponde cobrar este concepto — ej. la
   // pensión suele cobrarse de marzo a diciembre. Vacío = los 12 meses.
-  mesesAplicables Int[]    @default([3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  mesesAplicables Int[]           @default([3, 4, 5, 6, 7, 8, 9, 10, 11, 12])
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
 
   pagos Pago[]
 
@@ -851,40 +887,40 @@ model ConceptoPago {
 }
 
 model Pago {
-  id              String       @id @default(cuid())
-  colegioId       String
-  colegio         Colegio      @relation(fields: [colegioId], references: [id])
-  padreId         String
-  padre           Padre        @relation(fields: [padreId], references: [id])
+  id               String        @id @default(cuid())
+  colegioId        String
+  colegio          Colegio       @relation(fields: [colegioId], references: [id])
+  padreId          String
+  padre            Padre         @relation(fields: [padreId], references: [id])
   // A qué hijo corresponde el cargo — necesario cuando hay más de un hijo en
   // la familia, porque cada uno puede tener un monto distinto (ej. descuento
   // por hermanos, beca, etc.). Nullable por compatibilidad con pagos viejos
   // creados antes de este campo.
-  estudianteId    String?
-  estudiante      Estudiante?  @relation(fields: [estudianteId], references: [id])
-  montoOriginal   Decimal?     @db.Decimal(10, 2)
+  estudianteId     String?
+  estudiante       Estudiante?   @relation(fields: [estudianteId], references: [id])
+  montoOriginal    Decimal?      @db.Decimal(10, 2)
   montoAjustadoPor String?
-  motivoAjuste    String?
-  conceptoId      String?
-  concepto        ConceptoPago? @relation(fields: [conceptoId], references: [id])
-  tipo            PagoTipo
-  monto           Decimal      @db.Decimal(10, 2)
-  moneda          String       @default("PEN")
-  estado          PagoEstado   @default(PENDIENTE)
-  voucherUrl      String?
-  voucherNombre   String?
-  fechaPago       DateTime?
-  periodoPago     String?
-  numeroBoleta    String?
-  banco           String?
-  operacion       String?
-  observaciones   String?
-  aprobadoPorId   String?
-  aprobadoPor     Usuario?     @relation("PagoAprobadoPor", fields: [aprobadoPorId], references: [id])
-  fechaAprobacion DateTime?
-  notificadoPadre Boolean      @default(false)
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
+  motivoAjuste     String?
+  conceptoId       String?
+  concepto         ConceptoPago? @relation(fields: [conceptoId], references: [id])
+  tipo             PagoTipo
+  monto            Decimal       @db.Decimal(10, 2)
+  moneda           String        @default("PEN")
+  estado           PagoEstado    @default(PENDIENTE)
+  voucherUrl       String?
+  voucherNombre    String?
+  fechaPago        DateTime?
+  periodoPago      String?
+  numeroBoleta     String?
+  banco            String?
+  operacion        String?
+  observaciones    String?
+  aprobadoPorId    String?
+  aprobadoPor      Usuario?      @relation("PagoAprobadoPor", fields: [aprobadoPorId], references: [id])
+  fechaAprobacion  DateTime?
+  notificadoPadre  Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@index([colegioId])
   @@index([padreId])
@@ -897,24 +933,24 @@ model Pago {
 // =============================================================================
 
 model Comunicado {
-  id             String          @id @default(cuid())
+  id             String              @id @default(cuid())
   colegioId      String
-  colegio        Colegio         @relation(fields: [colegioId], references: [id])
+  colegio        Colegio             @relation(fields: [colegioId], references: [id])
   titulo         String
   contenido      String
   adjuntoUrl     String?
   adjuntoNombre  String?
-  paraElColegio  Boolean         @default(false)
+  paraElColegio  Boolean             @default(false)
   nivelEducativo NivelEducativo?
   gradoId        String?
   seccionId      String?
   publicadoEn    DateTime?
   venceEn        DateTime?
   creadoPorId    String
-  creadoPor      Usuario         @relation(fields: [creadoPorId], references: [id])
-  activo         Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  creadoPor      Usuario             @relation(fields: [creadoPorId], references: [id])
+  activo         Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   notificadoEn   DateTime?
   adjuntos       ComunicadoAdjunto[]
   lecturas       ComunicadoLectura[]
@@ -924,14 +960,14 @@ model Comunicado {
 }
 
 model ComunicadoAdjunto {
-  id            String     @id @default(cuid())
-  comunicadoId  String
+  id           String     @id @default(cuid())
+  comunicadoId String
   comunicado   Comunicado @relation(fields: [comunicadoId], references: [id], onDelete: Cascade)
-  url           String
-  nombre        String
-  mimeType      String?
-  tamano        Int?
-  createdAt     DateTime   @default(now())
+  url          String
+  nombre       String
+  mimeType     String?
+  tamano       Int?
+  createdAt    DateTime   @default(now())
 
   @@index([comunicadoId])
   @@map("comunicado_adjuntos")
@@ -955,21 +991,21 @@ model ComunicadoLectura {
 // =============================================================================
 
 model Evento {
-  id          String     @id @default(cuid())
+  id          String          @id @default(cuid())
   colegioId   String
-  colegio     Colegio    @relation(fields: [colegioId], references: [id])
+  colegio     Colegio         @relation(fields: [colegioId], references: [id])
   titulo      String
   descripcion String?
-  tipo        EventoTipo @default(ACTIVIDAD)
+  tipo        EventoTipo      @default(ACTIVIDAD)
   fechaInicio DateTime
   fechaFin    DateTime?
-  todoElDia   Boolean    @default(true)
+  todoElDia   Boolean         @default(true)
   lugar       String?
   creadoPorId String
-  creadoPor   Usuario    @relation(fields: [creadoPorId], references: [id])
-  activo      Boolean    @default(true)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  creadoPor   Usuario         @relation(fields: [creadoPorId], references: [id])
+  activo      Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   adjuntos    EventoAdjunto[]
 
   @@index([colegioId])
@@ -1159,18 +1195,18 @@ model Documento {
 // tiene dos hilos separados, cada uno con el contexto correcto ("sobre
 // Juan" vs "sobre María"), en vez de mezclar todo en un solo chat confuso.
 model Conversacion {
-  id               String    @id @default(cuid())
-  colegioId        String
-  colegio          Colegio   @relation(fields: [colegioId], references: [id])
-  padreUsuarioId   String
-  padreUsuario     Usuario   @relation("ConversacionPadre", fields: [padreUsuarioId], references: [id])
-  docenteUsuarioId String
-  docenteUsuario   Usuario   @relation("ConversacionDocente", fields: [docenteUsuarioId], references: [id])
-  estudianteId     String
-  estudiante       Estudiante @relation(fields: [estudianteId], references: [id])
-  ultimoMensajeEn  DateTime?
+  id                 String     @id @default(cuid())
+  colegioId          String
+  colegio            Colegio    @relation(fields: [colegioId], references: [id])
+  padreUsuarioId     String
+  padreUsuario       Usuario    @relation("ConversacionPadre", fields: [padreUsuarioId], references: [id])
+  docenteUsuarioId   String
+  docenteUsuario     Usuario    @relation("ConversacionDocente", fields: [docenteUsuarioId], references: [id])
+  estudianteId       String
+  estudiante         Estudiante @relation(fields: [estudianteId], references: [id])
+  ultimoMensajeEn    DateTime?
   ultimoMensajeTexto String?
-  createdAt        DateTime  @default(now())
+  createdAt          DateTime   @default(now())
 
   mensajes Mensaje[]
 
@@ -1196,19 +1232,19 @@ model Mensaje {
 }
 
 model Notificacion {
-  id        String           @id @default(cuid())
-  usuarioId String?
-  usuario   Usuario?         @relation(fields: [usuarioId], references: [id])
-  padreId   String?
-  padre     Padre?           @relation(fields: [padreId], references: [id])
-  tipo      NotificacionTipo
-  titulo    String
-  cuerpo    String
-  datos     Json?
-  leida     Boolean          @default(false)
-  enviadaFCM Boolean         @default(false)
-  errorFCM  String?
-  createdAt DateTime         @default(now())
+  id         String           @id @default(cuid())
+  usuarioId  String?
+  usuario    Usuario?         @relation(fields: [usuarioId], references: [id])
+  padreId    String?
+  padre      Padre?           @relation(fields: [padreId], references: [id])
+  tipo       NotificacionTipo
+  titulo     String
+  cuerpo     String
+  datos      Json?
+  leida      Boolean          @default(false)
+  enviadaFCM Boolean          @default(false)
+  errorFCM   String?
+  createdAt  DateTime         @default(now())
 
   @@index([usuarioId])
   @@index([padreId])
@@ -1239,21 +1275,21 @@ model ChatbotPregunta {
 // =============================================================================
 
 model Auditoria {
-  id          String          @id @default(cuid())
-  colegioId   String?
-  colegio     Colegio?        @relation(fields: [colegioId], references: [id])
-  usuarioId   String?
-  usuario     Usuario?        @relation(fields: [usuarioId], references: [id])
-  accion      AuditoriaAccion
-  modulo      String
-  recursoId   String?
-  recursoTipo String?
-  descripcion String?
-  datosAntes  Json?
+  id           String          @id @default(cuid())
+  colegioId    String?
+  colegio      Colegio?        @relation(fields: [colegioId], references: [id])
+  usuarioId    String?
+  usuario      Usuario?        @relation(fields: [usuarioId], references: [id])
+  accion       AuditoriaAccion
+  modulo       String
+  recursoId    String?
+  recursoTipo  String?
+  descripcion  String?
+  datosAntes   Json?
   datosDespues Json?
-  ip          String?
-  userAgent   String?
-  createdAt   DateTime        @default(now())
+  ip           String?
+  userAgent    String?
+  createdAt    DateTime        @default(now())
 
   @@index([colegioId])
   @@index([usuarioId])
@@ -1285,18 +1321,18 @@ model Backup {
 // =============================================================================
 
 model Exportacion {
-  id        String   @id @default(cuid())
-  colegioId String
-  colegio   Colegio  @relation(fields: [colegioId], references: [id])
-  usuarioId String
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
-  nombre    String
+  id         String   @id @default(cuid())
+  colegioId  String
+  colegio    Colegio  @relation(fields: [colegioId], references: [id])
+  usuarioId  String
+  usuario    Usuario  @relation(fields: [usuarioId], references: [id])
+  nombre     String
   archivoUrl String?
-  tamanoKB  Int?
-  modulos   String[]
-  estado    String   @default("EN_PROCESO")
-  error     String?
-  createdAt DateTime @default(now())
+  tamanoKB   Int?
+  modulos    String[]
+  estado     String   @default("EN_PROCESO")
+  error      String?
+  createdAt  DateTime @default(now())
 
   @@index([colegioId])
   @@map("exportaciones")

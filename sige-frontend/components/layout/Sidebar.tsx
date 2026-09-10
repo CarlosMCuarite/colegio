@@ -21,6 +21,7 @@ const NAV: Record<string, NavSection[]> = {
       { href: '/superadmin/licencias',      icon: 'bi-patch-check',    label: 'Licencias'        },
       { href: '/superadmin/facturacion',    icon: 'bi-cash-coin',      label: 'Facturación'      },
       { href: '/superadmin/monitoreo',      icon: 'bi-activity',       label: 'Monitoreo'        },
+      { href: '/superadmin/tesis',          icon: 'bi-mortarboard',    label: 'Tesis'            },
       { href: '/superadmin/roles-plan',     icon: 'bi-person-gear',    label: 'Roles por Plan'   },
       { href: '/superadmin/backups',        icon: 'bi-hdd-network',    label: 'Backups'          },
       { href: '/superadmin/auditoria',      icon: 'bi-shield-check',   label: 'Auditoría global' },

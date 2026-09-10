@@ -57,7 +57,7 @@ router.post(
     limiteHoy.setHours(hLim, mLim, 0, 0);
     const estado = horaLlegada > limiteHoy ? AsistenciaEstado.TARDANZA : AsistenciaEstado.PRESENTE;
 
-    const asistencia = await prisma.asistencia.create({
+    let asistencia = await prisma.asistencia.create({
       data: {
         colegioId:       req.colegioId!,
         estudianteId:    estudiante.id,
@@ -81,6 +81,10 @@ router.post(
         cuerpo:    `${estudiante.nombres} ${estudiante.apellidos} llegó a las ${dayjs(horaLlegada).format('HH:mm')}`,
         datos:     { estudianteId: estudiante.id, ruta: '/padre/asistencia' },
         fcmToken:  padrePrincipal.usuario?.fcmToken ?? undefined,
+      });
+      asistencia = await prisma.asistencia.update({
+        where: { id: asistencia.id },
+        data: { notificadoPadre: true, notificadoEn: new Date() },
       });
     }
 
