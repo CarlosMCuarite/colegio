@@ -1316,6 +1316,26 @@ model Backup {
   @@map("backups")
 }
 
+model ActualizacionMovil {
+  id              String   @id @default(cuid())
+  version         String
+  build           Int
+  notas           String
+  rutaArchivo     String   @map("ruta_archivo")
+  nombreArchivo   String   @map("nombre_archivo")
+  sha256          String
+  tamanoBytes     Int      @map("tamano_bytes")
+  obligatoria     Boolean  @default(false)
+  versionMinima   String?  @map("version_minima")
+  activa          Boolean  @default(true)
+  creadaPorId     String?  @map("creada_por_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([activa, build])
+  @@map("actualizaciones_moviles")
+}
+
 // =============================================================================
 // EXPORTACIONES HISTORICAS
 // =============================================================================

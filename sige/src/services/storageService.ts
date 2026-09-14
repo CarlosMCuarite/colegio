@@ -6,11 +6,13 @@ import { AppError } from '../utils/AppError';
 import { logger } from '../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
+import { normalizeStoragePath } from '../utils/storagePath';
 
 type Bucket = (typeof BUCKETS)[keyof typeof BUCKETS];
 
 const IMAGE_MIMETYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/heic', 'image/heif'];
 const DOCUMENT_MIMETYPES = [...IMAGE_MIMETYPES, 'application/pdf'];
+const APK_MIMETYPES = ['application/vnd.android.package-archive', 'application/octet-stream'];
 const MAX_WEBP_DIMENSION = 1920;
 
 interface UploadResult {
@@ -62,7 +64,7 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const allowedMimes = bucket === BUCKETS.LOGOS || bucket === BUCKETS.AVATARES
     ? IMAGE_MIMETYPES
-    : DOCUMENT_MIMETYPES;
+    : bucket === BUCKETS.ACTUALIZACIONES ? APK_MIMETYPES : DOCUMENT_MIMETYPES;
   if (!allowedMimes.includes(mimetype) && mimetype !== 'application/octet-stream') {
     throw new AppError('Tipo de archivo no permitido', 422);
   }
@@ -80,18 +82,19 @@ export async function uploadFile(
         : isWebp ? 'image/webp'
           : isHeif ? 'image/heic'
             : null;
-  const actualAllowed = detectedMime != null && allowedMimes.includes(detectedMime);
+  const isApk = bucket === BUCKETS.ACTUALIZACIONES && buffer.length >= 4 && buffer[0] === 0x50 && buffer[1] === 0x4b;
+  const actualAllowed = isApk || (detectedMime != null && allowedMimes.includes(detectedMime));
   if (!actualAllowed) {
     throw new AppError('El contenido del archivo no coincide con su tipo declarado', 422);
   }
 
   let fileBuffer = buffer;
-  let finalMime = detectedMime!;
+  let finalMime = isApk ? 'application/vnd.android.package-archive' : detectedMime!;
   let finalExt = path.extname(originalName).toLowerCase();
   let finalName = path.basename(originalName, finalExt);
 
   // ── Conversión a WebP ────────────────────────────────────────────────────
-  if (IMAGE_MIMETYPES.includes(detectedMime!)) {
+  if (!isApk && IMAGE_MIMETYPES.includes(detectedMime!)) {
     try {
       const imagen = sharp(buffer).resize(MAX_WEBP_DIMENSION, MAX_WEBP_DIMENSION, {
         fit: 'inside',
@@ -153,18 +156,7 @@ export async function uploadFile(
 
 /** Extrae el path interno tanto de URLs públicas antiguas como de paths directos. */
 export function storagePathFromStoredUrl(bucket: Bucket, storedValue: string): string | null {
-  try {
-    const pathname = new URL(storedValue).pathname;
-    const markers = [`/storage/v1/object/public/${bucket}/`, `/storage/v1/object/sign/${bucket}/`, `/${bucket}/`];
-    for (const marker of markers) {
-      const idx = pathname.indexOf(marker);
-      if (idx !== -1) return decodeURIComponent(pathname.slice(idx + marker.length));
-    }
-  } catch {
-    const clean = storedValue.replace(/^\/+/, '');
-    return clean.startsWith(`${bucket}/`) ? clean.slice(bucket.length + 1) : clean || null;
-  }
-  return null;
+  return normalizeStoragePath(storedValue, bucket);
 }
 
 /** Convierte el valor persistido en una URL temporal apta para buckets privados. */
@@ -179,6 +171,7 @@ const BUCKET_CONFIG: Record<string, { public: boolean; fileSizeLimit: number; al
   [BUCKETS.DOCUMENTOS]: { public: false, fileSizeLimit: 20 * 1024 * 1024, allowedMimeTypes: DOCUMENT_MIMETYPES },
   [BUCKETS.AVATARES]: { public: true, fileSizeLimit: 3 * 1024 * 1024, allowedMimeTypes: IMAGE_MIMETYPES },
   [BUCKETS.BACKUPS]: { public: false, fileSizeLimit: 50 * 1024 * 1024, allowedMimeTypes: ['application/json'] },
+  [BUCKETS.ACTUALIZACIONES]: { public: false, fileSizeLimit: 50 * 1024 * 1024, allowedMimeTypes: APK_MIMETYPES },
 };
 
 /**

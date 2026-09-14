@@ -51,6 +51,8 @@ import dashboardRoutes from './routes/dashboard';
 import qrRoutes from './routes/qr';
 import backupsRoutes from './routes/backups';
 import tesisRoutes from './routes/tesis';
+import healthRoutes from './routes/health';
+import actualizacionesRoutes from './routes/actualizaciones';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -125,6 +127,8 @@ app.use(`${api}/dashboard`,     dashboardRoutes);
 app.use(`${api}/qr`,            qrRoutes);
 app.use(`${api}/backups`,       backupsRoutes);
 app.use(`${api}/tesis`,         tesisRoutes);
+app.use(`${api}/health`,        healthRoutes);
+app.use(`${api}/actualizaciones`, actualizacionesRoutes);
 
 // ─── Error handler (siempre al final) ───────────────────────────────────────
 app.use(errorHandler);

@@ -48,4 +48,5 @@ export const BUCKETS = {
   AVATARES:    process.env.SUPABASE_STORAGE_BUCKET_AVATARES    || 'avatares',
   LOGOS:       process.env.SUPABASE_STORAGE_BUCKET_LOGOS       || 'logos',
   BACKUPS:     process.env.SUPABASE_STORAGE_BUCKET_BACKUPS     || 'backups',
+  ACTUALIZACIONES: process.env.SUPABASE_STORAGE_BUCKET_ACTUALIZACIONES || 'actualizaciones',
 } as const;

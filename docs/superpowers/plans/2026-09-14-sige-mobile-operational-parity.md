@@ -33,11 +33,11 @@
 - Consumes: proyecto Flutter local `version: 1.0.0+1`.
 - Produces: aplicación reproducible desde `sige-mobile/` y registro de avance auditable.
 
-- [ ] Copiar código, assets, Android y pruebas, excluyendo `.dart_tool`, `.idea`, `build`, `artifacts`, archivos de preview y credenciales.
-- [ ] Ejecutar `flutter pub get` y `flutter analyze`; registrar fallos preexistentes sin ocultarlos.
-- [ ] Ejecutar `flutter test` y construir APK debug para demostrar que la importación no cambió comportamiento.
-- [ ] Actualizar `docs/IMPLEMENTATION_PROGRESS.md` con comandos y resultados.
-- [ ] Commit: `Incorporar aplicación Flutter al repositorio`.
+- [x] Copiar código, assets, Android y pruebas, excluyendo `.dart_tool`, `.idea`, `build`, `artifacts`, archivos de preview y credenciales.
+- [x] Ejecutar `flutter pub get` y `flutter analyze`; registrar fallos preexistentes sin ocultarlos.
+- [x] Ejecutar `flutter test` y construir APK debug para demostrar que la importación no cambió comportamiento.
+- [x] Actualizar `docs/IMPLEMENTATION_PROGRESS.md` con comandos y resultados.
+- [x] Commit: `Incorporar aplicación Flutter al repositorio`.
 
 ### Task 2: Diagnóstico y normalización de Storage
 
