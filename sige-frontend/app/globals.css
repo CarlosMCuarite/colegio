@@ -1262,6 +1262,59 @@ a, button, input, select, textarea { accent-color: var(--accent); }
 .sige-content > h1, .sige-content > h2 { letter-spacing: -.03em; text-wrap: balance; }
 .sige-content button:not(.auth-submit):not(.auth-theme-toggle):not(.auth-password-toggle) { transition: color var(--transition), background-color var(--transition), border-color var(--transition), transform var(--transition), box-shadow var(--transition); }
 .sige-content button:active:not(:disabled) { transform: translateY(1px); }
+
+/* Botones operativos compartidos. Varias pantallas usan estas clases sin
+   Bootstrap; por eso la apariencia debe vivir también en el sistema SIGE. */
+.sige-content :is(.btn-primary,.btn-secondary,.btn-accent,.btn-danger) {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .65rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.15;
+  text-decoration: none;
+  cursor: pointer;
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--action-primary) 16%, transparent);
+}
+.sige-content .btn-primary,
+.sige-content .btn-accent {
+  color: var(--action-contrast, #fff);
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+}
+.sige-content :is(.btn-primary,.btn-accent):hover:not(:disabled) {
+  color: var(--action-contrast, #fff);
+  background: var(--action-hover);
+  border-color: var(--action-hover);
+  transform: translateY(-1px);
+}
+.sige-content .btn-secondary {
+  color: var(--action-primary);
+  background: color-mix(in srgb, var(--action-primary) 8%, #fff);
+  border-color: color-mix(in srgb, var(--action-primary) 28%, #fff);
+  box-shadow: none;
+}
+.sige-content .btn-danger {
+  color: #fff;
+  background: #b42318;
+  border-color: #b42318;
+  box-shadow: 0 8px 20px rgb(180 35 24 / 16%);
+}
+.sige-content :is(.btn-primary,.btn-secondary,.btn-accent,.btn-danger):focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--action-primary) 30%, transparent);
+  outline-offset: 2px;
+}
+.sige-content :is(.btn-primary,.btn-secondary,.btn-accent,.btn-danger):disabled {
+  opacity: .52;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
 .sige-table thead { position: sticky; top: 0; z-index: 1; }
 .sige-table tbody tr { transition: background-color var(--transition); }
 .recharts-cartesian-grid-horizontal line, .recharts-cartesian-grid-vertical line { stroke-opacity: .55; }

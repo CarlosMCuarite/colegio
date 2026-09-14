@@ -73,6 +73,18 @@ Future<void> openAdminEntityActions({
         if (values == null) return;
         await api.patch('matriculas/$id', values);
         break;
+      case 'edit_classroom':
+        if (!context.mounted) return;
+        final values = await _classroomForm(context, item);
+        if (values == null) return;
+        await api.patch('aulas/$id', values);
+        break;
+      case 'edit_event':
+        if (!context.mounted) return;
+        final values = await _eventForm(context, item);
+        if (values == null) return;
+        await api.patch('eventos/$id', values);
+        break;
       case 'validate_permission':
         await api.patch('permisos/$id/validar', {'llamadaConfirmada': true});
         break;
@@ -203,6 +215,7 @@ List<(String, String, IconData, bool)> _actions(
       ('delete_course', 'Eliminar curso', Icons.delete_outline_rounded, true),
     ],
     'Aulas' => [
+      ('edit_classroom', 'Editar aula', Icons.edit_outlined, false),
       ('delete_classroom', 'Eliminar aula', Icons.delete_outline_rounded, true),
     ],
     'Secciones' => [
@@ -222,6 +235,7 @@ List<(String, String, IconData, bool)> _actions(
       ),
     ],
     'Eventos' => [
+      ('edit_event', 'Editar evento', Icons.edit_outlined, false),
       ('delete_event', 'Eliminar evento', Icons.delete_outline_rounded, true),
     ],
     _ => const [],
@@ -241,6 +255,44 @@ Future<bool> createAdminCourse(BuildContext context, WidgetRef ref) async {
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Curso creado correctamente.')),
+      );
+    }
+    return true;
+  } catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(SuperAdminRepository.message(error))),
+      );
+    }
+    return false;
+  }
+}
+
+Future<bool> createAdminEntity(
+  BuildContext context,
+  WidgetRef ref,
+  String module,
+) async {
+  final values = switch (module) {
+    'Estudiantes' => await _studentForm(context, const {}),
+    'Aulas' => await _classroomForm(context, const {}),
+    'Eventos' => await _eventForm(context, const {}),
+    _ => null,
+  };
+  if (values == null || !context.mounted) return false;
+  final endpoint = switch (module) {
+    'Estudiantes' => 'estudiantes',
+    'Aulas' => 'aulas',
+    'Eventos' => 'eventos',
+    _ => '',
+  };
+  if (endpoint.isEmpty) return false;
+  try {
+    final client = await ref.read(apiClientProvider.future);
+    await SuperAdminRepository(client).post(endpoint, values);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$module: registro creado correctamente.')),
       );
     }
     return true;
@@ -311,7 +363,18 @@ Future<void> _showDetails(
   isScrollControlled: true,
   showDragHandle: true,
   builder: (context) {
-    const hidden = {'id', 'createdAt', 'updatedAt', 'password', 'supabaseId'};
+    const hidden = {
+      'id',
+      'createdAt',
+      'updatedAt',
+      'password',
+      'supabaseId',
+      'fotoUrl',
+      'avatarUrl',
+      'logoUrl',
+      'archivoUrl',
+      'voucherUrl',
+    };
     final entries = item.entries
         .where(
           (entry) =>
@@ -379,7 +442,7 @@ Future<Map<String, dynamic>?> _studentForm(
   Map<String, dynamic> initial,
 ) => _recordForm(
   context,
-  title: 'Editar estudiante',
+  title: initial.isEmpty ? 'Nuevo estudiante' : 'Editar estudiante',
   fields: const [
     ('dni', 'DNI'),
     ('nombres', 'Nombres'),
@@ -391,6 +454,33 @@ Future<Map<String, dynamic>?> _studentForm(
   ],
   initial: initial,
   numeric: const {'anoIngreso'},
+);
+
+Future<Map<String, dynamic>?> _classroomForm(
+  BuildContext context,
+  Map<String, dynamic> initial,
+) => _recordForm(
+  context,
+  title: initial.isEmpty ? 'Nueva aula' : 'Editar aula',
+  fields: const [('nombre', 'Nombre del aula'), ('capacidad', 'Capacidad')],
+  initial: initial,
+  numeric: const {'capacidad'},
+);
+
+Future<Map<String, dynamic>?> _eventForm(
+  BuildContext context,
+  Map<String, dynamic> initial,
+) => _recordForm(
+  context,
+  title: initial.isEmpty ? 'Nuevo evento' : 'Editar evento',
+  fields: const [
+    ('titulo', 'Título'),
+    ('descripcion', 'Descripción'),
+    ('tipo', 'Tipo (ACTIVIDAD, REUNION o FERIADO)'),
+    ('fechaInicio', 'Fecha de inicio (AAAA-MM-DD)'),
+    ('fechaFin', 'Fecha de fin (opcional)'),
+  ],
+  initial: initial,
 );
 
 Future<Map<String, dynamic>?> _parentForm(

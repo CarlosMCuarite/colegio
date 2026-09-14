@@ -358,77 +358,80 @@ class _LiveOverview extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 14),
-        SizedBox(
-          height: 154,
-          child: ListView.separated(
-            clipBehavior: Clip.none,
-            scrollDirection: Axis.horizontal,
-            itemCount: metrics.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, index) {
-              final metric = metrics[index];
-              return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: Duration(milliseconds: 360 + (index * 55)),
-                curve: Curves.easeOutCubic,
-                builder: (context, value, child) => Opacity(
-                  opacity: value,
-                  child: Transform.translate(
-                    offset: Offset(18 * (1 - value), 0),
-                    child: child,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final columns = constraints.maxWidth >= 720 ? 4 : 2;
+            final width =
+                (constraints.maxWidth - ((columns - 1) * 12)) / columns;
+            return Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: List.generate(metrics.length, (index) {
+                final metric = metrics[index];
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: Duration(milliseconds: 360 + (index * 55)),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, child) => Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(18 * (1 - value), 0),
+                      child: child,
+                    ),
                   ),
-                ),
-                child: Container(
-                  width: 210,
-                  padding: const EdgeInsets.all(17),
-                  decoration: BoxDecoration(
-                    color: metric.$4.withValues(alpha: .09),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: metric.$4,
-                              borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: width,
+                    constraints: const BoxConstraints(minHeight: 148),
+                    padding: const EdgeInsets.all(17),
+                    decoration: BoxDecoration(
+                      color: metric.$4.withValues(alpha: .09),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 38,
+                              height: 38,
+                              decoration: BoxDecoration(
+                                color: metric.$4,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Icon(
+                                metric.$3,
+                                color: Colors.white,
+                                size: 21,
+                              ),
                             ),
-                            child: Icon(
-                              metric.$3,
-                              color: Colors.white,
-                              size: 21,
-                            ),
-                          ),
-                          const Spacer(),
-                          const Icon(Icons.north_east_rounded, size: 18),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        '${metric.$2 ?? 0}',
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      Text(
-                        metric.$1,
-                        style: Theme.of(context).textTheme.labelLarge,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        metric.$5,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
+                            const Spacer(),
+                            const Icon(Icons.north_east_rounded, size: 18),
+                          ],
+                        ),
+                        const Spacer(),
+                        Text(
+                          '${metric.$2 ?? 0}',
+                          style: Theme.of(context).textTheme.headlineSmall,
+                        ),
+                        Text(
+                          metric.$1,
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          metric.$5,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
-          ),
+                );
+              }),
+            );
+          },
         ),
         if (data.kind == DashboardKind.superAdmin) ...[
           const SizedBox(height: 18),
@@ -1767,11 +1770,16 @@ class _WelcomeBanner extends StatelessWidget {
       _ => OwlMood.studying,
     };
 
+    final primary = Theme.of(context).colorScheme.primary;
     return Container(
-      height: 210,
+      constraints: const BoxConstraints(minHeight: 184),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.primary,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [primary, Color.lerp(primary, Colors.black, .16)!],
+        ),
         borderRadius: BorderRadius.circular(28),
       ),
       child: Stack(
@@ -1802,13 +1810,14 @@ class _WelcomeBanner extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(22, 24, 150, 22),
+            padding: const EdgeInsets.fromLTRB(22, 22, 142, 22),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Hola, ${user.displayName}',
-                  maxLines: 1,
+                  'Hola, ${user.displayName.split(' ').first}',
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.headlineSmall
                       ?.copyWith(color: Colors.white),
@@ -1821,7 +1830,7 @@ class _WelcomeBanner extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyMedium
                       ?.copyWith(color: const Color(0xFFD8E8FF)),
                 ),
-                const Spacer(),
+                const SizedBox(height: 18),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 12,
@@ -1843,9 +1852,9 @@ class _WelcomeBanner extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: 0,
-            bottom: -8,
-            child: OwlCompanion(mood: owlMood, size: 170),
+            right: -8,
+            bottom: -10,
+            child: OwlCompanion(mood: owlMood, size: 158),
           ),
         ],
       ),

@@ -127,6 +127,24 @@ class _ManagementListScreenState extends ConsumerState<ManagementListScreen> {
               icon: const Icon(Icons.add_rounded),
               label: const Text('Nuevo curso'),
             )
+          : const {
+              'Estudiantes',
+              'Aulas',
+              'Eventos',
+            }.contains(widget.module.title)
+          ? FloatingActionButton.extended(
+              onPressed: () async {
+                if (await createAdminEntity(
+                  context,
+                  ref,
+                  widget.module.title,
+                )) {
+                  ref.invalidate(managementPageProvider(request));
+                }
+              },
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Nuevo'),
+            )
           : null,
       body: SafeArea(
         child: RefreshIndicator(
@@ -337,95 +355,173 @@ class _ScheduleBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final times =
+        items
+            .map(
+              (item) =>
+                  '${item['horaInicio'] ?? '—'}–${item['horaFin'] ?? '—'}',
+            )
+            .toSet()
+            .toList()
+          ..sort();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Semana académica', style: Theme.of(context).textTheme.titleLarge),
-        const SizedBox(height: 12),
-        for (final day in days) ...[
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: primary.withValues(alpha: .14)),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Horario semanal',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Icon(Icons.swipe_rounded, size: 18, color: primary),
+            const SizedBox(width: 5),
+            const Text('Desliza'),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          clipBehavior: Clip.antiAlias,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: primary.withValues(alpha: .16)),
+          ),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Table(
+              defaultColumnWidth: const FixedColumnWidth(132),
+              columnWidths: const {0: FixedColumnWidth(92)},
+              border: TableBorder.symmetric(
+                inside: BorderSide(color: primary.withValues(alpha: .10)),
+              ),
               children: [
-                Text(
-                  day.substring(0, 1) + day.substring(1).toLowerCase(),
-                  style: TextStyle(color: primary, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 10),
-                for (final item in items.where(
-                  (item) => item['diaSemana']?.toString().toUpperCase() == day,
-                ))
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: primary.withValues(alpha: .08),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(
-                          '${item['horaInicio'] ?? '—'}\n${item['horaFin'] ?? '—'}',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            nestedName(item['curso'], 'Bloque académico'),
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ],
-                    ),
+                TableRow(
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: .09),
                   ),
-                if (!items.any(
-                  (item) => item['diaSemana']?.toString().toUpperCase() == day,
-                ))
-                  const Text('Sin bloques programados'),
+                  children: [
+                    _scheduleCell('Hora', header: true, primary: primary),
+                    for (final day in days)
+                      _scheduleCell(
+                        day.substring(0, 3),
+                        header: true,
+                        primary: primary,
+                      ),
+                  ],
+                ),
+                for (final time in times)
+                  TableRow(
+                    children: [
+                      _scheduleCell(time, header: true, primary: primary),
+                      for (final day in days)
+                        _scheduleCell(
+                          items
+                              .where(
+                                (item) =>
+                                    item['diaSemana']
+                                            ?.toString()
+                                            .toUpperCase() ==
+                                        day &&
+                                    '${item['horaInicio'] ?? '—'}–${item['horaFin'] ?? '—'}' ==
+                                        time,
+                              )
+                              .map(
+                                (item) => nestedName(
+                                  item['curso'],
+                                  'Bloque académico',
+                                ),
+                              )
+                              .join('\n'),
+                          primary: primary,
+                        ),
+                    ],
+                  ),
               ],
             ),
           ),
-        ],
+        ),
       ],
     );
   }
+
+  static Widget _scheduleCell(
+    String value, {
+    required Color primary,
+    bool header = false,
+  }) => Container(
+    constraints: const BoxConstraints(minHeight: 64),
+    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 11),
+    alignment: Alignment.center,
+    color: !header && value.isNotEmpty ? primary.withValues(alpha: .055) : null,
+    child: Text(
+      value.isEmpty ? '—' : value,
+      textAlign: TextAlign.center,
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: header ? 12 : 13,
+        fontWeight: header ? FontWeight.w900 : FontWeight.w700,
+        color: header ? primary : null,
+      ),
+    ),
+  );
 }
 
-class _EventCalendar extends ConsumerWidget {
+class _EventCalendar extends ConsumerStatefulWidget {
   const _EventCalendar({required this.items});
   final List<Map<String, dynamic>> items;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
-    final first = DateTime(now.year, now.month, 1);
-    final days = DateTime(now.year, now.month + 1, 0).day;
+  ConsumerState<_EventCalendar> createState() => _EventCalendarState();
+}
+
+class _EventCalendarState extends ConsumerState<_EventCalendar> {
+  late DateTime month = DateTime(DateTime.now().year, DateTime.now().month);
+
+  void _move(int delta) =>
+      setState(() => month = DateTime(month.year, month.month + delta));
+
+  @override
+  Widget build(BuildContext context) {
+    final first = DateTime(month.year, month.month, 1);
+    final days = DateTime(month.year, month.month + 1, 0).day;
     final leading = first.weekday % 7;
     final primary = Theme.of(context).colorScheme.primary;
     final byDay = <int, List<Map<String, dynamic>>>{};
-    for (final item in items) {
+    for (final item in widget.items) {
       final raw = item['fechaInicio']?.toString();
       // Los eventos escolares de día completo son fechas civiles, no instantes
       // UTC: conservar YYYY-MM-DD evita que Lima muestre el día anterior.
       final date = raw == null ? null : DateTime.tryParse(raw.split('T').first);
-      if (date != null && date.year == now.year && date.month == now.month) {
+      if (date != null &&
+          date.year == month.year &&
+          date.month == month.month) {
         byDay.putIfAbsent(date.day, () => []).add(item);
       }
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '${_monthName(now.month)} ${now.year}',
-          style: Theme.of(context).textTheme.titleLarge,
+        Row(
+          children: [
+            IconButton.filledTonal(
+              onPressed: () => _move(-1),
+              icon: const Icon(Icons.chevron_left_rounded),
+            ),
+            Expanded(
+              child: Text(
+                '${_monthName(month.month)} ${month.year}',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+            IconButton.filledTonal(
+              onPressed: () => _move(1),
+              icon: const Icon(Icons.chevron_right_rounded),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Container(
@@ -456,22 +552,28 @@ class _EventCalendar extends ConsumerWidget {
                   if (index < leading) return const SizedBox.shrink();
                   final day = index - leading + 1;
                   final hasEvent = byDay[day]?.isNotEmpty == true;
-                  return Container(
-                    margin: const EdgeInsets.all(2),
-                    decoration: BoxDecoration(
-                      color: hasEvent
-                          ? primary
-                          : primary.withValues(alpha: .045),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        '$day',
-                        style: TextStyle(
-                          color: hasEvent ? Colors.white : null,
-                          fontWeight: hasEvent
-                              ? FontWeight.w900
-                              : FontWeight.w600,
+                  return InkWell(
+                    borderRadius: BorderRadius.circular(10),
+                    onTap: hasEvent
+                        ? () => _showDay(context, byDay[day]!)
+                        : null,
+                    child: Container(
+                      margin: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: hasEvent
+                            ? primary
+                            : primary.withValues(alpha: .045),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          '$day',
+                          style: TextStyle(
+                            color: hasEvent ? Colors.white : null,
+                            fontWeight: hasEvent
+                                ? FontWeight.w900
+                                : FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
@@ -481,28 +583,68 @@ class _EventCalendar extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 16),
-        for (final item in items)
-          Card(
-            child: ListTile(
-              leading: Icon(Icons.event_rounded, color: primary),
-              title: Text(item['titulo']?.toString() ?? 'Evento'),
-              subtitle: Text(
-                item['fechaInicio']?.toString().split('T').first ?? '',
-              ),
-              trailing: const Icon(Icons.chevron_right_rounded),
-              onTap: () => openAdminEntityActions(
-                context: context,
-                ref: ref,
-                module: 'Eventos',
-                item: item,
-                onChanged: () {},
-              ),
-            ),
+        const SizedBox(height: 12),
+        Card(
+          child: ExpansionTile(
+            leading: Icon(Icons.history_rounded, color: primary),
+            title: const Text('Ver otros eventos'),
+            subtitle: Text('${widget.items.length} registrados'),
+            children: [
+              for (final item in widget.items)
+                _eventTile(context, item, primary),
+            ],
           ),
+        ),
       ],
     );
   }
+
+  void _showDay(BuildContext context, List<Map<String, dynamic>> events) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Eventos del día',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              for (final event in events)
+                _eventTile(
+                  context,
+                  event,
+                  Theme.of(context).colorScheme.primary,
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _eventTile(
+    BuildContext context,
+    Map<String, dynamic> item,
+    Color primary,
+  ) => ListTile(
+    leading: Icon(Icons.event_rounded, color: primary),
+    title: Text(item['titulo']?.toString() ?? 'Evento'),
+    subtitle: Text(item['fechaInicio']?.toString().split('T').first ?? ''),
+    trailing: const Icon(Icons.chevron_right_rounded),
+    onTap: () => openAdminEntityActions(
+      context: context,
+      ref: ref,
+      module: 'Eventos',
+      item: item,
+      onChanged: () {},
+    ),
+  );
 
   static String _monthName(int month) => const [
     'Enero',
