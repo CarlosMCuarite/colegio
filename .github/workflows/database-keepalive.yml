@@ -14,12 +14,6 @@ jobs:
     timeout-minutes: 3
     steps:
       - name: Consultar PostgreSQL mediante el backend
-        env:
-          SIGE_HEALTH_URL: ${{ secrets.SIGE_HEALTH_URL }}
-          SIGE_HEALTH_TOKEN: ${{ secrets.SIGE_HEALTH_TOKEN }}
         run: |
-          test -n "$SIGE_HEALTH_URL"
-          test -n "$SIGE_HEALTH_TOKEN"
           curl --fail-with-body --retry 3 --retry-delay 10 \
-            -H "X-Health-Token: $SIGE_HEALTH_TOKEN" \
-            -X POST "$SIGE_HEALTH_URL/api/v1/health/maintenance"
+            "https://sige-backend-wzmn.onrender.com/api/v1/health/database"

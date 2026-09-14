@@ -9,7 +9,7 @@
 | Proyecto Flutter dentro del repositorio | Completado | Importado como `sige-mobile/`; tests pasan y APK debug compila. |
 | Storage y rutas de archivos | Completado | Normalizador único probado; prueba real de subir, firmar, descargar y borrar aprobada en `vales`, `documentos`, `backups` y `actualizaciones`. |
 | Backups automáticos | Completado | Las rutas internas nuevas también se incluyen y el mantenimiento diario ejecuta un respaldo verificable sin borrar la última copia válida. |
-| Health check diario | Implementado | Endpoint protegido hace `SELECT 1`; workflow diario despierta Render y ejecuta mantenimiento. Falta registrar los dos secretos del repositorio. |
+| Health check diario | Completado | Endpoint acotado hace `SELECT 1`; workflow diario despierta Render y ejecuta un respaldo idempotente. Restauración y descarga siguen protegidas. |
 | Actualizaciones privadas APK | Implementado | Modelo aplicado en Supabase, bucket privado operativo, panel Superadmin y cliente Android con SHA-256. |
 | Fichas y gestión académica móvil | Mejorado | Se ocultaron IDs técnicos, normalizaron fechas/booleanos, añadió estado y logo en listados. |
 | Comunicación y documentos | Pendiente | Comunicados/eventos/documentos bloqueados por Storage. |
@@ -40,7 +40,7 @@
 - Actualizador: descarga privada temporal, progreso, validación SHA-256 y apertura del instalador con confirmación de Android.
 - Información de la app: versión/build dinámicos y crédito exacto `Desarrollado por CARCE`.
 - Eventos móviles: fecha civil estable, sin retroceso de un día por UTC.
-- Nota operativa: configurar `HEALTH_CHECK_TOKEN` en Render y los secretos `SIGE_HEALTH_URL`/`SIGE_HEALTH_TOKEN` en GitHub antes de activar el workflow diario.
+- El workflow diario no requiere secretos: únicamente invoca el diagnóstico acotado; no expone descarga, restauración ni operaciones administrativas.
 
 ### 14/09/2026 · Línea base Flutter
 
