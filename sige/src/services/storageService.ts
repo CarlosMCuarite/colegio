@@ -171,7 +171,7 @@ const BUCKET_CONFIG: Record<string, { public: boolean; fileSizeLimit: number; al
   [BUCKETS.DOCUMENTOS]: { public: false, fileSizeLimit: 20 * 1024 * 1024, allowedMimeTypes: DOCUMENT_MIMETYPES },
   [BUCKETS.AVATARES]: { public: true, fileSizeLimit: 3 * 1024 * 1024, allowedMimeTypes: IMAGE_MIMETYPES },
   [BUCKETS.BACKUPS]: { public: false, fileSizeLimit: 50 * 1024 * 1024, allowedMimeTypes: ['application/json'] },
-  [BUCKETS.ACTUALIZACIONES]: { public: false, fileSizeLimit: 50 * 1024 * 1024, allowedMimeTypes: APK_MIMETYPES },
+  [BUCKETS.ACTUALIZACIONES]: { public: false, fileSizeLimit: 250 * 1024 * 1024, allowedMimeTypes: APK_MIMETYPES },
 };
 
 /**
@@ -208,6 +208,15 @@ export const verificarBuckets = asegurarBuckets;
 export async function deleteFile(bucket: Bucket, filePath: string): Promise<void> {
   const { error } = await supabaseAdmin.storage.from(bucket).remove([filePath]);
   if (error) logger.warn(`No se pudo eliminar archivo: ${filePath}`, error);
+}
+
+/** Variante estricta para operaciones cuyo estado depende de liberar Storage. */
+export async function deleteFileStrict(bucket: Bucket, filePath: string): Promise<void> {
+  const { error } = await supabaseAdmin.storage.from(bucket).remove([filePath]);
+  if (error) {
+    logger.error(`No se pudo eliminar archivo: ${filePath}`, error);
+    throw new AppError(`No se pudo eliminar el archivo de Storage: ${error.message}`, 500);
+  }
 }
 
 let storageUsageCache: { at: number; value: { bytes: number; archivos: number; buckets: Array<{ nombre: string; bytes: number; archivos: number }> } } | null = null;
