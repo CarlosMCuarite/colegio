@@ -6,7 +6,7 @@
 
 | Fase | Estado | Evidencia |
 |---|---|---|
-| Proyecto Flutter dentro del repositorio | Pendiente | Aplicación localizada en `C:/Users/CARCE/AndroidStudioProjects/SIGEFlutter`; captura del Xiaomi realizada. |
+| Proyecto Flutter dentro del repositorio | Completado | Importado como `sige-mobile/`; tests pasan y APK debug compila. |
 | Storage y rutas de archivos | Pendiente | Los `403` reproducidos corresponden a autorización, no a una base pausada. |
 | Backups automáticos | Pendiente | El historial móvil informa ejecuciones fallidas; falta aislar error de cada bucket. |
 | Health check diario | Pendiente | Supabase Free puede pausar tras siete días de baja actividad; se implementará consulta diaria protegida. |
@@ -24,7 +24,17 @@
 
 ## Próximo bloque
 
-1. Incorporar el proyecto Flutter sin artefactos generados.
-2. Ejecutar análisis, pruebas y APK base.
-3. Diagnosticar cada bucket con una operación temporal completa.
+1. Diagnosticar cada bucket con una operación temporal completa.
+2. Normalizar rutas históricas de archivos.
+3. Reparar la observabilidad del backup automático.
+
+## Registro de ejecución
+
+### 14/09/2026 · Línea base Flutter
+
+- `flutter pub get`: completado.
+- `flutter test`: 1 prueba aprobada, 0 fallos.
+- `flutter build apk --debug`: completado; APK generado correctamente.
+- `flutter analyze`: terminó con 53 observaciones preexistentes (advertencias de miembros sin uso, `BuildContext` tras operaciones asíncronas y llaves de estilo). No hay errores de compilación; se corregirán al intervenir los archivos afectados.
+- Se excluyeron cachés, builds, configuración de Android Studio, `local.properties` y previews del repositorio.
 
