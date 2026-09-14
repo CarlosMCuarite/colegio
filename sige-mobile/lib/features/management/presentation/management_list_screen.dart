@@ -247,9 +247,11 @@ class _ManagementListScreenState extends ConsumerState<ManagementListScreen> {
                               imageUrl:
                                   widget.module.title == 'Usuarios' ||
                                       widget.module.title == 'Personal' ||
-                                      widget.module.title == 'Estudiantes'
+                                      widget.module.title == 'Estudiantes' ||
+                                      widget.module.title == 'Colegios'
                                   ? item['avatarUrl']?.toString() ??
-                                        item['fotoUrl']?.toString()
+                                        item['fotoUrl']?.toString() ??
+                                        item['logoUrl']?.toString()
                                   : null,
                               status:
                                   item['estado']?.toString() ??
@@ -411,7 +413,9 @@ class _EventCalendar extends ConsumerWidget {
     final byDay = <int, List<Map<String, dynamic>>>{};
     for (final item in items) {
       final raw = item['fechaInicio']?.toString();
-      final date = raw == null ? null : DateTime.tryParse(raw)?.toLocal();
+      // Los eventos escolares de día completo son fechas civiles, no instantes
+      // UTC: conservar YYYY-MM-DD evita que Lima muestre el día anterior.
+      final date = raw == null ? null : DateTime.tryParse(raw.split('T').first);
       if (date != null && date.year == now.year && date.month == now.month) {
         byDay.putIfAbsent(date.day, () => []).add(item);
       }

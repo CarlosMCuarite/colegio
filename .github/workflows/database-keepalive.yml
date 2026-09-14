@@ -1,0 +1,25 @@
+name: Mantener base de datos SIGE activa
+
+on:
+  schedule:
+    - cron: '17 13 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  database-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Consultar PostgreSQL mediante el backend
+        env:
+          SIGE_HEALTH_URL: ${{ secrets.SIGE_HEALTH_URL }}
+          SIGE_HEALTH_TOKEN: ${{ secrets.SIGE_HEALTH_TOKEN }}
+        run: |
+          test -n "$SIGE_HEALTH_URL"
+          test -n "$SIGE_HEALTH_TOKEN"
+          curl --fail-with-body --retry 3 --retry-delay 10 \
+            -H "X-Health-Token: $SIGE_HEALTH_TOKEN" \
+            -X POST "$SIGE_HEALTH_URL/api/v1/health/maintenance"

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:dio/dio.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -2216,6 +2217,21 @@ class _ProfilePage extends ConsumerWidget {
         onTap: () => Navigator.of(
           context,
         ).push(MaterialPageRoute<void>(builder: (_) => const SecurityScreen())),
+      ),
+      _ProfileAction(
+        icon: Icons.info_outline_rounded,
+        label: 'Información de la aplicación',
+        onTap: () async {
+          final info = await PackageInfo.fromPlatform();
+          if (!context.mounted) return;
+          showAboutDialog(
+            context: context,
+            applicationName: 'SIGE',
+            applicationVersion:
+                'Versión ${info.version} · compilación ${info.buildNumber}',
+            applicationLegalese: 'Desarrollado por CARCE\n© 2026. Todos los derechos reservados.',
+          );
+        },
       ),
       const SizedBox(height: 16),
       OutlinedButton.icon(

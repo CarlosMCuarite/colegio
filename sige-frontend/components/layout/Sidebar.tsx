@@ -24,6 +24,7 @@ const NAV: Record<string, NavSection[]> = {
       { href: '/superadmin/tesis',          icon: 'bi-mortarboard',    label: 'Tesis'            },
       { href: '/superadmin/roles-plan',     icon: 'bi-person-gear',    label: 'Roles por Plan'   },
       { href: '/superadmin/backups',        icon: 'bi-hdd-network',    label: 'Backups'          },
+      { href: '/superadmin/actualizaciones', icon: 'bi-phone',          label: 'Actualizaciones'  },
       { href: '/superadmin/auditoria',      icon: 'bi-shield-check',   label: 'Auditoría global' },
     ]},
     { label: 'Cuenta', items: [

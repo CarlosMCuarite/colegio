@@ -4,6 +4,7 @@ import prisma from '../config/prisma';
 import { logger } from '../utils/logger';
 import { BackupEstado } from '@prisma/client';
 import { supabaseAdmin, BUCKETS } from '../config/supabase';
+import { normalizeStoragePath } from '../utils/storagePath';
 
 export const BACKUP_BUCKET = process.env.SUPABASE_STORAGE_BUCKET_BACKUPS || 'backups';
 const BACKUP_MAX = Math.max(1, parseInt(process.env.BACKUP_MAX_VERSIONES || '7', 10));
@@ -26,26 +27,21 @@ export function initBackupCron(): void {
 }
 
 function pathDesdeUrl(url: string, bucket: string): string | null {
-  try {
-    const pathname = new URL(url).pathname;
-    for (const marker of [`/storage/v1/object/public/${bucket}/`, `/storage/v1/object/sign/${bucket}/`, `/${bucket}/`]) {
-      const index = pathname.indexOf(marker);
-      if (index !== -1) return decodeURIComponent(pathname.slice(index + marker.length));
-    }
-  } catch { /* URL externa o inválida: no pertenece a nuestro Storage. */ }
-  return null;
+  return normalizeStoragePath(url, bucket);
 }
 
 function extraerArchivos(valor: unknown): ArchivoFuente[] {
   const encontrados = new Map<string, ArchivoFuente>();
-  const visitar = (actual: unknown) => {
-    if (typeof actual === 'string' && actual.includes('/storage/')) {
-      for (const bucket of BUCKETS_ARCHIVOS) {
-        const path = pathDesdeUrl(actual, bucket);
-        if (path) encontrados.set(`${bucket}/${path}`, { bucket, path, url: actual });
-      }
-    } else if (Array.isArray(actual)) actual.forEach(visitar);
-    else if (actual && typeof actual === 'object') Object.values(actual as Record<string, unknown>).forEach(visitar);
+  const bucketPorCampo = (campo: string) => campo.toLowerCase().includes('voucher') ? BUCKETS.VOUCHERS
+    : campo.toLowerCase().includes('avatar') || campo.toLowerCase().includes('foto') ? BUCKETS.AVATARES
+      : campo.toLowerCase().includes('logo') ? BUCKETS.LOGOS : BUCKETS.DOCUMENTOS;
+  const visitar = (actual: unknown, campo = '') => {
+    if (typeof actual === 'string' && /(url|archivo|adjunto|voucher|foto|logo)/i.test(campo)) {
+      const bucket = bucketPorCampo(campo);
+      const path = pathDesdeUrl(actual, bucket);
+      if (path) encontrados.set(`${bucket}/${path}`, { bucket, path, url: actual });
+    } else if (Array.isArray(actual)) actual.forEach(item => visitar(item, campo));
+    else if (actual && typeof actual === 'object') Object.entries(actual as Record<string, unknown>).forEach(([key, item]) => visitar(item, key));
   };
   visitar(valor);
   return [...encontrados.values()];

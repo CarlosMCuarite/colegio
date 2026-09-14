@@ -311,9 +311,14 @@ Future<void> _showDetails(
   isScrollControlled: true,
   showDragHandle: true,
   builder: (context) {
-    const hidden = {'id', 'createdAt', 'updatedAt', 'password'};
+    const hidden = {'id', 'createdAt', 'updatedAt', 'password', 'supabaseId'};
     final entries = item.entries
-        .where((entry) => !hidden.contains(entry.key) && entry.value != null)
+        .where(
+          (entry) =>
+              !hidden.contains(entry.key) &&
+              !entry.key.endsWith('Id') &&
+              entry.value != null,
+        )
         .toList();
     return DraggableScrollableSheet(
       expand: false,
@@ -359,7 +364,14 @@ String _detailValue(dynamic value) {
         )
         .join('\n');
   }
-  return value.toString();
+  final raw = value.toString();
+  final isoDate = RegExp(r'^\d{4}-\d{2}-\d{2}(?:T.*)?$');
+  if (isoDate.hasMatch(raw)) {
+    final parts = raw.substring(0, 10).split('-');
+    return '${parts[2]}/${parts[1]}/${parts[0]}';
+  }
+  if (value is bool) return value ? 'Sí' : 'No';
+  return raw;
 }
 
 Future<Map<String, dynamic>?> _studentForm(
@@ -375,6 +387,7 @@ Future<Map<String, dynamic>?> _studentForm(
     ('fechaNacimiento', 'Fecha de nacimiento (AAAA-MM-DD)'),
     ('direccion', 'Dirección'),
     ('anoIngreso', 'Año de ingreso'),
+    ('estado', 'Estado'),
   ],
   initial: initial,
   numeric: const {'anoIngreso'},

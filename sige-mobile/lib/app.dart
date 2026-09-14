@@ -12,6 +12,8 @@ import 'features/auth/presentation/auth_controller.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/home/presentation/home_screen.dart';
 import 'shared/widgets/owl_companion.dart';
+import 'core/update/app_update_dialog.dart';
+import 'core/update/app_update_service.dart';
 
 class SigeApp extends ConsumerStatefulWidget {
   const SigeApp({super.key});
@@ -46,7 +48,10 @@ class _SigeAppState extends ConsumerState<SigeApp> {
         ? const _LaunchScreen(key: ValueKey('splash'))
         : auth.user == null
         ? const LoginScreen(key: ValueKey('login'))
-        : HomeScreen(key: const ValueKey('home'), user: auth.user!);
+        : _UpdateGate(
+            key: const ValueKey('home'),
+            child: HomeScreen(user: auth.user!),
+          );
     return MaterialApp(
       title: 'SIGE Encinas',
       debugShowCheckedModeBanner: false,
@@ -73,6 +78,31 @@ class _SigeAppState extends ConsumerState<SigeApp> {
     }
     return Color(int.parse('FF${value.substring(1)}', radix: 16));
   }
+}
+
+class _UpdateGate extends StatefulWidget {
+  const _UpdateGate({super.key, required this.child});
+  final Widget child;
+  @override
+  State<_UpdateGate> createState() => _UpdateGateState();
+}
+
+class _UpdateGateState extends State<_UpdateGate> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      try {
+        final release = await AppUpdateService().check();
+        if (release != null && mounted) await showAppUpdate(context, release);
+      } catch (_) {
+        /* Offline: no bloquea el acceso. */
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
 
 class _LaunchScreen extends StatefulWidget {
